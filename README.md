@@ -1,1 +1,3 @@
-# ml-for-building-energy-modeling
+# Machine Learning for Building Energy Modeling
+
+MIT 4.463 class project page, Zoe LeHong & Sam Wolk
