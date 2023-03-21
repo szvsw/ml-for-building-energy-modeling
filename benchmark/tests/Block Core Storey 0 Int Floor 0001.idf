@@ -1,0 +1,1356 @@
+!- Windows Line endings 
+
+VERSION,
+    9.2.0;                    !- Version Identifier
+
+SIMULATIONCONTROL,
+    No,                       !- Do Zone Sizing Calculation
+    No,                       !- Do System Sizing Calculation
+    No,                       !- Do Plant Sizing Calculation
+    No,                       !- Run Simulation for Sizing Periods
+    Yes,                      !- Run Simulation for Weather File Run Periods
+    No,                       !- Do HVAC Sizing Simulation for Sizing Periods
+    1;                        !- Maximum Number of HVAC Sizing Simulation Passes
+
+BUILDING,
+    015fdf53-c83a-11ed-8d48-841b77d62e9a.idf,    !- Name
+    0,                        !- North Axis
+    Suburbs,                  !- Terrain
+    0.04,                     !- Loads Convergence Tolerance Value
+    0.4,                      !- Temperature Convergence Tolerance Value
+    FullExterior,             !- Solar Distribution
+    25,                       !- Maximum Number of Warmup Days
+    6;                        !- Minimum Number of Warmup Days
+
+RUNPERIOD,
+    Run Period 1,             !- Name
+    1,                        !- Begin Month
+    1,                        !- Begin Day of Month
+    ,                         !- Begin Year
+    12,                       !- End Month
+    31,                       !- End Day of Month
+    ,                         !- End Year
+    ,                         !- Day of Week for Start Day
+    Yes,                      !- Use Weather File Holidays and Special Days
+    Yes,                      !- Use Weather File Daylight Saving Period
+    No,                       !- Apply Weekend Holiday Rule
+    Yes,                      !- Use Weather File Rain Indicators
+    Yes,                      !- Use Weather File Snow Indicators
+    No;                       !- Treat Weather as Actual
+
+SITE:GROUNDTEMPERATURE:BUILDINGSURFACE,
+    10,                       !- January Ground Temperature
+    10,                       !- February Ground Temperature
+    10,                       !- March Ground Temperature
+    10,                       !- April Ground Temperature
+    10,                       !- May Ground Temperature
+    10,                       !- June Ground Temperature
+    10,                       !- July Ground Temperature
+    10,                       !- August Ground Temperature
+    10,                       !- September Ground Temperature
+    10,                       !- October Ground Temperature
+    10,                       !- November Ground Temperature
+    10;                       !- December Ground Temperature
+
+SCHEDULETYPELIMITS,
+    Fraction,                 !- Name
+    0,                        !- Lower Limit Value
+    1,                        !- Upper Limit Value
+    Continuous,               !- Numeric Type
+    Dimensionless;            !- Unit Type
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Occ_WD,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0,                        !- Hour 1
+    0,                        !- Hour 2
+    0,                        !- Hour 3
+    0,                        !- Hour 4
+    0,                        !- Hour 5
+    0,                        !- Hour 6
+    0.1,                      !- Hour 7
+    0.2,                      !- Hour 8
+    1,                        !- Hour 9
+    1,                        !- Hour 10
+    1,                        !- Hour 11
+    1,                        !- Hour 12
+    0.5,                      !- Hour 13
+    1,                        !- Hour 14
+    1,                        !- Hour 15
+    1,                        !- Hour 16
+    1,                        !- Hour 17
+    0.3,                      !- Hour 18
+    0.2,                      !- Hour 19
+    0.1,                      !- Hour 20
+    0,                        !- Hour 21
+    0,                        !- Hour 22
+    0,                        !- Hour 23
+    0;                        !- Hour 24
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Occ_WE,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0,                        !- Hour 1
+    0,                        !- Hour 2
+    0,                        !- Hour 3
+    0,                        !- Hour 4
+    0,                        !- Hour 5
+    0,                        !- Hour 6
+    0.1,                      !- Hour 7
+    0.1,                      !- Hour 8
+    0.1,                      !- Hour 9
+    0.1,                      !- Hour 10
+    0.1,                      !- Hour 11
+    0.1,                      !- Hour 12
+    0.1,                      !- Hour 13
+    0.1,                      !- Hour 14
+    0.1,                      !- Hour 15
+    0.1,                      !- Hour 16
+    0.1,                      !- Hour 17
+    0.1,                      !- Hour 18
+    0.1,                      !- Hour 19
+    0.1,                      !- Hour 20
+    0,                        !- Hour 21
+    0,                        !- Hour 22
+    0,                        !- Hour 23
+    0;                        !- Hour 24
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Lgt_WD,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0.1,                      !- Hour 1
+    0.1,                      !- Hour 2
+    0.1,                      !- Hour 3
+    0.1,                      !- Hour 4
+    0.1,                      !- Hour 5
+    0.1,                      !- Hour 6
+    0.1,                      !- Hour 7
+    0.3,                      !- Hour 8
+    1,                        !- Hour 9
+    1,                        !- Hour 10
+    1,                        !- Hour 11
+    1,                        !- Hour 12
+    0.8,                      !- Hour 13
+    1,                        !- Hour 14
+    1,                        !- Hour 15
+    1,                        !- Hour 16
+    1,                        !- Hour 17
+    0.5,                      !- Hour 18
+    0.3,                      !- Hour 19
+    0.3,                      !- Hour 20
+    0.2,                      !- Hour 21
+    0.2,                      !- Hour 22
+    0.1,                      !- Hour 23
+    0.1;                      !- Hour 24
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Lgt_WE,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0.1,                      !- Hour 1
+    0.1,                      !- Hour 2
+    0.1,                      !- Hour 3
+    0.1,                      !- Hour 4
+    0.1,                      !- Hour 5
+    0.1,                      !- Hour 6
+    0.1,                      !- Hour 7
+    0.1,                      !- Hour 8
+    0.1,                      !- Hour 9
+    0.1,                      !- Hour 10
+    0.1,                      !- Hour 11
+    0.1,                      !- Hour 12
+    0.1,                      !- Hour 13
+    0.1,                      !- Hour 14
+    0.1,                      !- Hour 15
+    0.1,                      !- Hour 16
+    0.1,                      !- Hour 17
+    0.1,                      !- Hour 18
+    0.1,                      !- Hour 19
+    0.1,                      !- Hour 20
+    0.1,                      !- Hour 21
+    0.1,                      !- Hour 22
+    0.1,                      !- Hour 23
+    0.1;                      !- Hour 24
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Plg_WD,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0.1,                      !- Hour 1
+    0.1,                      !- Hour 2
+    0.1,                      !- Hour 3
+    0.1,                      !- Hour 4
+    0.1,                      !- Hour 5
+    0.1,                      !- Hour 6
+    0.1,                      !- Hour 7
+    0.3,                      !- Hour 8
+    1,                        !- Hour 9
+    1,                        !- Hour 10
+    1,                        !- Hour 11
+    1,                        !- Hour 12
+    0.8,                      !- Hour 13
+    1,                        !- Hour 14
+    1,                        !- Hour 15
+    1,                        !- Hour 16
+    1,                        !- Hour 17
+    1,                        !- Hour 18
+    0.3,                      !- Hour 19
+    0.3,                      !- Hour 20
+    0.2,                      !- Hour 21
+    0.2,                      !- Hour 22
+    0.1,                      !- Hour 23
+    0.1;                      !- Hour 24
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Plg_WE,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0.1,                      !- Hour 1
+    0.1,                      !- Hour 2
+    0.1,                      !- Hour 3
+    0.1,                      !- Hour 4
+    0.1,                      !- Hour 5
+    0.1,                      !- Hour 6
+    0.1,                      !- Hour 7
+    0.1,                      !- Hour 8
+    0.1,                      !- Hour 9
+    0.1,                      !- Hour 10
+    0.1,                      !- Hour 11
+    0.1,                      !- Hour 12
+    0.1,                      !- Hour 13
+    0.1,                      !- Hour 14
+    0.1,                      !- Hour 15
+    0.1,                      !- Hour 16
+    0.1,                      !- Hour 17
+    0.1,                      !- Hour 18
+    0.1,                      !- Hour 19
+    0.1,                      !- Hour 20
+    0.1,                      !- Hour 21
+    0.1,                      !- Hour 22
+    0.1,                      !- Hour 23
+    0.1;                      !- Hour 24
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Dhw_WD,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0,                        !- Hour 1
+    0,                        !- Hour 2
+    0,                        !- Hour 3
+    0,                        !- Hour 4
+    0,                        !- Hour 5
+    0,                        !- Hour 6
+    0.2,                      !- Hour 7
+    0.4,                      !- Hour 8
+    0.4,                      !- Hour 9
+    0.4,                      !- Hour 10
+    0.4,                      !- Hour 11
+    0.6,                      !- Hour 12
+    0.6,                      !- Hour 13
+    0.4,                      !- Hour 14
+    0.4,                      !- Hour 15
+    0.4,                      !- Hour 16
+    0.4,                      !- Hour 17
+    0.4,                      !- Hour 18
+    0.4,                      !- Hour 19
+    0.2,                      !- Hour 20
+    0,                        !- Hour 21
+    0,                        !- Hour 22
+    0,                        !- Hour 23
+    0;                        !- Hour 24
+
+SCHEDULE:DAY:HOURLY,
+    B_Off_D_Dhw_WE,           !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    0,                        !- Hour 1
+    0,                        !- Hour 2
+    0,                        !- Hour 3
+    0,                        !- Hour 4
+    0,                        !- Hour 5
+    0,                        !- Hour 6
+    0.1,                      !- Hour 7
+    0.1,                      !- Hour 8
+    0.1,                      !- Hour 9
+    0.1,                      !- Hour 10
+    0.1,                      !- Hour 11
+    0.1,                      !- Hour 12
+    0.1,                      !- Hour 13
+    0.1,                      !- Hour 14
+    0.1,                      !- Hour 15
+    0.1,                      !- Hour 16
+    0.1,                      !- Hour 17
+    0.1,                      !- Hour 18
+    0.1,                      !- Hour 19
+    0.1,                      !- Hour 20
+    0,                        !- Hour 21
+    0,                        !- Hour 22
+    0,                        !- Hour 23
+    0;                        !- Hour 24
+
+SCHEDULE:WEEK:DAILY,
+    B_Off_W_Occ,              !- Name
+    B_Off_D_Occ_WE,           !- Sunday ScheduleDay Name
+    B_Off_D_Occ_WD,           !- Monday ScheduleDay Name
+    B_Off_D_Occ_WD,           !- Tuesday ScheduleDay Name
+    B_Off_D_Occ_WD,           !- Wednesday ScheduleDay Name
+    B_Off_D_Occ_WD,           !- Thursday ScheduleDay Name
+    B_Off_D_Occ_WD,           !- Friday ScheduleDay Name
+    B_Off_D_Occ_WE,           !- Saturday ScheduleDay Name
+    B_Off_D_Occ_WE,           !- Holiday ScheduleDay Name
+    B_Off_D_Occ_WD,           !- SummerDesignDay ScheduleDay Name
+    B_Off_D_Occ_WD,           !- WinterDesignDay ScheduleDay Name
+    B_Off_D_Occ_WD,           !- CustomDay1 ScheduleDay Name
+    B_Off_D_Occ_WE;           !- CustomDay2 ScheduleDay Name
+
+SCHEDULE:WEEK:DAILY,
+    B_Off_W_Lgt,              !- Name
+    B_Off_D_Lgt_WE,           !- Sunday ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- Monday ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- Tuesday ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- Wednesday ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- Thursday ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- Friday ScheduleDay Name
+    B_Off_D_Lgt_WE,           !- Saturday ScheduleDay Name
+    B_Off_D_Lgt_WE,           !- Holiday ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- SummerDesignDay ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- WinterDesignDay ScheduleDay Name
+    B_Off_D_Lgt_WD,           !- CustomDay1 ScheduleDay Name
+    B_Off_D_Lgt_WE;           !- CustomDay2 ScheduleDay Name
+
+SCHEDULE:WEEK:DAILY,
+    B_Off_W_Plg,              !- Name
+    B_Off_D_Plg_WE,           !- Sunday ScheduleDay Name
+    B_Off_D_Plg_WD,           !- Monday ScheduleDay Name
+    B_Off_D_Plg_WD,           !- Tuesday ScheduleDay Name
+    B_Off_D_Plg_WD,           !- Wednesday ScheduleDay Name
+    B_Off_D_Plg_WD,           !- Thursday ScheduleDay Name
+    B_Off_D_Plg_WD,           !- Friday ScheduleDay Name
+    B_Off_D_Plg_WE,           !- Saturday ScheduleDay Name
+    B_Off_D_Plg_WE,           !- Holiday ScheduleDay Name
+    B_Off_D_Plg_WD,           !- SummerDesignDay ScheduleDay Name
+    B_Off_D_Plg_WD,           !- WinterDesignDay ScheduleDay Name
+    B_Off_D_Plg_WD,           !- CustomDay1 ScheduleDay Name
+    B_Off_D_Plg_WE;           !- CustomDay2 ScheduleDay Name
+
+SCHEDULE:WEEK:DAILY,
+    B_Off_W_Dhw,              !- Name
+    B_Off_D_Dhw_WE,           !- Sunday ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- Monday ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- Tuesday ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- Wednesday ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- Thursday ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- Friday ScheduleDay Name
+    B_Off_D_Dhw_WE,           !- Saturday ScheduleDay Name
+    B_Off_D_Dhw_WE,           !- Holiday ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- SummerDesignDay ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- WinterDesignDay ScheduleDay Name
+    B_Off_D_Dhw_WD,           !- CustomDay1 ScheduleDay Name
+    B_Off_D_Dhw_WE;           !- CustomDay2 ScheduleDay Name
+
+SCHEDULE:YEAR,
+    B_Off_Y_Occ,              !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    B_Off_W_Occ,              !- ScheduleWeek Name 1
+    1,                        !- Start Month 1
+    1,                        !- Start Day 1
+    12,                       !- End Month 1
+    31;                       !- End Day 1
+
+SCHEDULE:YEAR,
+    B_Off_Y_Lgt,              !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    B_Off_W_Lgt,              !- ScheduleWeek Name 1
+    1,                        !- Start Month 1
+    1,                        !- Start Day 1
+    12,                       !- End Month 1
+    31;                       !- End Day 1
+
+SCHEDULE:YEAR,
+    B_Off_Y_Plg,              !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    B_Off_W_Plg,              !- ScheduleWeek Name 1
+    1,                        !- Start Month 1
+    1,                        !- Start Day 1
+    12,                       !- End Month 1
+    31;                       !- End Day 1
+
+SCHEDULE:YEAR,
+    B_Off_Y_Dhw,              !- Name
+    Fraction,                 !- Schedule Type Limits Name
+    B_Off_W_Dhw,              !- ScheduleWeek Name 1
+    1,                        !- Start Month 1
+    1,                        !- Start Day 1
+    12,                       !- End Month 1
+    31;                       !- End Day 1
+
+SCHEDULE:CONSTANT,
+    PeopleActivity,           !- Name
+    ,                         !- Schedule Type Limits Name
+    125.28;                   !- Hourly Value
+
+SCHEDULE:CONSTANT,
+    WorkEfficiency,           !- Name
+    ,                         !- Schedule Type Limits Name
+    0;                        !- Hourly Value
+
+SCHEDULE:CONSTANT,
+    AirVelocity,              !- Name
+    ,                         !- Schedule Type Limits Name
+    0.2;                      !- Hourly Value
+
+SCHEDULE:CONSTANT,
+    AlwaysOn,                 !- Name
+    ,                         !- Schedule Type Limits Name
+    1;                        !- Hourly Value
+
+SCHEDULE:CONSTANT,
+    DhwHotTemp,               !- Name
+    ,                         !- Schedule Type Limits Name
+    55;                       !- Hourly Value
+
+SCHEDULE:CONSTANT,
+    DhwInletTemp,             !- Name
+    ,                         !- Schedule Type Limits Name
+    16;                       !- Hourly Value
+
+MATERIAL,
+    B_Clay_Brick_H,           !- Name
+    Rough,                    !- Roughness
+    0.06,                     !- Thickness
+    0.41,                     !- Conductivity
+    1000,                     !- Density
+    920,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.5,                      !- Solar Absorptance
+    0.5;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Concrete_Block_H,       !- Name
+    Rough,                    !- Roughness
+    0.15,                     !- Thickness
+    1.25,                     !- Conductivity
+    880,                      !- Density
+    840,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.7,                      !- Solar Absorptance
+    0.7;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Fiberglass_Batts,       !- Name
+    Rough,                    !- Roughness
+    0.05,                     !- Thickness
+    0.043,                    !- Conductivity
+    12,                       !- Density
+    840,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.6,                      !- Solar Absorptance
+    0.6;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Cement_Mortar,          !- Name
+    Rough,                    !- Roughness
+    0.03,                     !- Thickness
+    0.8,                      !- Conductivity
+    1900,                     !- Density
+    840,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.8,                      !- Solar Absorptance
+    0.8;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Ceramic_Tile,           !- Name
+    Rough,                    !- Roughness
+    0.02,                     !- Thickness
+    0.8,                      !- Conductivity
+    2243,                     !- Density
+    840,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.4,                      !- Solar Absorptance
+    0.4;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Air_Floor_15cm,         !- Name
+    Rough,                    !- Roughness
+    0.15,                     !- Thickness
+    0.7,                      !- Conductivity
+    1.2,                      !- Density
+    1000,                     !- Specific Heat
+    0.01,                     !- Thermal Absorptance
+    0.7,                      !- Solar Absorptance
+    0.7;                      !- Visible Absorptance
+
+MATERIAL,
+    B_XPS_Board,              !- Name
+    Rough,                    !- Roughness
+    0.1,                      !- Thickness
+    0.037,                    !- Conductivity
+    40,                       !- Density
+    1200,                     !- Specific Heat
+    0.6,                      !- Thermal Absorptance
+    0.6,                      !- Solar Absorptance
+    0.6;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Concrete_MC_Light,      !- Name
+    Rough,                    !- Roughness
+    0.15,                     !- Thickness
+    1.65,                     !- Conductivity
+    2100,                     !- Density
+    1040,                     !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.7,                      !- Solar Absorptance
+    0.7;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Concrete_RC_Dense,      !- Name
+    Rough,                    !- Roughness
+    0.2,                      !- Thickness
+    1.75,                     !- Conductivity
+    2400,                     !- Density
+    840,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.7,                      !- Solar Absorptance
+    0.7;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Gypsum_Board,           !- Name
+    Rough,                    !- Roughness
+    0.02,                     !- Thickness
+    0.16,                     !- Conductivity
+    950,                      !- Density
+    840,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.6,                      !- Solar Absorptance
+    0.6;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Gypsum_Plaster,         !- Name
+    Rough,                    !- Roughness
+    0.02,                     !- Thickness
+    0.42,                     !- Conductivity
+    900,                      !- Density
+    840,                      !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.7,                      !- Solar Absorptance
+    0.7;                      !- Visible Absorptance
+
+MATERIAL,
+    B_Softwood_General,       !- Name
+    Rough,                    !- Roughness
+    0.02,                     !- Thickness
+    0.13,                     !- Conductivity
+    496,                      !- Density
+    1630,                     !- Specific Heat
+    0.9,                      !- Thermal Absorptance
+    0.6,                      !- Solar Absorptance
+    0.6;                      !- Visible Absorptance
+
+WINDOWMATERIAL:GLAZING,
+    B_Glass_Clear_3,          !- Name
+    SpectralAverage,          !- Optical Data Type
+    SpectralAverage,          !- Window Glass Spectral Data Set Name
+    0.003,                    !- Thickness
+    0.83,                     !- Solar Transmittance at Normal Incidence
+    0.07,                     !- Front Side Solar Reflectance at Normal Incidence
+    0.07,                     !- Back Side Solar Reflectance at Normal Incidence
+    0.89,                     !- Visible Transmittance at Normal Incidence
+    0.08,                     !- Front Side Visible Reflectance at Normal Incidence
+    0.08,                     !- Back Side Visible Reflectance at Normal Incidence
+    0.01,                     !- Infrared Transmittance at Normal Incidence
+    0.84,                     !- Front Side Infrared Hemispherical Emissivity
+    0.84,                     !- Back Side Infrared Hemispherical Emissivity
+    0.9,                      !- Conductivity
+    1,                        !- Dirt Correction Factor for Solar and Visible Transmittance
+    No,                       !- Solar Diffusing
+    72000000000,              !- Youngs modulus
+    0.22;                     !- Poissons ratio
+
+WINDOWMATERIAL:GAS,
+    AIR,                      !- Name
+    AIR,                      !- Gas Type
+    0.006;                    !- Thickness
+
+CONSTRUCTION,
+    B_Off_Fac_0,              !- Name
+    B_Clay_Brick_H,           !- Outside Layer
+    B_XPS_Board,              !- Layer 2
+    B_Concrete_Block_H,       !- Layer 3
+    B_Fiberglass_Batts,       !- Layer 4
+    B_Gypsum_Board;           !- Layer 5
+
+CONSTRUCTION,
+    B_Off_Gro_0,              !- Name
+    B_XPS_Board,              !- Outside Layer
+    B_Concrete_RC_Dense,      !- Layer 2
+    B_Concrete_MC_Light,      !- Layer 3
+    B_Cement_Mortar,          !- Layer 4
+    B_Ceramic_Tile;           !- Layer 5
+
+CONSTRUCTION,
+    B_Off_Rof_0,              !- Name
+    B_XPS_Board,              !- Outside Layer
+    B_Concrete_MC_Light,      !- Layer 2
+    B_Concrete_RC_Dense,      !- Layer 3
+    B_Air_Floor_15cm,         !- Layer 4
+    B_Gypsum_Board;           !- Layer 5
+
+CONSTRUCTION,
+    B_Off_Par_0,              !- Name
+    B_Gypsum_Plaster,         !- Outside Layer
+    B_Softwood_General,       !- Layer 2
+    B_Gypsum_Plaster;         !- Layer 3
+
+CONSTRUCTION,
+    B_Dbl_Air_Cl,             !- Name
+    B_Glass_Clear_3,          !- Outside Layer
+    AIR,                      !- Layer 2
+    B_Glass_Clear_3;          !- Layer 3
+
+CONSTRUCTION,
+    B_Off_Thm_0,              !- Name
+    B_Gypsum_Plaster,         !- Outside Layer
+    B_Softwood_General,       !- Layer 2
+    B_Gypsum_Plaster;         !- Layer 3
+
+GLOBALGEOMETRYRULES,
+    UpperLeftCorner,          !- Starting Vertex Position
+    CounterClockWise,         !- Vertex Entry Direction
+    World,                    !- Coordinate System
+    Relative,                 !- Daylighting Reference Point Coordinate System
+    Relative;                 !- Rectangular Surface Coordinate System
+
+ZONE,
+    Block Perim Storey 0,     !- Name
+    0,                        !- Direction of Relative North
+    0,                        !- X Origin
+    0,                        !- Y Origin
+    0,                        !- Z Origin
+    1,                        !- Type
+    1,                        !- Multiplier
+    autocalculate,            !- Ceiling Height
+    autocalculate,            !- Volume
+    autocalculate,            !- Floor Area
+    ,                         !- Zone Inside Convection Algorithm
+    ,                         !- Zone Outside Convection Algorithm
+    Yes;                      !- Part of Total Floor Area
+
+ZONE,
+    Block Core Storey 0,      !- Name
+    0,                        !- Direction of Relative North
+    0,                        !- X Origin
+    0,                        !- Y Origin
+    0,                        !- Z Origin
+    1,                        !- Type
+    1,                        !- Multiplier
+    autocalculate,            !- Ceiling Height
+    autocalculate,            !- Volume
+    autocalculate,            !- Floor Area
+    ,                         !- Zone Inside Convection Algorithm
+    ,                         !- Zone Outside Convection Algorithm
+    Yes;                      !- Part of Total Floor Area
+
+BUILDINGSURFACE:DETAILED,
+    Block Perim Storey 0 Wall 0001,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Fac_0,              !- Construction Name
+    Block Perim Storey 0,     !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    0,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    0,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    3,                        !- Vertex 3 Xcoordinate
+    5,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    3,                        !- Vertex 4 Xcoordinate
+    5,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Perim Storey 0 Wall 0003,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Fac_0,              !- Construction Name
+    Block Perim Storey 0,     !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    0,                        !- Vertex 1 Xcoordinate
+    5,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    0,                        !- Vertex 2 Xcoordinate
+    5,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    0,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    0,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Perim Storey 0 Wall 0004,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Fac_0,              !- Construction Name
+    Block Perim Storey 0,     !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    0,                        !- Vertex 1 Xcoordinate
+    0,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    0,                        !- Vertex 2 Xcoordinate
+    0,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    3,                        !- Vertex 3 Xcoordinate
+    0,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    3,                        !- Vertex 4 Xcoordinate
+    0,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Perim Storey 0 Floor 0001,    !- Name
+    floor,                    !- Surface Type
+    B_Off_Gro_0,              !- Construction Name
+    Block Perim Storey 0,     !- Zone Name
+    ground,                   !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    NoSun,                    !- Sun Exposure
+    NoWind,                   !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    5,                        !- Vertex 1 Ycoordinate
+    0,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    0,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    0,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    5,                        !- Vertex 4 Ycoordinate
+    0;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Perim Storey 0 Roof 0001,    !- Name
+    roof,                     !- Surface Type
+    B_Off_Rof_0,              !- Construction Name
+    Block Perim Storey 0,     !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    0,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    5,                        !- Vertex 2 Ycoordinate
+    3,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    5,                        !- Vertex 3 Ycoordinate
+    3,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    0,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Core Storey 0 Wall 0001,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Fac_0,              !- Construction Name
+    Block Core Storey 0,      !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    5,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    5,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    3,                        !- Vertex 3 Xcoordinate
+    10,                       !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    3,                        !- Vertex 4 Xcoordinate
+    10,                       !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Core Storey 0 Wall 0002,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Fac_0,              !- Construction Name
+    Block Core Storey 0,      !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    10,                       !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    10,                       !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    10,                       !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    10,                       !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Core Storey 0 Wall 0003,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Fac_0,              !- Construction Name
+    Block Core Storey 0,      !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    0,                        !- Vertex 1 Xcoordinate
+    10,                       !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    0,                        !- Vertex 2 Xcoordinate
+    10,                       !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    5,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    5,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Core Storey 0 Floor 0001,    !- Name
+    floor,                    !- Surface Type
+    B_Off_Gro_0,              !- Construction Name
+    Block Core Storey 0,      !- Zone Name
+    ground,                   !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    NoSun,                    !- Sun Exposure
+    NoWind,                   !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    10,                       !- Vertex 1 Ycoordinate
+    0,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    5,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    5,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    10,                       !- Vertex 4 Ycoordinate
+    0;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Core Storey 0 Roof 0001,    !- Name
+    roof,                     !- Surface Type
+    B_Off_Rof_0,              !- Construction Name
+    Block Core Storey 0,      !- Zone Name
+    outdoors,                 !- Outside Boundary Condition
+    ,                         !- Outside Boundary Condition Object
+    SunExposed,               !- Sun Exposure
+    WindExposed,              !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    5,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    10,                       !- Vertex 2 Ycoordinate
+    3,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    10,                       !- Vertex 3 Ycoordinate
+    3,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    5,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Perim Storey 0 Wall 0002_1,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Par_0,              !- Construction Name
+    Block Perim Storey 0,     !- Zone Name
+    surface,                  !- Outside Boundary Condition
+    Block Core Storey 0 Wall 0004_1,    !- Outside Boundary Condition Object
+    NoSun,                    !- Sun Exposure
+    NoWind,                   !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    3,                        !- Vertex 1 Xcoordinate
+    5,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    3,                        !- Vertex 2 Xcoordinate
+    5,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    0,                        !- Vertex 3 Xcoordinate
+    5,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    0,                        !- Vertex 4 Xcoordinate
+    5,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+BUILDINGSURFACE:DETAILED,
+    Block Core Storey 0 Wall 0004_1,    !- Name
+    wall,                     !- Surface Type
+    B_Off_Par_0,              !- Construction Name
+    Block Core Storey 0,      !- Zone Name
+    surface,                  !- Outside Boundary Condition
+    Block Perim Storey 0 Wall 0002_1,    !- Outside Boundary Condition Object
+    NoSun,                    !- Sun Exposure
+    NoWind,                   !- Wind Exposure
+    autocalculate,            !- View Factor to Ground
+    autocalculate,            !- Number of Vertices
+    0,                        !- Vertex 1 Xcoordinate
+    5,                        !- Vertex 1 Ycoordinate
+    3,                        !- Vertex 1 Zcoordinate
+    0,                        !- Vertex 2 Xcoordinate
+    5,                        !- Vertex 2 Ycoordinate
+    0,                        !- Vertex 2 Zcoordinate
+    3,                        !- Vertex 3 Xcoordinate
+    5,                        !- Vertex 3 Ycoordinate
+    0,                        !- Vertex 3 Zcoordinate
+    3,                        !- Vertex 4 Xcoordinate
+    5,                        !- Vertex 4 Ycoordinate
+    3;                        !- Vertex 4 Zcoordinate
+
+FENESTRATIONSURFACE:DETAILED,
+    Block Perim Storey 0 Wall 0004 window,    !- Name
+    Window,                   !- Surface Type
+    B_Dbl_Air_Cl,             !- Construction Name
+    Block Perim Storey 0 Wall 0004,    !- Building Surface Name
+    ,                         !- Outside Boundary Condition Object
+    autocalculate,            !- View Factor to Ground
+    ,                         !- Frame and Divider Name
+    1.0,                      !- Multiplier
+    autocalculate,            !- Number of Vertices
+    1.500000e-03,             !- Vertex 1 Xcoordinate
+    0,                        !- Vertex 1 Ycoordinate
+    2.1,                      !- Vertex 1 Zcoordinate
+    1.500000e-03,             !- Vertex 2 Xcoordinate
+    0,                        !- Vertex 2 Ycoordinate
+    0.8999999999999999,       !- Vertex 2 Zcoordinate
+    2.9985,                   !- Vertex 3 Xcoordinate
+    0,                        !- Vertex 3 Ycoordinate
+    0.8999999999999999,       !- Vertex 3 Zcoordinate
+    2.9985,                   !- Vertex 4 Xcoordinate
+    0,                        !- Vertex 4 Ycoordinate
+    2.1;                      !- Vertex 4 Zcoordinate
+
+INTERNALMASS,
+    Block Perim Storey 0 InternalMass,    !- Name
+    B_Off_Thm_0,              !- Construction Name
+    Block Perim Storey 0,     !- Zone or ZoneList Name
+    15.75;                    !- Surface Area
+
+INTERNALMASS,
+    Block Core Storey 0 InternalMass,    !- Name
+    B_Off_Thm_0,              !- Construction Name
+    Block Core Storey 0,      !- Zone or ZoneList Name
+    15.75;                    !- Surface Area
+
+PEOPLE,
+    People:B_Off_0 loads:Block Perim Storey 0,    !- Name
+    Block Perim Storey 0,     !- Zone or ZoneList Name
+    B_Off_Y_Occ,              !- Number of People Schedule Name
+    People/Area,              !- Number of People Calculation Method
+    ,                         !- Number of People
+    0.055,                    !- People per Zone Floor Area
+    ,                         !- Zone Floor Area per Person
+    0.3,                      !- Fraction Radiant
+    AUTOCALCULATE,            !- Sensible Heat Fraction
+    PeopleActivity,           !- Activity Level Schedule Name
+    3.82e-08,                 !- Carbon Dioxide Generation Rate
+    No,                       !- Enable ASHRAE 55 Comfort Warnings
+    ZoneAveraged,             !- Mean Radiant Temperature Calculation Type
+    ,                         !- Surface NameAngle Factor List Name
+    WorkEfficiency,           !- Work Efficiency Schedule Name
+    DynamicClothingModelASHRAE55,    !- Clothing Insulation Calculation Method
+    ,                         !- Clothing Insulation Calculation Method Schedule Name
+    ,                         !- Clothing Insulation Schedule Name
+    AirVelocity;              !- Air Velocity Schedule Name
+
+PEOPLE,
+    People:B_Off_0 loads:Block Core Storey 0,    !- Name
+    Block Core Storey 0,      !- Zone or ZoneList Name
+    B_Off_Y_Occ,              !- Number of People Schedule Name
+    People/Area,              !- Number of People Calculation Method
+    ,                         !- Number of People
+    0.055,                    !- People per Zone Floor Area
+    ,                         !- Zone Floor Area per Person
+    0.3,                      !- Fraction Radiant
+    AUTOCALCULATE,            !- Sensible Heat Fraction
+    PeopleActivity,           !- Activity Level Schedule Name
+    3.82e-08,                 !- Carbon Dioxide Generation Rate
+    No,                       !- Enable ASHRAE 55 Comfort Warnings
+    ZoneAveraged,             !- Mean Radiant Temperature Calculation Type
+    ,                         !- Surface NameAngle Factor List Name
+    WorkEfficiency,           !- Work Efficiency Schedule Name
+    DynamicClothingModelASHRAE55,    !- Clothing Insulation Calculation Method
+    ,                         !- Clothing Insulation Calculation Method Schedule Name
+    ,                         !- Clothing Insulation Schedule Name
+    AirVelocity;              !- Air Velocity Schedule Name
+
+LIGHTS,
+    Lights:B_Off_0 loads:Block Perim Storey 0,    !- Name
+    Block Perim Storey 0,     !- Zone or ZoneList Name
+    B_Off_Y_Lgt,              !- Schedule Name
+    Watts/Area,               !- Design Level Calculation Method
+    ,                         !- Lighting Level
+    12,                       !- Watts per Zone Floor Area
+    ,                         !- Watts per Person
+    0,                        !- Return Air Fraction
+    0.42,                     !- Fraction Radiant
+    0.18,                     !- Fraction Visible
+    1,                        !- Fraction Replaceable
+    General,                  !- EndUse Subcategory
+    No,                       !- Return Air Fraction Calculated from Plenum Temperature
+    0,                        !- Return Air Fraction Function of Plenum Temperature Coefficient 1
+    0;                        !- Return Air Fraction Function of Plenum Temperature Coefficient 2
+
+LIGHTS,
+    Lights:B_Off_0 loads:Block Core Storey 0,    !- Name
+    Block Core Storey 0,      !- Zone or ZoneList Name
+    B_Off_Y_Lgt,              !- Schedule Name
+    Watts/Area,               !- Design Level Calculation Method
+    ,                         !- Lighting Level
+    12,                       !- Watts per Zone Floor Area
+    ,                         !- Watts per Person
+    0,                        !- Return Air Fraction
+    0.42,                     !- Fraction Radiant
+    0.18,                     !- Fraction Visible
+    1,                        !- Fraction Replaceable
+    General,                  !- EndUse Subcategory
+    No,                       !- Return Air Fraction Calculated from Plenum Temperature
+    0,                        !- Return Air Fraction Function of Plenum Temperature Coefficient 1
+    0;                        !- Return Air Fraction Function of Plenum Temperature Coefficient 2
+
+ELECTRICEQUIPMENT,
+    ElectricEquipment:B_Off_0 loads:Block Perim Storey 0,    !- Name
+    Block Perim Storey 0,     !- Zone or ZoneList Name
+    B_Off_Y_Plg,              !- Schedule Name
+    Watts/Area,               !- Design Level Calculation Method
+    ,                         !- Design Level
+    8,                        !- Watts per Zone Floor Area
+    ,                         !- Watts per Person
+    0,                        !- Fraction Latent
+    0.2,                      !- Fraction Radiant
+    0,                        !- Fraction Lost
+    ElectricEquipment;        !- EndUse Subcategory
+
+ELECTRICEQUIPMENT,
+    ElectricEquipment:B_Off_0 loads:Block Core Storey 0,    !- Name
+    Block Core Storey 0,      !- Zone or ZoneList Name
+    B_Off_Y_Plg,              !- Schedule Name
+    Watts/Area,               !- Design Level Calculation Method
+    ,                         !- Design Level
+    8,                        !- Watts per Zone Floor Area
+    ,                         !- Watts per Person
+    0,                        !- Fraction Latent
+    0.2,                      !- Fraction Radiant
+    0,                        !- Fraction Lost
+    ElectricEquipment;        !- EndUse Subcategory
+
+ZONEINFILTRATION:DESIGNFLOWRATE,
+    Block Perim Storey 0 Infiltration,    !- Name
+    Block Perim Storey 0,     !- Zone or ZoneList Name
+    AlwaysOn,                 !- Schedule Name
+    AirChanges/Hour,          !- Design Flow Rate Calculation Method
+    ,                         !- Design Flow Rate
+    ,                         !- Flow per Zone Floor Area
+    ,                         !- Flow per Exterior Surface Area
+    0.35,                     !- Air Changes per Hour
+    1,                        !- Constant Term Coefficient
+    0,                        !- Temperature Term Coefficient
+    0,                        !- Velocity Term Coefficient
+    0;                        !- Velocity Squared Term Coefficient
+
+ZONEINFILTRATION:DESIGNFLOWRATE,
+    Block Core Storey 0 Infiltration,    !- Name
+    Block Core Storey 0,      !- Zone or ZoneList Name
+    AlwaysOn,                 !- Schedule Name
+    AirChanges/Hour,          !- Design Flow Rate Calculation Method
+    ,                         !- Design Flow Rate
+    ,                         !- Flow per Zone Floor Area
+    ,                         !- Flow per Exterior Surface Area
+    0.35,                     !- Air Changes per Hour
+    1,                        !- Constant Term Coefficient
+    0,                        !- Temperature Term Coefficient
+    0,                        !- Velocity Term Coefficient
+    0;                        !- Velocity Squared Term Coefficient
+
+HVACTEMPLATE:THERMOSTAT,
+    Zone Block Perim Storey 0 Thermostat,    !- Name
+    ,                         !- Heating Setpoint Schedule Name
+    20,                       !- Constant Heating Setpoint
+    ,                         !- Cooling Setpoint Schedule Name
+    24;                       !- Constant Cooling Setpoint
+
+HVACTEMPLATE:THERMOSTAT,
+    Zone Block Core Storey 0 Thermostat,    !- Name
+    ,                         !- Heating Setpoint Schedule Name
+    20,                       !- Constant Heating Setpoint
+    ,                         !- Cooling Setpoint Schedule Name
+    24;                       !- Constant Cooling Setpoint
+
+HVACTEMPLATE:ZONE:IDEALLOADSAIRSYSTEM,
+    Block Perim Storey 0,     !- Zone Name
+    Zone Block Perim Storey 0 Thermostat,    !- Template Thermostat Name
+    ,                         !- System Availability Schedule Name
+    50,                       !- Maximum Heating Supply Air Temperature
+    13,                       !- Minimum Cooling Supply Air Temperature
+    0.0156,                   !- Maximum Heating Supply Air Humidity Ratio
+    0.0077,                   !- Minimum Cooling Supply Air Humidity Ratio
+    NoLimit,                  !- Heating Limit
+    100,                      !- Maximum Heating Air Flow Rate
+    100,                      !- Maximum Sensible Heating Capacity
+    NoLimit,                  !- Cooling Limit
+    100,                      !- Maximum Cooling Air Flow Rate
+    100,                      !- Maximum Total Cooling Capacity
+    ,                         !- Heating Availability Schedule Name
+    ,                         !- Cooling Availability Schedule Name
+    ConstantSensibleHeatRatio,    !- Dehumidification Control Type
+    0.7,                      !- Cooling Sensible Heat Ratio
+    60,                       !- Dehumidification Setpoint
+    None,                     !- Humidification Control Type
+    30,                       !- Humidification Setpoint
+    Sum,                      !- Outdoor Air Method
+    0.0025,                   !- Outdoor Air Flow Rate per Person
+    0.0003,                   !- Outdoor Air Flow Rate per Zone Floor Area
+    0,                        !- Outdoor Air Flow Rate per Zone
+    Zone Block Perim Storey 0 Outdoor Air,    !- Design Specification Outdoor Air Object Name
+    None,                     !- Demand Controlled Ventilation Type
+    NoEconomizer,             !- Outdoor Air Economizer Type
+    NONE,                     !- Heat Recovery Type
+    0.7,                      !- Sensible Heat Recovery Effectiveness
+    0.65;                     !- Latent Heat Recovery Effectiveness
+
+HVACTEMPLATE:ZONE:IDEALLOADSAIRSYSTEM,
+    Block Core Storey 0,      !- Zone Name
+    Zone Block Core Storey 0 Thermostat,    !- Template Thermostat Name
+    ,                         !- System Availability Schedule Name
+    50,                       !- Maximum Heating Supply Air Temperature
+    13,                       !- Minimum Cooling Supply Air Temperature
+    0.0156,                   !- Maximum Heating Supply Air Humidity Ratio
+    0.0077,                   !- Minimum Cooling Supply Air Humidity Ratio
+    NoLimit,                  !- Heating Limit
+    100,                      !- Maximum Heating Air Flow Rate
+    100,                      !- Maximum Sensible Heating Capacity
+    NoLimit,                  !- Cooling Limit
+    100,                      !- Maximum Cooling Air Flow Rate
+    100,                      !- Maximum Total Cooling Capacity
+    ,                         !- Heating Availability Schedule Name
+    ,                         !- Cooling Availability Schedule Name
+    ConstantSensibleHeatRatio,    !- Dehumidification Control Type
+    0.7,                      !- Cooling Sensible Heat Ratio
+    60,                       !- Dehumidification Setpoint
+    None,                     !- Humidification Control Type
+    30,                       !- Humidification Setpoint
+    Sum,                      !- Outdoor Air Method
+    0.0025,                   !- Outdoor Air Flow Rate per Person
+    0.0003,                   !- Outdoor Air Flow Rate per Zone Floor Area
+    0,                        !- Outdoor Air Flow Rate per Zone
+    Zone Block Core Storey 0 Outdoor Air,    !- Design Specification Outdoor Air Object Name
+    None,                     !- Demand Controlled Ventilation Type
+    NoEconomizer,             !- Outdoor Air Economizer Type
+    NONE,                     !- Heat Recovery Type
+    0.7,                      !- Sensible Heat Recovery Effectiveness
+    0.65;                     !- Latent Heat Recovery Effectiveness
+
+WATERUSE:EQUIPMENT,
+    Block Perim Storey 0 DHW,    !- Name
+    DHW,                      !- EndUse Subcategory
+    8.75e-07,                 !- Peak Flow Rate
+    B_Off_Y_Dhw,              !- Flow Rate Fraction Schedule Name
+    ,                         !- Target Temperature Schedule Name
+    DhwHotTemp,               !- Hot Water Supply Temperature Schedule Name
+    DhwInletTemp,             !- Cold Water Supply Temperature Schedule Name
+    Block Perim Storey 0,     !- Zone Name
+    ,                         !- Sensible Fraction Schedule Name
+    ;                         !- Latent Fraction Schedule Name
+
+WATERUSE:EQUIPMENT,
+    Block Core Storey 0 DHW,    !- Name
+    DHW,                      !- EndUse Subcategory
+    8.75e-07,                 !- Peak Flow Rate
+    B_Off_Y_Dhw,              !- Flow Rate Fraction Schedule Name
+    ,                         !- Target Temperature Schedule Name
+    DhwHotTemp,               !- Hot Water Supply Temperature Schedule Name
+    DhwInletTemp,             !- Cold Water Supply Temperature Schedule Name
+    Block Core Storey 0,      !- Zone Name
+    ,                         !- Sensible Fraction Schedule Name
+    ;                         !- Latent Fraction Schedule Name
+
+OUTPUT:VARIABLEDICTIONARY,
+    IDF;                      !- Key Field
+
+OUTPUT:SCHEDULES,
+    Hourly;                   !- Key Field
+
+OUTPUT:TABLE:SUMMARYREPORTS,
+    AllSummary;               !- Report 1 Name
+
+OUTPUTCONTROL:TABLE:STYLE,
+    CommaAndHTML,             !- Column Separator
+    None;                     !- Unit Conversion
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Air System Outdoor Air Minimum Flow Fraction,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Air System Total Cooling Energy,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Air System Total Heating Energy,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Heat Exchanger Latent Effectiveness,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Heat Exchanger Sensible Effectiveness,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Heat Exchanger Total Heating Rate,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Water Heater Heating Energy,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Zone Ideal Loads Zone Total Cooling Energy,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Zone Ideal Loads Zone Total Heating Energy,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Zone Thermostat Cooling Setpoint Temperature,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:VARIABLE,
+    *,                        !- Key Value
+    Zone Thermostat Heating Setpoint Temperature,    !- Variable Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Baseboard:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Cooling:DistrictCooling,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Cooling:Electricity,      !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Cooling:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Cooling:Gas,              !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    CoolingCoils:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Electricity:Facility,     !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Fans:Electricity,         !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Gas:Facility,             !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    HeatRejection:Electricity,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    HeatRejection:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Heating:DistrictHeating,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Heating:Electricity,      !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Heating:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Heating:Gas,              !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    HeatingCoils:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Pumps:Electricity,        !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Refrigeration:Electricity,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    Refrigeration:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    WaterSystems:Electricity,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:METER,
+    WaterSystems:EnergyTransfer,    !- Key Name
+    Monthly;                  !- Reporting Frequency
+
+OUTPUT:SQLITE,
+    SimpleAndTabular;         !- Option Type
