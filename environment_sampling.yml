@@ -1,0 +1,13 @@
+name: ml-for-bem-training
+
+channels:
+  - conda-forge
+dependencies:
+  - fiona
+  - numpy
+  - python=3.8
+  - requests
+  - google-cloud-storage
+  - h5py
+  - pip
+  
