@@ -4,19 +4,34 @@ import os
 import numpy as np
 import pandas as pd
 
+import h5py
+
 # from archetypal.schedule import Schedule
 from archetypal import config, settings, parallel_process
 from archetypal.idfclass.sql import Sql
 from archetypal import UmiTemplateLibrary
 from pyumi.shoeboxer.shoebox import ShoeBox
 
-# config(use_cache=True, log_console=True)
+from google.cloud import storage
+
+def upload_to_bucket(blob_name, file_name, bucket):
+    blob = bucket.blob(blob_name)
+    blob.upload_from_filename(file_name)
+
 
 epw_path = os.path.join('data', 'CAN_PQ_Montreal.Intl.AP.716270_CWEC.epw')
 template_path = os.path.join('data', 'BostonTemplateLibrary.json')
 templates = UmiTemplateLibrary.open(template_path)
 N_sims_in_benchmark = 100
+outfile = f"benchmark_results_{N_sims_in_benchmark:04d}.hdf5"
 
+with h5py.File(outfile,"w") as f:
+    f.create_group("benchmark")
+
+storage_client = storage.Client.from_service_account_json("../credentials/bucket-key.json")
+bucket = storage_client.get_bucket("ml-for-bem-data")
+
+# config(use_cache=True, log_console=True)
 
 
 def shoebox_from_template(
@@ -163,15 +178,30 @@ rundict = {
 }
 
 
+
 def simulate(idx=0):
     sb, zone_params = shoebox_from_template(name=f"test_{idx:05d}", template=templates.BuildingTemplates[0], epw_path=epw_path)
     sb.outputs.add_custom(outputs_to_add)
     sb.outputs.apply()
     sb.simulate(verbose=False, prep_outputs=False, readvars=False)
+    sql = Sql(sb.sql_file)
+    ep_df_hourly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Hourly"))
+    ep_df_hourly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Hourly"))
+    ep_df_monthly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Monthly"))
+    ep_df_monthly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Monthly"))
     print("done simming")
+    return ep_df_hourly_heating, ep_df_hourly_cooling, ep_df_monthly_heating, ep_df_monthly_cooling
+
 
 start = time.time()
-parallel_process(rundict, simulate, use_kwargs=True, processors=5)
+simulate(0)
+results = parallel_process(rundict, simulate, use_kwargs=True, processors=5)
+for ix, data in results.items():
+    data[0].to_hdf(outfile, f"benchmark/bldg_{ix:07d}/heating/hourly")
+    data[1].to_hdf(outfile, f"benchmark/bldg_{ix:07d}/cooling/hourly")
+    data[2].to_hdf(outfile, f"benchmark/bldg_{ix:07d}/heating/monthly")
+    data[3].to_hdf(outfile, f"benchmark/bldg_{ix:07d}/cooling/monthly")
+upload_to_bucket(f"benchmark/{outfile}",outfile,bucket)
 end = time.time()
 
 duration = end-start

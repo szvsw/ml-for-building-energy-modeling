@@ -9,5 +9,6 @@ dependencies:
   - requests
   - google-cloud-storage
   - h5py
+  - pytables
   - pip
   
