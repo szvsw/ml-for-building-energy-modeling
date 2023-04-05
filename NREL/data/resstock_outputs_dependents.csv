@@ -1,0 +1,134 @@
+,output,dependencies
+0,Schedules,[]
+1,Usage Level,[]
+2,Orientation,[]
+3,Eaves,[]
+4,Door Area,[]
+5,Overhangs,[]
+6,Interior Shading,[]
+7,Doors,[]
+8,Hot Water Fixtures,['Usage Level']
+9,Hot Water Distribution,[]
+10,Solar Hot Water,[]
+11,HVAC Secondary Heating Type And Fuel,[]
+12,HVAC Secondary Heating Efficiency,[]
+13,HVAC System Is Faulted,[]
+14,Dehumidifier,[]
+15,Lighting Interior Use,[]
+16,Lighting Other Use,[]
+17,Holiday Lighting,[]
+18,Plug Load Diversity,['Usage Level']
+19,Electric Vehicle,[]
+20,Misc Gas Fireplace,[]
+21,Misc Gas Grill,[]
+22,Misc Gas Lighting,[]
+23,Misc Well Pump,[]
+24,Natural Ventilation,[]
+25,Mechanical Ventilation,[]
+26,Bathroom Spot Vent Hour,[]
+27,Range Spot Vent Hour,[]
+28,ASHRAE IECC Climate Zone 2004,[]
+29,County and PUMA,['ASHRAE IECC Climate Zone 2004']
+30,CEC Climate Zone,['County and PUMA']
+31,County,['County and PUMA']
+32,AHS Region,['County']
+33,ASHRAE IECC Climate Zone 2004 - 2A Split,['County']
+34,State,['County']
+35,Location Region,['State']
+36,Census Division,['State']
+37,Census Division RECS,['State']
+38,Census Region,['Census Division']
+39,ISO RTO Region,['County']
+40,Building America Climate Zone,['County']
+41,PUMA,['County and PUMA']
+42,Geometry Building Type ACS,['PUMA']
+43,Vintage,"['Geometry Building Type ACS', 'PUMA']"
+44,Vintage ACS,['Vintage']
+45,Geometry Building Type RECS,['Geometry Building Type ACS']
+46,Heating Fuel,"['Geometry Building Type RECS', 'PUMA', 'Vintage']"
+47,Geometry Building Number Units SFA,['Geometry Building Type ACS']
+48,Geometry Building Horizontal Location SFA,['Geometry Building Number Units SFA']
+49,Geometry Foundation Type,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'Vintage ACS']"
+50,Corridor,['Geometry Building Type RECS']
+51,Vacancy Status,"['Geometry Building Type RECS', 'PUMA']"
+52,Tenure,"['Geometry Building Type RECS', 'PUMA']"
+53,Income,"['Geometry Building Type RECS', 'PUMA', 'Tenure', 'Vintage ACS']"
+54,Income RECS2015,['Income']
+55,Income RECS2020,['Income']
+56,Neighbors,['Geometry Building Type RECS']
+57,Radiant Barrier,['Geometry Building Type RECS']
+58,Roof Material,"['Geometry Building Type RECS', 'Location Region']"
+59,Insulation Slab,"['Location Region', 'Vintage', 'Geometry Building Type RECS', 'Geometry Foundation Type']"
+60,Insulation Floor,"['Location Region', 'Vintage', 'Geometry Building Type RECS', 'Geometry Foundation Type']"
+61,Insulation Foundation Wall,"['Location Region', 'Vintage', 'Geometry Building Type RECS', 'Geometry Foundation Type']"
+62,Insulation Rim Joist,['Insulation Foundation Wall']
+63,Windows,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'Vintage ACS']"
+64,Water Heater In Unit,"['Geometry Building Type RECS', 'Location Region', 'Vintage ACS']"
+65,Water Heater Fuel,"['Geometry Building Type RECS', 'Heating Fuel', 'Location Region']"
+66,Water Heater Efficiency,"['Location Region', 'Water Heater Fuel']"
+67,HVAC Heating Type,"['ASHRAE IECC Climate Zone 2004 - 2A Split', 'Heating Fuel', 'Vintage']"
+68,HVAC Cooling Type,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'HVAC Heating Type', 'Vintage ACS']"
+69,HVAC Has Shared System,"['Geometry Building Type RECS', 'HVAC Cooling Type', 'HVAC Heating Type', 'Vintage']"
+70,HVAC Shared Efficiencies,"['Heating Fuel', 'HVAC Has Shared System']"
+71,HVAC Heating Efficiency,"['Heating Fuel', 'HVAC Has Shared System', 'HVAC Heating Type']"
+72,HVAC Has Zonal Electric Heating,['HVAC Heating Efficiency']
+73,HVAC Heating Type And Fuel,"['Heating Fuel', 'HVAC Heating Efficiency']"
+74,HVAC Cooling Efficiency,"['HVAC Cooling Type', 'HVAC Has Shared System', 'Vintage']"
+75,HVAC System Single Speed AC Airflow,"['HVAC Cooling Efficiency', 'HVAC System Is Faulted']"
+76,HVAC System Single Speed ASHP Airflow,"['HVAC Heating Efficiency', 'HVAC System Is Faulted']"
+77,HVAC System Single Speed AC Charge,"['HVAC Cooling Efficiency', 'HVAC System Is Faulted']"
+78,HVAC System Single Speed ASHP Charge,"['HVAC Heating Efficiency', 'HVAC System Is Faulted']"
+79,Heating Setpoint,"['Vacancy Status', 'ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'HVAC Has Zonal Electric Heating']"
+80,Cooling Setpoint,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'HVAC Cooling Type']"
+81,Heating Setpoint Has Offset,"['ASHRAE IECC Climate Zone 2004', 'HVAC Has Zonal Electric Heating', 'Geometry Building Type RECS']"
+82,Cooling Setpoint Has Offset,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS']"
+83,Heating Setpoint Offset Magnitude,"['ASHRAE IECC Climate Zone 2004', 'HVAC Has Zonal Electric Heating', 'Geometry Building Type RECS', 'Heating Setpoint Has Offset']"
+84,Cooling Setpoint Offset Magnitude,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'Cooling Setpoint Has Offset']"
+85,Heating Setpoint Offset Period,"['ASHRAE IECC Climate Zone 2004', 'HVAC Has Zonal Electric Heating', 'Geometry Building Type RECS', 'Heating Setpoint Has Offset']"
+86,Cooling Setpoint Offset Period,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'Cooling Setpoint Has Offset']"
+87,Ceiling Fan,['Vacancy Status']
+88,Refrigerator,['Geometry Building Type RECS']
+89,Cooking Range,"['Heating Fuel', 'Location Region', 'Usage Level']"
+90,Dishwasher,"['Geometry Building Type RECS', 'Location Region', 'Usage Level']"
+91,Clothes Washer Presence,"['AHS Region', 'Geometry Building Type RECS', 'Heating Fuel']"
+92,Clothes Washer,"['Clothes Washer Presence', 'Usage Level']"
+93,Clothes Dryer,"['AHS Region', 'Clothes Washer Presence', 'Geometry Building Type RECS', 'Heating Fuel', 'Usage Level']"
+94,Lighting,"['Census Division RECS', 'Geometry Building Type RECS']"
+95,Plug Loads,"['Census Division RECS', 'Geometry Building Type RECS']"
+96,Misc Extra Refrigerator,['Geometry Building Type RECS']
+97,Misc Freezer,"['Geometry Building Type RECS', 'Location Region']"
+98,Misc Hot Tub Spa,"['Geometry Building Type RECS', 'Location Region']"
+99,Misc Pool,"['Geometry Building Type RECS', 'Location Region']"
+100,Misc Pool Heater,"['Location Region', 'Misc Pool']"
+101,Misc Pool Pump,['Misc Pool']
+102,HVAC Has Ducts,"['HVAC Cooling Type', 'HVAC Heating Type']"
+103,Ducts,"['HVAC Has Ducts', 'Geometry Building Type RECS', 'Vintage', 'Geometry Foundation Type']"
+104,Has PV,"['County', 'Geometry Building Type RECS', 'Vacancy Status']"
+105,PV System Size,"['Has PV', 'State']"
+106,PV Orientation,['Has PV']
+107,PUMA Metro Status,['PUMA']
+108,Geometry Floor Area,"['Census Division', 'Geometry Building Type RECS', 'Income RECS2020', 'PUMA Metro Status', 'Tenure', 'Vintage ACS']"
+109,Geometry Floor Area Bin,['Geometry Floor Area']
+110,Geometry Stories,"['Geometry Building Type ACS', 'Geometry Floor Area Bin', 'Vintage ACS']"
+111,Geometry Building Type Height,"['Geometry Building Type RECS', 'Geometry Stories']"
+112,Geometry Building Level MF,"['Geometry Building Type RECS', 'Geometry Stories']"
+113,Geometry Building Number Units MF,"['Geometry Building Type ACS', 'Geometry Stories']"
+114,Geometry Building Horizontal Location MF,"['Geometry Building Number Units MF', 'Geometry Stories']"
+115,Geometry Stories Low Rise,['Geometry Stories']
+116,Geometry Attic Type,"['Geometry Building Type RECS', 'Geometry Stories Low Rise']"
+117,Geometry Story Bin,['Geometry Stories']
+118,Geometry Wall Type,"['Geometry Building Type RECS', 'Geometry Story Bin', 'State', 'Vintage ACS']"
+119,Geometry Wall Exterior Finish,"['Geometry Wall Type', 'State', 'Vintage ACS']"
+120,Geometry Garage,"['Geometry Building Type RECS', 'Geometry Floor Area Bin', 'Geometry Foundation Type', 'Geometry Stories Low Rise', 'Vintage']"
+121,Bedrooms,"['Geometry Building Type RECS', 'Geometry Floor Area']"
+122,Occupants,"['Bedrooms', 'Census Division', 'Geometry Building Type RECS', 'Income RECS2015', 'PUMA Metro Status', 'Tenure']"
+123,Federal Poverty Level,"['Income', 'Occupants']"
+124,Window Areas,['Geometry Building Type Height']
+125,Insulation Ceiling,"['Geometry Attic Type', 'Location Region', 'Vintage']"
+126,Insulation Roof,['Geometry Attic Type']
+127,Insulation Wall,"['Location Region', 'Vintage', 'Geometry Wall Type']"
+128,HVAC Cooling Partial Space Conditioning,"['ASHRAE IECC Climate Zone 2004', 'Geometry Building Type RECS', 'Geometry Floor Area Bin', 'HVAC Cooling Type']"
+129,Infiltration,"['ASHRAE IECC Climate Zone 2004', 'Geometry Floor Area', 'Vintage']"
+130,REEDS Balancing Area,['County']
+131,Generation And Emissions Assessment Region,['REEDS Balancing Area']
+132,City,['County and PUMA']
