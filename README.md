@@ -18,3 +18,12 @@ pip install -e . --no-deps
 cd /path/to/archetypal
 pip install -e .
 ```
+
+
+## Sampling Outline
+
+1. 500 building baselines from Res(Com)Stock
+1. 2k after Grid Sample 4 Orientations
+1. 20k after Randomly perturb schedules 10 times (including on/off consts) 
+1. 200k after LHC on geometric/internal mass etc
+1. 1m after applying upgrades/downgrades
