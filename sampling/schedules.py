@@ -61,8 +61,6 @@ def get_schedules(template, zones=template_zones, paths=schedule_paths, operatio
     for i,zone in enumerate(zones):
         for j,path in enumerate(paths):
             scheds[i*total_paths + j] = get_sched_values(template, [zone]+path)
-            if operations:
-                pass
     return scheds
 
 def get_sched_values(template, path):
@@ -144,6 +142,11 @@ def mutate_timeseries(series, operations, seed):
 
     return series
 
+def extract_schedules_from_flattened_vectors(vecs, start, ct):
+    # TODO: change to torch
+    scheds = vecs[:,start:start+ct*8760]
+    return scheds.reshape(-1, ct, 8760)
+
 
 
 
@@ -158,6 +161,7 @@ if __name__ == "__main__":
         ["Loads", "LightsAvailabilitySchedule"]
     ]
     scheds = get_schedules(template,zones=zones, paths=paths)
+    scheds_alt = get_schedules(template,zones=zones, paths=paths)
     print(scheds.shape)
     # np.random.seed(1)
     # x = np.random.rand(2,8760)
@@ -170,6 +174,12 @@ if __name__ == "__main__":
         ]),
         seed
     )
+    dummy_start = np.zeros(100)
+    dummy_end = np.zeros(100)
+    design_vectors = np.stack([np.concatenate([ dummy_start, scheds.flatten(), dummy_end]), np.concatenate([ dummy_start, scheds_alt.flatten(), dummy_end])])
+    print(design_vectors.shape)
+    schedule_tensor = extract_schedules_from_flattened_vectors(design_vectors,100,2)
+    print(schedule_tensor.shape)
     for i in range(scheds.shape[0]):
         figs, axs = plt.subplots(1,2)
         axs[0].plot(scheds[i, :7*24])
