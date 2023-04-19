@@ -3,6 +3,7 @@ from functools import reduce
 import numpy as np
 
 from archetypal import UmiTemplateLibrary
+from pyumi.shoeboxer.shoebox import ShoeBox
 from schedules import schedule_paths, operations
 
 class ShoeboxConfiguration:
@@ -35,7 +36,9 @@ class WhiteboxSimulation:
         "schema",
         "storage_vector",
         "template",
-        "shoebox_config"
+        "epw_path",
+        "shoebox_config",
+        "shoebox"
     )
 
     def __init__(self, schema, storage_vector):
@@ -52,6 +55,7 @@ class WhiteboxSimulation:
         self.storage_vector = storage_vector
         self.shoebox_config = ShoeboxConfiguration()
         self.load_template()
+        self.build_epw_path()
         self.update_parameters()
     
     def load_template(self):
@@ -63,12 +67,82 @@ class WhiteboxSimulation:
 
         template_id = self.schema["base_template"].extract_storage_values(self.storage_vector)
 
+        # TODO: consider migrating away from independent loaders, but ensure there are no race conditions
         lib = UmiTemplateLibrary.open("./data/template_libs/BostonTemplateLibrary.json")
         self.template = lib.BuildingTemplates[int(template_id)]
 
     def update_parameters(self):
+        """
+        Method for mutating semantic simulation objects
+        """
         for parameter in self.schema.parameters:
             parameter.mutate_simulation_object(self)
+        
+    def build_epw_path(self):
+        """Method for building the epw path"""
+        # TODO: implement, for now just defaults to montreal
+        self.epw_path = "./data/epws/CAN_PQ_Montreal.Intl.AP.716270_CWEC.epw"
+
+    def build_shoebox(self):
+        """
+        Method for constructing the actual shoebox simulation object
+        """
+        # TODO: implement wwr parser
+        wwr_map = {0: 0, 90: 0, 180: 1, 270: 0}  # N is 0, E is 90
+        # Convert to coords
+        width = self.shoebox_config.width
+        depth = self.shoebox_config.height / self.shoebox_config.facade_2_footprint
+        perim_depth = depth * self.shoebox_config.perim_2_footprint
+        height = self.shoebox_config.height
+        zones_data = [
+            {
+                "name": "Perim",
+                "coordinates": [
+                    (width, 0),
+                    (width, perim_depth),
+                    (0, perim_depth),
+                    (0, 0),
+                ],
+                "height": height,
+                "num_stories": 1,
+                "zoning": "by_storey",
+            },
+            {
+                "name": "Core",
+                "coordinates": [
+                    (width, perim_depth),
+                    (width, depth),
+                    (0, depth),
+                    (0, perim_depth),
+                ],
+                "height": height,
+                "num_stories": 1,
+                "zoning": "by_storey",
+            },
+        ]
+
+        sb = ShoeBox.from_template(
+            building_template=self.template,
+            zones_data=zones_data,
+            wwr_map=wwr_map,
+        )
+        sb.epw = self.epw_path
+
+        # Set floor and roof geometry for each zone
+        for surface in sb.getsurfaces(surface_type="roof"):
+            name = surface.Name
+            name = name.replace("Roof", "Ceiling")
+            # sb.add_adiabatic_to_surface(surface, name, zone_params["roof_2_ground"])
+        for surface in sb.getsurfaces(surface_type="floor"):
+            name = surface.Name
+            name = name.replace("Floor", "Int Floor")
+            # sb.add_adiabatic_to_surface(
+            #     surface, name, zone_params["footprint_2_ground"]
+            # )
+        # Internal partition and glazing
+        # Orientation
+
+        self.shoebox = sb
 
 
 class SchemaParameter:
