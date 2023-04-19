@@ -358,6 +358,17 @@ class RValueParameter(BuildingTemplateParameter):
         pass
 
 
+class TMassParameter(BuildingTemplateParameter):
+    def __init__(self, path, **kwargs):
+        super().__init__(path, **kwargs)
+
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        TODO: Implement
+        """
+        pass
+
+
 class SchedulesParameters(SchemaParameter):
     __slots__ = ()
     paths = schedule_paths
@@ -405,35 +416,46 @@ class Schema:
                 shape_ml=(0,),
                 info="Lookup index of EPW file to use.",
             ),
-            ShoeboxGeometryParameter(name="width", min=1.5, max=5, info="Width [m]"),
+            ShoeboxGeometryParameter(
+                name="width",
+                min=3,
+                max=12,
+                source="battini_shoeboxing_2023",
+                info="Width [m]",
+            ),
             ShoeboxGeometryParameter(
                 name="height",
                 min=2.5,
-                max=5,
+                max=6,
+                source="ComStock",
                 info="Height [m]",
             ),
             ShoeboxGeometryParameter(
                 name="facade_2_footprint",
                 min=0.5,
                 max=5,
+                source="dogan_shoeboxer_2017",
                 info="Facade to footprint ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="perim_2_footprint",
-                min=0.5,
-                max=5,
+                min=0,
+                max=2,
+                source="dogan_shoeboxer_2017",
                 info="Perimeter to footprint ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="roof_2_footprint",
-                min=0.5,
-                max=5,
+                min=0,
+                max=1.5,
+                source="dogan_shoeboxer_2017",
                 info="Roof to footprint ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="footprint_2_ground",
-                min=0.5,
-                max=5,
+                min=0,
+                max=1.5,
+                source="dogan_shoeboxer_2017",
                 info="Footprint to ground ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
@@ -473,51 +495,90 @@ class Schema:
             BuildingTemplateParameter(
                 name="LightingPowerDensity",
                 path="Loads.LightingPowerDensity",
-                min=0.1,
+                min=0,
                 max=20,
+                source="ComStock",
                 info="Lighting Power Density [W/m2]",
             ),
             BuildingTemplateParameter(
                 name="EquipmentPowerDensity",
                 path="Loads.EquipmentPowerDensity",
                 min=0.1,
-                max=20,
+                max=2150,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
+                source="ComStock",
                 info="Equipment Power Density [W/m2]",
             ),
             BuildingTemplateParameter(
                 name="PeopleDensity",
                 path="Loads.PeopleDensity",
-                min=0.05,
+                min=0,
                 max=2,
+                source="ComStock",
                 info="People Density [people/m2]",
             ),
             RValueParameter(
                 name="FacadeRValue",
                 path="Facade",
                 min=0.1,
-                max=50,
+                max=15,
+                source="ComStock, tacit knowledge",
                 info="Facade R-value",
             ),
             RValueParameter(
                 name="RoofRValue",
                 path="Roof",
                 min=0.1,
-                max=50,
+                max=15,
+                source="ComStock, tacit knowledge",
                 info="Roof R-value",
             ),
             RValueParameter(
                 name="PartitionRValue",
                 path="Partition",
                 min=0.1,
-                max=50,
+                max=10,
+                source="Tacit knowledge",
                 info="Partition R-value",
             ),
             RValueParameter(
                 name="SlabRValue",
                 path="Slab",
                 min=0.1,
-                max=50,
+                max=15,
+                source="ComStock, tacit knowledge",
                 info="Slab R-value",
+            ),
+            TMassParameter(
+                name="FacadeMass",
+                path="Facade",
+                min=5,
+                max=200,
+                source="https://www.designingbuildings.co.uk/",
+                info="Exterior wall thermal mass (J/Km2)",
+            ),
+            TMassParameter(
+                name="RoofMass",
+                path="Roof",
+                min=5,
+                max=200,
+                source="https://www.designingbuildings.co.uk/",
+                info="Exterior roof thermal mass (J/Km2)",
+            ),
+            TMassParameter(
+                name="PartitionMass",
+                path="Partition",
+                min=5,
+                max=100,
+                source="https://www.designingbuildings.co.uk/, tacit",
+                info="Interior partition thermal mass (J/Km2)",
+            ),
+            TMassParameter(
+                name="SlabMass",
+                path="Slab",
+                min=5,
+                max=200,
+                source="https://www.designingbuildings.co.uk/",
+                info="Exterior slab thermal mass (J/Km2)",
             ),
             SchemaParameter(
                 name="schedules_seed",
