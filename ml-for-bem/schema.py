@@ -4,7 +4,50 @@ import numpy as np
 
 from schedules import schedule_paths, operations
 
+class ShoeboxConfiguration:
+    """
+    Stateful class for shoebox object args
+    """
+    __slots__ = (
+        "width",
+        "height",
+        "facade_2_footprint",
+        "perim_2_footprint",
+        "roof_2_footprint",
+        "footprint_2_ground",
+        "shading_fact",
+        "wwr_n",
+        "wwr_e",
+        "wwr_s",
+        "wwr_w",
+        "orientation"
+    )
+
+    def __init__(self):
+        pass
+
+class WhiteboxSimulation:
+    """
+    Class for configuring a whitebox simulation from a storage vector
+    """
+    __slots__ = (
+        "storage_vector",
+        "template",
+        "shoebox_config"
+    )
+
+    def __init__(self, storage_vector):
+        self.storage_vector = storage_vector
+        self.shoebox_config = ShoeboxConfiguration()
+
+
+
 class SchemaParameter:
+    """
+    Base class for semantically representing operations on numpy/torch tensors
+    which handles mutations of storage vectors, methods for updating simulation objects,
+    and generating ML vectors from storage vectors, etc 
+    """
     __slots__ = (
         "name",
         "target_object_key",
@@ -37,6 +80,14 @@ class SchemaParameter:
         return f"---{self.name}---\nshape_storage={self.shape_storage}, shape_ml={self.shape_ml}, dtype={self.dtype}\n{self.info}"
 
     def extract_storage_values(self, storage_vector):
+        """
+        Extract data values for this parameter from the current storage vector.  If this parameter represents matrix data,
+        the data will be reshaped into the appropriate shape.
+        Args:
+            storage_vector: np.ndarray, shape=(len(storage_vector)) to extract data from
+        Returns:
+            data: float or np.ndarray, shape=(*parameter.shape), data associated with this parameter
+        """
         data = storage_vector[self.start_storage:self.start_storage+self.len_storage]
         if self.shape_storage == (1,):
             return data[0]
@@ -44,20 +95,59 @@ class SchemaParameter:
             return data.reshape(*self.shape_storage)
     
     def extract_storage_values_batch(self, storage_batch):
+        """
+        Extract data values for this parameter from all vectors in a storage batch.  If this parameter represents matrix data,
+        the data will be reshaped into the appropriate shape so possibly a tensor if the parameter stores matrix data).
+        Args:
+            storage_batch: np.ndarray, shape=(n_vectors_in_batch, len(storage_vector)) to extract data from
+        Returns:
+            data: np.ndarray, shape=(n_vectors_in_batch, *parameter.shape), data associated with this parameter for each vector in batch
+        """
         data = storage_batch[:,self.start_storage:self.start_storage+self.len_storage]
         return data.reshape(-1,*self.shape_storage)
     
     def normalize(self, val):
+        """
+        Normalize data according to the model's schema.  For base ModelParameters, this method
+        does nothing.  Descendents of this (e.g. numerics) which require normalization implement 
+        their own methods for normalization.
+        Args:
+            val: np.ndarray, data to normalize
+        Returns:
+            val: np.ndarray, normalized data
+        """
         return val
 
     def unnormalize(self, val):
+        """
+        Unnormalize data according to the model's schema.  For base ModelParameters, this method
+        does nothing.  Descendents of this (e.g. numerics) which require normalization implement 
+        their own methods for unnormalization.
+        Args:
+            val: np.ndarray, data to unnormalize
+        Returns:
+            val: np.ndarray, unnormalized data
+        """
         return val
 
     
-    def mutate_simulation_objects(self, epw, template, shoebox_dict):
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        This method updates the simulation objects (archetypal template, shoebox config) 
+        by extracting values for this parameter from the sim's storage vector and using this
+        parameter's logic to update the appropriate objects.
+        The default base SchemaParameter does nothing.  Children classes implement the appropriate
+        semantic logic.
+        Args:
+            whitebox_sim: WhiteboxSimulation
+        """
         pass
 
 class NumericParameter(SchemaParameter):
+    """
+    Numeric parameters which have mins/maxs/ranges can inherit this class in order
+    to gain the ability to normalize/unnormalize
+    """
     __slots__ = (
         "min",
         "max",
@@ -90,6 +180,18 @@ class ShoeboxGeometryParameter(NumericParameter):
     )
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        This method updates the simulation objects (archetypal template, shoebox config) 
+        by extracting values for this parameter from the sim's storage vector and using this
+        parameter's logic to update the appropriate objects.
+        Updates whitebox simulation's shoebox configuration dictionary class.
+        Args:
+            whitebox_sim: WhiteboxSimulation
+        """
+        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        setattr(whitebox_sim.shoebox_config, self.name, value)
 
 class ShoeboxOrientationParameter(OneHotParameter):
     __slots__ = (
@@ -132,10 +234,16 @@ class Schema:
     def __init__(self):
         self.parameters = [
             SchemaParameter(
-                name="id",
+                name="batch_id",
                 dtype="index",
                 shape_ml=(0,),
-                info="id of design"
+                info="batch_id of design"
+            ),
+            SchemaParameter(
+                name="variation_id",
+                dtype="index",
+                shape_ml=(0,),
+                info="variation_id of design"
             ),
             SchemaParameter(
                 name="base_template",
@@ -379,6 +487,20 @@ class Schema:
                 storage_batch[:, start:end] = value
             else:
                 storage_batch[index, start:end] = value
+    
+    def create_whitebox_simulation(self, storage_vector):
+        """
+        Given a storage vector, generate a semantic object ready to simulate
+
+        Args:
+            storage_vector: np.ndarray, shape=(len(storage_vector)), the vector to generate a simulation from
+        Returns:
+            whitebox_sim: WhiteboxSimulation, simulation object ready to simulte
+        """
+        whitebox_sim = WhiteboxSimulation(storage_vector)
+        for parameter in self.parameters:
+            parameter.mutate_simulation_object(whitebox_sim)
+        return whitebox_sim
         
 class Model:
     __slots__ = (
