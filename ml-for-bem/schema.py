@@ -6,10 +6,12 @@ from archetypal import UmiTemplateLibrary
 from pyumi.shoeboxer.shoebox import ShoeBox
 from schedules import schedule_paths, operations
 
+
 class ShoeboxConfiguration:
     """
     Stateful class for shoebox object args
     """
+
     __slots__ = (
         "width",
         "height",
@@ -22,23 +24,25 @@ class ShoeboxConfiguration:
         "wwr_e",
         "wwr_s",
         "wwr_w",
-        "orientation"
+        "orientation",
     )
 
     def __init__(self):
         pass
 
+
 class WhiteboxSimulation:
     """
     Class for configuring a whitebox simulation from a storage vector
     """
+
     __slots__ = (
         "schema",
         "storage_vector",
         "template",
         "epw_path",
         "shoebox_config",
-        "shoebox"
+        "shoebox",
     )
 
     def __init__(self, schema, storage_vector):
@@ -57,15 +61,19 @@ class WhiteboxSimulation:
         self.load_template()
         self.build_epw_path()
         self.update_parameters()
-    
+
     def load_template(self):
         """
         Method for loading a template based off id in storage vector.
         """
         # TODO: for now defaulting to boston template library.
-        template_lib = self.schema["base_template_lib"].extract_storage_values(self.storage_vector)
+        template_lib = self.schema["base_template_lib"].extract_storage_values(
+            self.storage_vector
+        )
 
-        template_id = self.schema["base_template"].extract_storage_values(self.storage_vector)
+        template_id = self.schema["base_template"].extract_storage_values(
+            self.storage_vector
+        )
 
         # TODO: consider migrating away from independent loaders, but ensure there are no race conditions
         lib = UmiTemplateLibrary.open("./data/template_libs/BostonTemplateLibrary.json")
@@ -77,7 +85,7 @@ class WhiteboxSimulation:
         """
         for parameter in self.schema.parameters:
             parameter.mutate_simulation_object(self)
-        
+
     def build_epw_path(self):
         """Method for building the epw path"""
         # TODO: implement, for now just defaults to montreal
@@ -149,8 +157,9 @@ class SchemaParameter:
     """
     Base class for semantically representing operations on numpy/torch tensors
     which handles mutations of storage vectors, methods for updating simulation objects,
-    and generating ML vectors from storage vectors, etc 
+    and generating ML vectors from storage vectors, etc
     """
+
     __slots__ = (
         "name",
         "target_object_key",
@@ -162,13 +171,21 @@ class SchemaParameter:
         "len_storage",
         "len_ml",
         "in_ml",
-        "info"
+        "info",
     )
 
-    def __init__(self, name, info, shape_storage=(1,), shape_ml=(1,), target_object_key=None, dtype="scalar"):
+    def __init__(
+        self,
+        name,
+        info,
+        shape_storage=(1,),
+        shape_ml=(1,),
+        target_object_key=None,
+        dtype="scalar",
+    ):
         self.name = name
         self.info = info
-        self.target_object_key = target_object_key 
+        self.target_object_key = target_object_key
         self.dtype = dtype
 
         self.shape_storage = shape_storage
@@ -176,9 +193,9 @@ class SchemaParameter:
         if shape_ml == (0,):
             self.in_ml = False
 
-        self.len_storage = reduce(lambda a,b: a*b, shape_storage)
-        self.len_ml = reduce(lambda a,b: a*b, shape_ml)
-    
+        self.len_storage = reduce(lambda a, b: a * b, shape_storage)
+        self.len_ml = reduce(lambda a, b: a * b, shape_ml)
+
     def __repr__(self):
         return f"---{self.name}---\nshape_storage={self.shape_storage}, shape_ml={self.shape_ml}, dtype={self.dtype}\n{self.info}"
 
@@ -191,12 +208,14 @@ class SchemaParameter:
         Returns:
             data: float or np.ndarray, shape=(*parameter.shape), data associated with this parameter
         """
-        data = storage_vector[self.start_storage:self.start_storage+self.len_storage]
+        data = storage_vector[
+            self.start_storage : self.start_storage + self.len_storage
+        ]
         if self.shape_storage == (1,):
             return data[0]
         else:
             return data.reshape(*self.shape_storage)
-    
+
     def extract_storage_values_batch(self, storage_batch):
         """
         Extract data values for this parameter from all vectors in a storage batch.  If this parameter represents matrix data,
@@ -206,13 +225,15 @@ class SchemaParameter:
         Returns:
             data: np.ndarray, shape=(n_vectors_in_batch, *parameter.shape), data associated with this parameter for each vector in batch
         """
-        data = storage_batch[:,self.start_storage:self.start_storage+self.len_storage]
-        return data.reshape(-1,*self.shape_storage)
-    
+        data = storage_batch[
+            :, self.start_storage : self.start_storage + self.len_storage
+        ]
+        return data.reshape(-1, *self.shape_storage)
+
     def normalize(self, val):
         """
         Normalize data according to the model's schema.  For base SchemaParameters, this method
-        does nothing.  Descendents of this (e.g. numerics) which require normalization implement 
+        does nothing.  Descendents of this (e.g. numerics) which require normalization implement
         their own methods for normalization.
         Args:
             val: np.ndarray, data to normalize
@@ -224,7 +245,7 @@ class SchemaParameter:
     def unnormalize(self, val):
         """
         Unnormalize data according to the model's schema.  For base SchemaParameters, this method
-        does nothing.  Descendents of this (e.g. numerics) which require normalization implement 
+        does nothing.  Descendents of this (e.g. numerics) which require normalization implement
         their own methods for unnormalization.
         Args:
             val: np.ndarray, data to unnormalize
@@ -233,10 +254,9 @@ class SchemaParameter:
         """
         return val
 
-    
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
-        This method updates the simulation objects (archetypal template, shoebox config) 
+        This method updates the simulation objects (archetypal template, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         The default base SchemaParameter does nothing.  Children classes implement the appropriate
@@ -246,47 +266,45 @@ class SchemaParameter:
         """
         pass
 
+
 class NumericParameter(SchemaParameter):
     """
     Numeric parameters which have mins/maxs/ranges can inherit this class in order
     to gain the ability to normalize/unnormalize
     """
-    __slots__ = (
-        "min",
-        "max",
-        "range"
-    )
+
+    __slots__ = ("min", "max", "range")
+
     def __init__(self, min=0, max=1, **kwargs):
         super().__init__(**kwargs)
         self.min = min
         self.max = max
         self.range = self.max - self.min
-    
+
     def normalize(self, value):
-        return (value - self.min)/self.range
-    
+        return (value - self.min) / self.range
+
     def unnormalize(self, value):
-        return value*self.range + self.min
+        return value * self.range + self.min
+
 
 class OneHotParameter(SchemaParameter):
-    __slots__ = (
-        "count"
-    )
+    __slots__ = "count"
 
     def __init__(self, count, **kwargs):
         super().__init__(dtype="onehot", shape_ml=(count,), **kwargs)
         self.count = count
-    
-class ShoeboxGeometryParameter(NumericParameter):
-    __slots__ = (
 
-    )
+
+class ShoeboxGeometryParameter(NumericParameter):
+    __slots__ = ()
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
-        This method updates the simulation objects (archetypal template, shoebox config) 
+        This method updates the simulation objects (archetypal template, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         Updates whitebox simulation's shoebox configuration dictionary class.
@@ -296,24 +314,24 @@ class ShoeboxGeometryParameter(NumericParameter):
         value = self.extract_storage_values(whitebox_sim.storage_vector)
         setattr(whitebox_sim.shoebox_config, self.name, value)
 
-class ShoeboxOrientationParameter(OneHotParameter):
-    __slots__ = (
 
-    )
+class ShoeboxOrientationParameter(OneHotParameter):
+    __slots__ = ()
+
     def __init__(self, **kwargs):
-        super().__init__(count=4,**kwargs)
+        super().__init__(count=4, **kwargs)
+
 
 class BuildingTemplateParameter(NumericParameter):
-    __slots__ = (
-        "path"
-    )
+    __slots__ = "path"
+
     def __init__(self, path, **kwargs):
         super().__init__(**kwargs)
         self.path = path.split(".")
-    
+
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
-        This method updates the simulation objects (archetypal template, shoebox config) 
+        This method updates the simulation objects (archetypal template, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         Updates whitebox simulation's direct building template parameters.
@@ -325,76 +343,69 @@ class BuildingTemplateParameter(NumericParameter):
         for zone in ["Perimeter", "Core"]:
             path = [whitebox_sim.template, zone, *self.path]
             path = path[:-1]
-            object_to_update = reduce(lambda a,b: a[b], path)
-            setattr(object_to_update, template_param, value) 
+            object_to_update = reduce(lambda a, b: a[b], path)
+            setattr(object_to_update, template_param, value)
+
 
 class RValueParameter(BuildingTemplateParameter):
     def __init__(self, path, **kwargs):
         super().__init__(path, **kwargs)
-    
+
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
         TODO: Implement
         """
         pass
 
+
 class SchedulesParameters(SchemaParameter):
-    __slots__ = (
-    )
+    __slots__ = ()
     paths = schedule_paths
     operations = operations
+
     def __init__(self, **kwargs):
-        super().__init__(name="schedules", dtype="matrix", shape_storage=(len(schedule_paths),len(operations)), shape_ml=(len(schedule_paths),8760), **kwargs)
+        super().__init__(
+            name="schedules",
+            dtype="matrix",
+            shape_storage=(len(schedule_paths), len(operations)),
+            shape_ml=(len(schedule_paths), 8760),
+            **kwargs,
+        )
 
-
-    
 
 class Schema:
-    __slots__ = (
-        "parameters",
-        "storage_vec_len",
-        "ml_vec_len",
-        "_key_ix_lookup"
-    )
+    __slots__ = ("parameters", "storage_vec_len", "ml_vec_len", "_key_ix_lookup")
 
     def __init__(self):
         self.parameters = [
             SchemaParameter(
-                name="batch_id",
-                dtype="index",
-                shape_ml=(0,),
-                info="batch_id of design"
+                name="batch_id", dtype="index", shape_ml=(0,), info="batch_id of design"
             ),
             SchemaParameter(
                 name="variation_id",
                 dtype="index",
                 shape_ml=(0,),
-                info="variation_id of design"
+                info="variation_id of design",
             ),
             SchemaParameter(
                 name="base_template_lib",
                 dtype="index",
                 shape_ml=(0,),
-                info="Lookup index of template library to use."
+                info="Lookup index of template library to use.",
             ),
             SchemaParameter(
                 name="base_template",
                 dtype="index",
                 shape_ml=(0,),
-                info="Lookup index of template to use."
+                info="Lookup index of template to use.",
             ),
             SchemaParameter(
                 name="base_epw",
                 dtype="index",
                 shape_ml=(0,),
-                info="Lookup index of EPW file to use."
+                info="Lookup index of EPW file to use.",
             ),
-            ShoeboxGeometryParameter(
-                name="width",
-                min=1.5,
-                max=5,
-                info="Width [m]"
-            ),
+            ShoeboxGeometryParameter(name="width", min=1.5, max=5, info="Width [m]"),
             ShoeboxGeometryParameter(
                 name="height",
                 min=2.5,
@@ -516,18 +527,18 @@ class Schema:
             ),
             SchedulesParameters(
                 info="A matrix in the storage vector with operations to apply to schedules; a matrix of timeseries in ml vector",
-            )
+            ),
         ]
         self.storage_vec_len = 0
         self.ml_vec_len = 0
         self._key_ix_lookup = {}
-        for i,parameter in enumerate(self.parameters):
+        for i, parameter in enumerate(self.parameters):
             self._key_ix_lookup[parameter.name] = i
             parameter.start_storage = self.storage_vec_len
             parameter.start_ml = self.ml_vec_len
             self.storage_vec_len += parameter.len_storage
             self.ml_vec_len += parameter.len_ml
-    
+
     @property
     def parameter_names(self):
         """Return a list of the named parameters in the schema"""
@@ -538,11 +549,11 @@ class Schema:
         Args:
             key: str, name of parameter
         Returns:
-            parameter: SchemaParameter 
+            parameter: SchemaParameter
 
         """
         return self.parameters[self._key_ix_lookup[key]]
-    
+
     def __str__(self):
         """Generate a summary of the storach schema"""
         desc = "-------- Schema --------"
@@ -551,10 +562,10 @@ class Schema:
             desc += f"\nshape storage: {parameter.shape_storage} / shape ml: {parameter.shape_ml}"
             desc += f"\nlocation storage: {parameter.start_storage}->{parameter.start_storage+parameter.len_storage} / location ml: {parameter.start_ml}->{parameter.start_ml+parameter.len_ml}"
             desc += f"\n"
-        
+
         desc += f"\nTotal length of storage vectors: {self.storage_vec_len} / Total length of ml vectors: {self.ml_vec_len}"
         return desc
-    
+
     def generate_empty_storage_vector(self):
         """
         Create a vector of zeros representing a blank storage vector
@@ -573,8 +584,7 @@ class Schema:
         Returns:
             storage_batch: np.ndarray, 2-dim, shape=(n_vectors_in_batch, len(storage_vector))
         """
-        return np.zeros(shape=(n,self.storage_vec_len))
-    
+        return np.zeros(shape=(n, self.storage_vec_len))
 
     def update_storage_vector(self, storage_vector, parameter, value):
         """
@@ -593,7 +603,9 @@ class Schema:
         else:
             storage_vector[start] = value
 
-    def update_storage_batch(self, storage_batch, index=None, parameter=None, value=None):
+    def update_storage_batch(
+        self, storage_batch, index=None, parameter=None, value=None
+    ):
         """
         Update a storage vector parameter within a batch of storage vectors with a new value (or matrix which will be flattened)
 
@@ -608,7 +620,7 @@ class Schema:
         end = start + parameter.len_storage
 
         if isinstance(value, np.ndarray):
-            value = value.reshape(-1,parameter.len_storage)
+            value = value.reshape(-1, parameter.len_storage)
 
         if isinstance(index, tuple):
             start_ix = index[0]
@@ -619,18 +631,15 @@ class Schema:
                 storage_batch[:, start:end] = value
             else:
                 storage_batch[index, start:end] = value
-    
+
+
 class Model:
-    __slots__ = (
-        "design_vectors",
-        "map"
-    )
+    __slots__ = ("design_vectors", "map")
 
 
 if __name__ == "__main__":
     schema = Schema()
     print(schema)
-
 
     """Create a single empty storage vector"""
     storage_vector = schema.generate_empty_storage_vector()
@@ -651,14 +660,20 @@ if __name__ == "__main__":
     end = start + n
     parameter = "PartitionRValue"
     shape = (n, *schema[parameter].shape_storage)
-    values = np.random.rand(*shape) # create a random sample with appropriate shape
-    schema.update_storage_batch(storage_batch, index=(start,end), parameter=parameter, value=values)
-    print(schema[parameter].extract_storage_values_batch(storage_batch)[start-1:end+1]) # use [1:11] slice to see that the adjacentt cells are still zero
+    values = np.random.rand(*shape)  # create a random sample with appropriate shape
+    schema.update_storage_batch(
+        storage_batch, index=(start, end), parameter=parameter, value=values
+    )
+    print(
+        schema[parameter].extract_storage_values_batch(storage_batch)[
+            start - 1 : end + 1
+        ]
+    )  # use [1:11] slice to see that the adjacentt cells are still zero
 
     """Updating an entire batch with random values"""
     parameter = "SlabRValue"
     n = batch_size
     shape = (n, *schema[parameter].shape_storage)
-    values = np.random.rand(*shape) # create a random sample with appropriate shape
+    values = np.random.rand(*shape)  # create a random sample with appropriate shape
     schema.update_storage_batch(storage_batch, parameter=parameter, value=values)
     print(schema[parameter].extract_storage_values_batch(storage_batch))
