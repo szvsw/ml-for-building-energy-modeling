@@ -15,11 +15,13 @@ class SchemaParameter:
         "shape_ml",
         "len_storage",
         "len_ml",
-        "in_ml"
+        "in_ml",
+        "info"
     )
 
-    def __init__(self, name, shape_storage=(1,), shape_ml=(1,), target_object_key=None, dtype="scalar"):
+    def __init__(self, name, info, shape_storage=(1,), shape_ml=(1,), target_object_key=None, dtype="scalar"):
         self.name = name
+        self.info = info
         self.target_object_key = target_object_key 
         self.dtype = dtype
 
@@ -30,6 +32,9 @@ class SchemaParameter:
 
         self.len_storage = reduce(lambda a,b: a*b, shape_storage)
         self.len_ml = reduce(lambda a,b: a*b, shape_ml)
+    
+    def __repr__(self):
+        return f"---{self.name}---\nshape_storage={self.shape_storage}, shape_ml={self.shape_ml}, dtype={self.dtype}\n{self.info}"
 
     def extract_storage_values(self, storage_vector):
         data = storage_vector[self.start_storage:self.start_storage+self.len_storage]
@@ -111,7 +116,7 @@ class SchedulesParameters(SchemaParameter):
     paths = schedule_paths
     operations = operations
     def __init__(self, **kwargs):
-        super().__init__(name="schedules", shape_storage=(len(schedule_paths),len(operations)), shape_ml=(len(schedule_paths),8760), **kwargs)
+        super().__init__(name="schedules", dtype="matrix", shape_storage=(len(schedule_paths),len(operations)), shape_ml=(len(schedule_paths),8760), **kwargs)
 
 
     
@@ -129,124 +134,149 @@ class Schema:
             SchemaParameter(
                 name="id",
                 dtype="index",
-                shape_ml=(0,)
+                shape_ml=(0,),
+                info="id of design"
             ),
             SchemaParameter(
                 name="base_template",
                 dtype="index",
-                shape_ml=(0,)
+                shape_ml=(0,),
+                info="Lookup index of template to use."
             ),
             SchemaParameter(
                 name="base_epw",
                 dtype="index",
-                shape_ml=(0,)
+                shape_ml=(0,),
+                info="Lookup index of EPW file to use."
             ),
             ShoeboxGeometryParameter(
                 name="width",
                 min=1.5,
-                max=5
+                max=5,
+                info="Width [m]"
             ),
             ShoeboxGeometryParameter(
                 name="height",
                 min=2.5,
-                max=5
+                max=5,
+                info="Height [m]",
             ),
             ShoeboxGeometryParameter(
                 name="facade_2_footprint",
                 min=0.5,
-                max=5
+                max=5,
+                info="Facade to footprint ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="perim_2_footprint",
                 min=0.5,
-                max=5
+                max=5,
+                info="Perimeter to footprint ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="roof_2_footprint",
                 min=0.5,
-                max=5
+                max=5,
+                info="Roof to footprint ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="footprint_2_ground",
                 min=0.5,
-                max=5
+                max=5,
+                info="Footprint to ground ratio (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="shading_fact",
                 min=0,
-                max=1
+                max=1,
+                info="Shading fact (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="wwr_n",
                 min=0,
-                max=1
+                max=1,
+                info="Window-to-wall Ratio, N (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="wwr_e",
                 min=0,
-                max=1
+                max=1,
+                info="Window-to-wall Ratio, E (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="wwr_s",
                 min=0,
-                max=1
+                max=1,
+                info="Window-to-wall Ratio, S (unitless)",
             ),
             ShoeboxGeometryParameter(
                 name="wwr_w",
                 min=0,
-                max=1
+                max=1,
+                info="Window-to-wall Ratio, W (unitless)",
             ),
             ShoeboxOrientationParameter(
-                name="orientation"
+                name="orientation",
+                info="Shoebox Orientation",
             ),
             BuildingTemplateParameter(
                 name="LightingPowerDensity",
                 path="Loads.LightingPowerDensity",
                 min=0.1,
-                max=20
+                max=20,
+                info="Lighting Power Density [W/m2]",
             ),
             BuildingTemplateParameter(
                 name="EquipmentPowerDensity",
                 path="Loads.EquipmentPowerDensity",
                 min=0.1,
-                max=20
+                max=20,
+                info="Equipment Power Density [W/m2]",
             ),
             BuildingTemplateParameter(
                 name="PeopleDensity",
                 path="Loads.PeopleDensity",
                 min=0.05,
                 max=2,
+                info="People Density [people/m2]",
             ),
             RValueParameter(
                 name="FacadeRValue",
                 path="Facade",
                 min=0.1,
                 max=50,
+                info="Facade R-value",
             ),
             RValueParameter(
                 name="RoofRValue",
                 path="Roof",
                 min=0.1,
                 max=50,
+                info="Roof R-value",
             ),
             RValueParameter(
                 name="PartitionRValue",
                 path="Partition",
                 min=0.1,
                 max=50,
+                info="Partition R-value",
             ),
             RValueParameter(
                 name="SlabRValue",
                 path="Slab",
                 min=0.1,
                 max=50,
+                info="Slab R-value",
             ),
             SchemaParameter(
                 name="schedules_seed",
                 shape_ml=(0,),
                 dtype="index",
+                info="A seed to reliably reproduce schedules from the storage vector's schedule operations when generating ml vector",
             ),
-            SchedulesParameters()
+            SchedulesParameters(
+                info="A matrix in the storage vector with operations to apply to schedules; a matrix of timeseries in ml vector",
+            )
         ]
         self.storage_vec_len = 0
         self.ml_vec_len = 0
@@ -261,7 +291,7 @@ class Schema:
     @property
     def parameter_names(self):
         """Return a list of the named parameters in the schema"""
-        return list(self.parameters.keys())
+        return list(self._key_ix_lookup.keys())
 
     def __getitem__(self, key):
         """
@@ -371,9 +401,8 @@ if __name__ == "__main__":
 
     """
     Updating a storage batch with a constant parameter
-    -- -1 i
     """
-    schema.update_storage_batch(storage_batch, index=-1, parameter="FacadeRValue", value=2)
+    schema.update_storage_batch(storage_batch, parameter="FacadeRValue", value=2)
     print(schema["FacadeRValue"].extract_storage_values_batch(storage_batch))
 
     """Updating a subset of a storage batch with random values"""
