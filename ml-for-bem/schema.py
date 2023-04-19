@@ -2,6 +2,7 @@ from functools import reduce
 
 import numpy as np
 
+from archetypal import UmiTemplateLibrary
 from schedules import schedule_paths, operations
 
 class ShoeboxConfiguration:
@@ -31,15 +32,43 @@ class WhiteboxSimulation:
     Class for configuring a whitebox simulation from a storage vector
     """
     __slots__ = (
+        "schema",
         "storage_vector",
         "template",
         "shoebox_config"
     )
 
-    def __init__(self, storage_vector):
+    def __init__(self, schema, storage_vector):
+        """
+        Create a whitebox simulation object
+
+        Args:
+            schema: Schema, semantic method handler
+            storage_vector: np.ndarray, shape=(len(storage_vector)), the storage vector to load
+        Returns:
+            A ready to simulate whitebox sim
+        """
+        self.schema = schema
         self.storage_vector = storage_vector
         self.shoebox_config = ShoeboxConfiguration()
+        self.load_template()
+        self.update_parameters()
+    
+    def load_template(self):
+        """
+        Method for loading a template based off id in storage vector.
+        """
+        # TODO: for now defaulting to boston template library.
+        template_lib = self.schema["base_template_lib"].extract_storage_values(self.storage_vector)
 
+        template_id = self.schema["base_template"].extract_storage_values(self.storage_vector)
+
+        lib = UmiTemplateLibrary.open("./data/template_libs/BostonTemplateLibrary.json")
+        self.template = lib.BuildingTemplates[int(template_id)]
+
+    def update_parameters(self):
+        for parameter in self.schema.parameters:
+            parameter.mutate_simulation_object(self)
 
 
 class SchemaParameter:
@@ -108,7 +137,7 @@ class SchemaParameter:
     
     def normalize(self, val):
         """
-        Normalize data according to the model's schema.  For base ModelParameters, this method
+        Normalize data according to the model's schema.  For base SchemaParameters, this method
         does nothing.  Descendents of this (e.g. numerics) which require normalization implement 
         their own methods for normalization.
         Args:
@@ -120,7 +149,7 @@ class SchemaParameter:
 
     def unnormalize(self, val):
         """
-        Unnormalize data according to the model's schema.  For base ModelParameters, this method
+        Unnormalize data according to the model's schema.  For base SchemaParameters, this method
         does nothing.  Descendents of this (e.g. numerics) which require normalization implement 
         their own methods for unnormalization.
         Args:
@@ -206,11 +235,34 @@ class BuildingTemplateParameter(NumericParameter):
     )
     def __init__(self, path, **kwargs):
         super().__init__(**kwargs)
-        self.path = path
+        self.path = path.split(".")
+    
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        This method updates the simulation objects (archetypal template, shoebox config) 
+        by extracting values for this parameter from the sim's storage vector and using this
+        parameter's logic to update the appropriate objects.
+        Updates whitebox simulation's direct building template parameters.
+        Args:
+            whitebox_sim: WhiteboxSimulation
+        """
+        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        template_param = self.path[-1]
+        for zone in ["Perimeter", "Core"]:
+            path = [whitebox_sim.template, zone, *self.path]
+            path = path[:-1]
+            object_to_update = reduce(lambda a,b: a[b], path)
+            setattr(object_to_update, template_param, value) 
 
 class RValueParameter(BuildingTemplateParameter):
     def __init__(self, path, **kwargs):
         super().__init__(path, **kwargs)
+    
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        TODO: Implement
+        """
+        pass
 
 class SchedulesParameters(SchemaParameter):
     __slots__ = (
@@ -244,6 +296,12 @@ class Schema:
                 dtype="index",
                 shape_ml=(0,),
                 info="variation_id of design"
+            ),
+            SchemaParameter(
+                name="base_template_lib",
+                dtype="index",
+                shape_ml=(0,),
+                info="Lookup index of template library to use."
             ),
             SchemaParameter(
                 name="base_template",
@@ -488,20 +546,6 @@ class Schema:
             else:
                 storage_batch[index, start:end] = value
     
-    def create_whitebox_simulation(self, storage_vector):
-        """
-        Given a storage vector, generate a semantic object ready to simulate
-
-        Args:
-            storage_vector: np.ndarray, shape=(len(storage_vector)), the vector to generate a simulation from
-        Returns:
-            whitebox_sim: WhiteboxSimulation, simulation object ready to simulte
-        """
-        whitebox_sim = WhiteboxSimulation(storage_vector)
-        for parameter in self.parameters:
-            parameter.mutate_simulation_object(whitebox_sim)
-        return whitebox_sim
-        
 class Model:
     __slots__ = (
         "design_vectors",

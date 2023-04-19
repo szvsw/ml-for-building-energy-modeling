@@ -131,4 +131,4 @@ dmypy.json
 benchmark/cache/
 ipynb/cache/
 credentials/*.json
-ml-for-bem/data/*.hdf5
+ml-for-bem/data/**/*.hdf5
