@@ -31,16 +31,16 @@ class SchemaParameter:
         self.len_storage = reduce(lambda a,b: a*b, shape_storage)
         self.len_ml = reduce(lambda a,b: a*b, shape_ml)
 
-    def extract_values(self, storage_vector):
+    def extract_storage_values(self, storage_vector):
         data = storage_vector[self.start_storage:self.start_storage+self.len_storage]
         if self.shape_storage == (1,):
             return data[0]
         else:
-            return data.reshape(*self.shape)
+            return data.reshape(*self.shape_storage)
     
-    def extract_values_batch(self, storage_batch):
+    def extract_storage_values_batch(self, storage_batch):
         data = storage_batch[:,self.start_storage:self.start_storage+self.len_storage]
-        return data.reshape(-1,*self.shape)
+        return data.reshape(-1,*self.shape_storage)
     
     def normalize(self, val):
         return val
@@ -218,13 +218,13 @@ class Schema:
                 max=2,
             ),
             RValueParameter(
-                name="FacadeRVaue",
+                name="FacadeRValue",
                 path="Facade",
                 min=0.1,
                 max=50,
             ),
             RValueParameter(
-                name="RoofRVaue",
+                name="RoofRValue",
                 path="Roof",
                 min=0.1,
                 max=50,
@@ -236,7 +236,7 @@ class Schema:
                 max=50,
             ),
             RValueParameter(
-                name="SlabRVaue",
+                name="SlabRValue",
                 path="Slab",
                 min=0.1,
                 max=50,
@@ -288,14 +288,28 @@ class Schema:
     def generate_empty_storage_vector(self):
         """
         Create a vector of zeros representing a blank storage vector
+
         Returns:
-            storage_vector: np.ndarray, 1-dim 
+            storage_vector: np.ndarray, 1-dim, shape=(len(storage_vector))
         """
         return np.zeros(shape=self.storage_vec_len)
+
+    def generate_empty_storage_batch(self, n):
+        """
+        Create a matrix of zeros representing a batch of blank storage vectors
+
+        Args:
+            n: number of vectors to initialize in batch
+        Returns:
+            storage_batch: np.ndarray, 2-dim, shape=(n_vectors_in_batch, len(storage_vector))
+        """
+        return np.zeros(shape=(n,self.storage_vec_len))
+    
 
     def update_storage_vector(self, storage_vector, parameter, value):
         """
         Update a storage vector parameter with a value (or matrix which will be flattened)
+
         Args:
             storage_vector: np.ndarray, 1-dim, shape=(len(storage_vector))
             parameter: str, name of parameter to update
@@ -309,12 +323,13 @@ class Schema:
         else:
             storage_vector[start] = value
 
-    def update_storage_batch(self, storage_batch, index, parameter, value):
+    def update_storage_batch(self, storage_batch, index=None, parameter=None, value=None):
         """
         Update a storage vector parameter within a batch of storage vectors with a new value (or matrix which will be flattened)
+
         Args:
             storage_batch: np.ndarray, 2-dim, shape=(n_vectors, len(storage_vector))
-            index: int | tuple, which storage vector (or range of storage vectors) within the batch to update.  use -1 if updating the full batch
+            index: int | tuple, which storage vector (or range of storage vectors) within the batch to update.  omit or use None if updating the full batch
             parameter: str, name of parameter to update
             value: np.ndarray | float, n-dim, will be flattened and stored in the storage vector
         """
@@ -323,14 +338,14 @@ class Schema:
         end = start + parameter.len_storage
 
         if isinstance(value, np.ndarray):
-            value = value.reshape(-1,parameter.len_storage_vector)
+            value = value.reshape(-1,parameter.len_storage)
 
         if isinstance(index, tuple):
             start_ix = index[0]
             end_ix = index[1]
             storage_batch[start_ix:end_ix, start:end] = value
         else:
-            if index < 0:
+            if index == None:
                 storage_batch[:, start:end] = value
             else:
                 storage_batch[index, start:end] = value
@@ -342,5 +357,39 @@ class Model:
     )
 
 
-schema = Schema()
-print(schema)
+if __name__ == "__main__":
+    schema = Schema()
+    print(schema)
+
+
+    """Create a single empty storage vector"""
+    storage_vector = schema.generate_empty_storage_vector()
+
+    """Create a batch matrix of empty storage vectors"""
+    batch_size = 20
+    storage_batch = schema.generate_empty_storage_batch(batch_size)
+
+    """
+    Updating a storage batch with a constant parameter
+    -- -1 i
+    """
+    schema.update_storage_batch(storage_batch, index=-1, parameter="FacadeRValue", value=2)
+    print(schema["FacadeRValue"].extract_storage_values_batch(storage_batch))
+
+    """Updating a subset of a storage batch with random values"""
+    start = 2
+    n = 8
+    end = start + n
+    parameter = "PartitionRValue"
+    shape = (n, *schema[parameter].shape_storage)
+    values = np.random.rand(*shape) # create a random sample with appropriate shape
+    schema.update_storage_batch(storage_batch, index=(start,end), parameter=parameter, value=values)
+    print(schema[parameter].extract_storage_values_batch(storage_batch)[start-1:end+1]) # use [1:11] slice to see that the adjacentt cells are still zero
+
+    """Updating an entire batch with random values"""
+    parameter = "SlabRValue"
+    n = batch_size
+    shape = (n, *schema[parameter].shape_storage)
+    values = np.random.rand(*shape) # create a random sample with appropriate shape
+    schema.update_storage_batch(storage_batch, parameter=parameter, value=values)
+    print(schema[parameter].extract_storage_values_batch(storage_batch))
