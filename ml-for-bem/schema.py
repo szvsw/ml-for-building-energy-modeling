@@ -1,8 +1,11 @@
 from functools import reduce
+from typing import List
 
 import numpy as np
+import pandas as pd
 
 from archetypal import UmiTemplateLibrary
+from archetypal.idfclass.sql import Sql
 from pyumi.shoeboxer.shoebox import ShoeBox
 from schedules import schedule_paths, operations
 
@@ -61,6 +64,7 @@ class WhiteboxSimulation:
         self.load_template()
         self.build_epw_path()
         self.update_parameters()
+        self.build_shoebox()
 
     def load_template(self):
         """
@@ -150,7 +154,32 @@ class WhiteboxSimulation:
         # Internal partition and glazing
         # Orientation
 
+        # todo - confirm that these do not need to be moved inside of simulate parallel process
+        outputs = [
+            timeseries.to_output_dict() for timeseries in self.schema.timeseries_outputs
+        ]
+        sb.outputs.add_custom(outputs)
+        sb.outputs.apply()
         self.shoebox = sb
+
+    def simulate(self):
+        self.shoebox.simulate(verbose=False, prep_outputs=False, readvars=False)
+        sql = Sql(self.shoebox.sql_file)
+        series_to_retrieve = []
+        for timeseries in self.schema.timeseries_outputs:
+            if timeseries.store_output:
+                series_to_retrieve.append(timeseries.var_name)
+        ep_df_hourly = pd.DataFrame(
+            sql.timeseries_by_name(series_to_retrieve, reporting_frequency="Hourly")
+        )
+        ep_df_monthly = pd.DataFrame(
+            sql.timeseries_by_name(series_to_retrieve, reporting_frequency="Monthly")
+        )
+        return ep_df_hourly, ep_df_monthly
+        # ep_df_hourly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Hourly"))
+        # ep_df_hourly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Hourly"))
+        # ep_df_monthly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Monthly"))
+        # ep_df_monthly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Monthly"))
 
 
 class SchemaParameter:
@@ -172,12 +201,14 @@ class SchemaParameter:
         "len_ml",
         "in_ml",
         "info",
+        "source",
     )
 
     def __init__(
         self,
         name,
         info,
+        source=None,
         shape_storage=(1,),
         shape_ml=(1,),
         target_object_key=None,
@@ -185,6 +216,7 @@ class SchemaParameter:
     ):
         self.name = name
         self.info = info
+        self.source = source
         self.target_object_key = target_object_key
         self.dtype = dtype
 
@@ -384,212 +416,297 @@ class SchedulesParameters(SchemaParameter):
         )
 
 
-class Schema:
-    __slots__ = ("parameters", "storage_vec_len", "ml_vec_len", "_key_ix_lookup")
+class TimeSeriesOutput:
+    __slots__ = (
+        "name",
+        "var_name",
+        "freq",
+        "key",
+        "store_output",
+    )
 
-    def __init__(self):
-        self.parameters = [
-            SchemaParameter(
-                name="batch_id", dtype="index", shape_ml=(0,), info="batch_id of design"
+    def __init__(
+        self, name, var_name, store_output, freq="hourly", key="OUTPUT:VARIABLE"
+    ):
+        self.name = name
+        self.var_name = var_name
+        self.freq = freq
+        self.key = key
+        self.store_output = store_output
+
+    def to_output_dict(self):
+        return dict(
+            key=self.key,
+            Variable_Name=self.var_name,
+            Reporting_Frequency=self.freq,
+        )
+
+
+class Schema:
+    __slots__ = (
+        "parameters",
+        "timeseries_outputs",
+        "storage_vec_len",
+        "ml_vec_len",
+        "_key_ix_lookup",
+        "sim_output_configs",
+        "sim_output_shape",
+    )
+
+    def __init__(
+        self,
+        parameters: List[SchemaParameter] = None,
+        timeseries_outputs: List[TimeSeriesOutput] = None,
+    ):
+
+        if parameters != None:
+            self.parameters = parameters
+        else:
+            self.parameters = [
+                SchemaParameter(
+                    name="batch_id",
+                    dtype="index",
+                    shape_ml=(0,),
+                    info="batch_id of design",
+                ),
+                SchemaParameter(
+                    name="variation_id",
+                    dtype="index",
+                    shape_ml=(0,),
+                    info="variation_id of design",
+                ),
+                SchemaParameter(
+                    name="base_template_lib",
+                    dtype="index",
+                    shape_ml=(0,),
+                    info="Lookup index of template library to use.",
+                ),
+                SchemaParameter(
+                    name="base_template",
+                    dtype="index",
+                    shape_ml=(0,),
+                    info="Lookup index of template to use.",
+                ),
+                SchemaParameter(
+                    name="base_epw",
+                    dtype="index",
+                    shape_ml=(0,),
+                    info="Lookup index of EPW file to use.",
+                ),
+                ShoeboxGeometryParameter(
+                    name="width",
+                    min=3,
+                    max=12,
+                    source="battini_shoeboxing_2023",
+                    info="Width [m]",
+                ),
+                ShoeboxGeometryParameter(
+                    name="height",
+                    min=2.5,
+                    max=6,
+                    source="ComStock",
+                    info="Height [m]",
+                ),
+                ShoeboxGeometryParameter(
+                    name="facade_2_footprint",
+                    min=0.5,
+                    max=5,
+                    source="dogan_shoeboxer_2017",
+                    info="Facade to footprint ratio (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="perim_2_footprint",
+                    min=0,
+                    max=2,
+                    source="dogan_shoeboxer_2017",
+                    info="Perimeter to footprint ratio (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="roof_2_footprint",
+                    min=0,
+                    max=1.5,
+                    source="dogan_shoeboxer_2017",
+                    info="Roof to footprint ratio (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="footprint_2_ground",
+                    min=0,
+                    max=1.5,
+                    source="dogan_shoeboxer_2017",
+                    info="Footprint to ground ratio (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="shading_fact",
+                    min=0,
+                    max=1,
+                    info="Shading fact (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="wwr_n",
+                    min=0,
+                    max=1,
+                    info="Window-to-wall Ratio, N (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="wwr_e",
+                    min=0,
+                    max=1,
+                    info="Window-to-wall Ratio, E (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="wwr_s",
+                    min=0,
+                    max=1,
+                    info="Window-to-wall Ratio, S (unitless)",
+                ),
+                ShoeboxGeometryParameter(
+                    name="wwr_w",
+                    min=0,
+                    max=1,
+                    info="Window-to-wall Ratio, W (unitless)",
+                ),
+                ShoeboxOrientationParameter(
+                    name="orientation",
+                    info="Shoebox Orientation",
+                ),
+                BuildingTemplateParameter(
+                    name="LightingPowerDensity",
+                    path="Loads.LightingPowerDensity",
+                    min=0,
+                    max=20,
+                    source="ComStock",
+                    info="Lighting Power Density [W/m2]",
+                ),
+                BuildingTemplateParameter(
+                    name="EquipmentPowerDensity",
+                    path="Loads.EquipmentPowerDensity",
+                    min=0.1,
+                    max=30,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
+                    source="ComStock",
+                    info="Equipment Power Density [W/m2]",
+                ),
+                BuildingTemplateParameter(
+                    name="PeopleDensity",
+                    path="Loads.PeopleDensity",
+                    min=0,
+                    max=2,
+                    source="ComStock",
+                    info="People Density [people/m2]",
+                ),
+                RValueParameter(
+                    name="FacadeRValue",
+                    path="Facade",
+                    min=0.1,
+                    max=15,
+                    source="ComStock, tacit knowledge",
+                    info="Facade R-value",
+                ),
+                RValueParameter(
+                    name="RoofRValue",
+                    path="Roof",
+                    min=0.1,
+                    max=15,
+                    source="ComStock, tacit knowledge",
+                    info="Roof R-value",
+                ),
+                RValueParameter(
+                    name="PartitionRValue",
+                    path="Partition",
+                    min=0.1,
+                    max=10,
+                    source="Tacit knowledge",
+                    info="Partition R-value",
+                ),
+                RValueParameter(
+                    name="SlabRValue",
+                    path="Slab",
+                    min=0.1,
+                    max=15,
+                    source="ComStock, tacit knowledge",
+                    info="Slab R-value",
+                ),
+                TMassParameter(
+                    name="FacadeMass",
+                    path="Facade",
+                    min=5,
+                    max=200,
+                    source="https://www.designingbuildings.co.uk/",
+                    info="Exterior wall thermal mass (J/Km2)",
+                ),
+                TMassParameter(
+                    name="RoofMass",
+                    path="Roof",
+                    min=5,
+                    max=200,
+                    source="https://www.designingbuildings.co.uk/",
+                    info="Exterior roof thermal mass (J/Km2)",
+                ),
+                TMassParameter(
+                    name="PartitionMass",
+                    path="Partition",
+                    min=5,
+                    max=100,
+                    source="https://www.designingbuildings.co.uk/, tacit",
+                    info="Interior partition thermal mass (J/Km2)",
+                ),
+                TMassParameter(
+                    name="SlabMass",
+                    path="Slab",
+                    min=5,
+                    max=200,
+                    source="https://www.designingbuildings.co.uk/",
+                    info="Exterior slab thermal mass (J/Km2)",
+                ),
+                SchemaParameter(
+                    name="schedules_seed",
+                    shape_ml=(0,),
+                    dtype="index",
+                    info="A seed to reliably reproduce schedules from the storage vector's schedule operations when generating ml vector",
+                ),
+                SchedulesParameters(
+                    info="A matrix in the storage vector with operations to apply to schedules; a matrix of timeseries in ml vector",
+                ),
+            ]
+
+        if timeseries_outputs != None:
+            self.timeseries_outputs = timeseries_outputs
+        self.timeseries_outputs = [
+            TimeSeriesOutput(
+                name="Heating",
+                key="OUTPUT:VARIABLE",
+                var_name="Zone Ideal Loads Zone Total Heating Energy",
+                freq="hourly",
+                store_output=True,
             ),
-            SchemaParameter(
-                name="variation_id",
-                dtype="index",
-                shape_ml=(0,),
-                info="variation_id of design",
+            TimeSeriesOutput(
+                name="Cooling",
+                key="OUTPUT:VARIABLE",
+                var_name="Zone Ideal Loads Zone Total Cooling Energy",
+                freq="hourly",
+                store_output=True,
             ),
-            SchemaParameter(
-                name="base_template_lib",
-                dtype="index",
-                shape_ml=(0,),
-                info="Lookup index of template library to use.",
+            TimeSeriesOutput(
+                name="Lighting",
+                key="OUTPUT:VARIABLE",
+                var_name="Lights Total Heating Energy",
+                freq="hourly",
+                store_output=False,
             ),
-            SchemaParameter(
-                name="base_template",
-                dtype="index",
-                shape_ml=(0,),
-                info="Lookup index of template to use.",
-            ),
-            SchemaParameter(
-                name="base_epw",
-                dtype="index",
-                shape_ml=(0,),
-                info="Lookup index of EPW file to use.",
-            ),
-            ShoeboxGeometryParameter(
-                name="width",
-                min=3,
-                max=12,
-                source="battini_shoeboxing_2023",
-                info="Width [m]",
-            ),
-            ShoeboxGeometryParameter(
-                name="height",
-                min=2.5,
-                max=6,
-                source="ComStock",
-                info="Height [m]",
-            ),
-            ShoeboxGeometryParameter(
-                name="facade_2_footprint",
-                min=0.5,
-                max=5,
-                source="dogan_shoeboxer_2017",
-                info="Facade to footprint ratio (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="perim_2_footprint",
-                min=0,
-                max=2,
-                source="dogan_shoeboxer_2017",
-                info="Perimeter to footprint ratio (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="roof_2_footprint",
-                min=0,
-                max=1.5,
-                source="dogan_shoeboxer_2017",
-                info="Roof to footprint ratio (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="footprint_2_ground",
-                min=0,
-                max=1.5,
-                source="dogan_shoeboxer_2017",
-                info="Footprint to ground ratio (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="shading_fact",
-                min=0,
-                max=1,
-                info="Shading fact (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="wwr_n",
-                min=0,
-                max=1,
-                info="Window-to-wall Ratio, N (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="wwr_e",
-                min=0,
-                max=1,
-                info="Window-to-wall Ratio, E (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="wwr_s",
-                min=0,
-                max=1,
-                info="Window-to-wall Ratio, S (unitless)",
-            ),
-            ShoeboxGeometryParameter(
-                name="wwr_w",
-                min=0,
-                max=1,
-                info="Window-to-wall Ratio, W (unitless)",
-            ),
-            ShoeboxOrientationParameter(
-                name="orientation",
-                info="Shoebox Orientation",
-            ),
-            BuildingTemplateParameter(
-                name="LightingPowerDensity",
-                path="Loads.LightingPowerDensity",
-                min=0,
-                max=20,
-                source="ComStock",
-                info="Lighting Power Density [W/m2]",
-            ),
-            BuildingTemplateParameter(
-                name="EquipmentPowerDensity",
-                path="Loads.EquipmentPowerDensity",
-                min=0.1,
-                max=2150,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
-                source="ComStock",
-                info="Equipment Power Density [W/m2]",
-            ),
-            BuildingTemplateParameter(
-                name="PeopleDensity",
-                path="Loads.PeopleDensity",
-                min=0,
-                max=2,
-                source="ComStock",
-                info="People Density [people/m2]",
-            ),
-            RValueParameter(
-                name="FacadeRValue",
-                path="Facade",
-                min=0.1,
-                max=15,
-                source="ComStock, tacit knowledge",
-                info="Facade R-value",
-            ),
-            RValueParameter(
-                name="RoofRValue",
-                path="Roof",
-                min=0.1,
-                max=15,
-                source="ComStock, tacit knowledge",
-                info="Roof R-value",
-            ),
-            RValueParameter(
-                name="PartitionRValue",
-                path="Partition",
-                min=0.1,
-                max=10,
-                source="Tacit knowledge",
-                info="Partition R-value",
-            ),
-            RValueParameter(
-                name="SlabRValue",
-                path="Slab",
-                min=0.1,
-                max=15,
-                source="ComStock, tacit knowledge",
-                info="Slab R-value",
-            ),
-            TMassParameter(
-                name="FacadeMass",
-                path="Facade",
-                min=5,
-                max=200,
-                source="https://www.designingbuildings.co.uk/",
-                info="Exterior wall thermal mass (J/Km2)",
-            ),
-            TMassParameter(
-                name="RoofMass",
-                path="Roof",
-                min=5,
-                max=200,
-                source="https://www.designingbuildings.co.uk/",
-                info="Exterior roof thermal mass (J/Km2)",
-            ),
-            TMassParameter(
-                name="PartitionMass",
-                path="Partition",
-                min=5,
-                max=100,
-                source="https://www.designingbuildings.co.uk/, tacit",
-                info="Interior partition thermal mass (J/Km2)",
-            ),
-            TMassParameter(
-                name="SlabMass",
-                path="Slab",
-                min=5,
-                max=200,
-                source="https://www.designingbuildings.co.uk/",
-                info="Exterior slab thermal mass (J/Km2)",
-            ),
-            SchemaParameter(
-                name="schedules_seed",
-                shape_ml=(0,),
-                dtype="index",
-                info="A seed to reliably reproduce schedules from the storage vector's schedule operations when generating ml vector",
-            ),
-            SchedulesParameters(
-                info="A matrix in the storage vector with operations to apply to schedules; a matrix of timeseries in ml vector",
+            TimeSeriesOutput(
+                name="TransmittedSolar",
+                key="OUTPUT:VARIABLE",
+                var_name="Zone Windows Total Transmitted Solar Radiation Energy",
+                freq="hourly",
+                store_output=False,
             ),
         ]
+        # multiply len by 2 because perim/core
+        self.sim_output_shape = (
+            len([series for series in self.timeseries_outputs if series.store_output])
+            * 2,
+            8760,
+        )
+
         self.storage_vec_len = 0
         self.ml_vec_len = 0
         self._key_ix_lookup = {}
@@ -692,10 +809,6 @@ class Schema:
                 storage_batch[:, start:end] = value
             else:
                 storage_batch[index, start:end] = value
-
-
-class Model:
-    __slots__ = ("design_vectors", "map")
 
 
 if __name__ == "__main__":
