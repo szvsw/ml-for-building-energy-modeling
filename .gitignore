@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 benchmark/cache/
+ml-for-bem/cache/
 ipynb/cache/
 credentials/*.json
 ml-for-bem/data/**/*.hdf5
