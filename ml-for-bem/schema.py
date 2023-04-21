@@ -282,6 +282,17 @@ class SchemaParameter:
             val: np.ndarray, unnormalized data
         """
         return val
+    
+    def clip(self, val):
+        """
+        Clip values to the input range if defined. 
+        This method does nothing, descendents should implement if needed.
+        Args:
+            val: np.ndarray, data to clip
+        Returns:
+            val: np.ndarray, clipped data
+        """
+        return val
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
@@ -302,12 +313,14 @@ class NumericParameter(SchemaParameter):
     to gain the ability to normalize/unnormalize
     """
 
-    __slots__ = ("min", "max", "range")
+    __slots__ = ("min", "max", "range", "mean", "std")
 
-    def __init__(self, min=0, max=1, **kwargs):
+    def __init__(self, min=0, max=1, mean=0.5, std=0.25, **kwargs):
         super().__init__(**kwargs)
-        self.min = min
-        self.max = max
+        self.min   = min
+        self.max   = max
+        self.mean  = mean
+        self.std   = std 
         self.range = self.max - self.min
 
     def normalize(self, value):
@@ -315,6 +328,17 @@ class NumericParameter(SchemaParameter):
 
     def unnormalize(self, value):
         return value * self.range + self.min
+
+    def clip(self, val):
+        """
+        Clip values to the input range if defined. 
+        This method does nothing, descendents should implement if needed.
+        Args:
+            val: np.ndarray, data to clip
+        Returns:
+            val: np.ndarray, clipped data
+        """
+        return np.clip(val, self.min, self.max)
 
 
 class OneHotParameter(SchemaParameter):
@@ -458,7 +482,6 @@ class Schema:
 
 
         # TODO:
-        # infiltration,
         # interior thermal mass,
         # windows - shgc, low-e, u-values,
         # schedules
@@ -501,6 +524,8 @@ class Schema:
                     name="width",
                     min=3,
                     max=12,
+                    mean=5,
+                    std=1,
                     source="battini_shoeboxing_2023",
                     info="Width [m]",
                 ),
@@ -508,6 +533,8 @@ class Schema:
                     name="height",
                     min=2.5,
                     max=6,
+                    mean=3,
+                    std=0.5,
                     source="ComStock",
                     info="Height [m]",
                 ),
@@ -515,13 +542,17 @@ class Schema:
                     name="facade_2_footprint",
                     min=0.01,
                     max=2,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Facade to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="perim_2_footprint",
                     min=0.01,
-                    max=0.5,
+                    max=1,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Perimeter to footprint ratio (unitless)",
                 ),
@@ -529,6 +560,8 @@ class Schema:
                     name="roof_2_footprint",
                     min=0.01,
                     max=1,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Roof to footprint ratio (unitless)",
                 ),
@@ -536,6 +569,8 @@ class Schema:
                     name="footprint_2_ground",
                     min=0.01,
                     max=1,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Footprint to ground ratio (unitless)",
                 ),
@@ -543,12 +578,16 @@ class Schema:
                     name="shading_fact",
                     min=0,
                     max=1,
+                    mean=0.1,
+                    std=0.33,
                     info="Shading fact (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="wwr",
                     min=0.05,
                     max=0.9,
+                    mean=0.3,
+                    std=0.25,
                     info="Window-to-wall Ratio (unitless)",
                 ),
                 ShoeboxOrientationParameter(
@@ -560,6 +599,8 @@ class Schema:
                     path="Loads.LightingPowerDensity",
                     min=0,
                     max=20,
+                    mean=10,
+                    std=6,
                     source="ComStock",
                     info="Lighting Power Density [W/m2]",
                 ),
@@ -568,6 +609,8 @@ class Schema:
                     path="Loads.EquipmentPowerDensity",
                     min=0.1,
                     max=30,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
+                    mean=10,
+                    std=6,
                     source="ComStock",
                     info="Equipment Power Density [W/m2]",
                 ),
@@ -576,14 +619,28 @@ class Schema:
                     path="Loads.PeopleDensity",
                     min=0,
                     max=2,
+                    mean=0.1,
+                    std=0.1,
                     source="ComStock",
                     info="People Density [people/m2]",
+                ),
+                BuildingTemplateParameter(
+                    name="Infiltration",
+                    path="Ventilation.Infiltration",
+                    min=0.1,
+                    max=4,
+                    mean=2,
+                    std=1,
+                    source="tacit",
+                    info="Infiltration rate [ach]",
                 ),
                 TMassParameter(
                     name="FacadeMass",
                     path="Facade",
                     min=5,
                     max=200,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior wall thermal mass (J/Km2)",
                 ),
@@ -592,6 +649,8 @@ class Schema:
                     path="Roof",
                     min=5,
                     max=200,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior roof thermal mass (J/Km2)",
                 ),
@@ -600,6 +659,8 @@ class Schema:
                     path="Partition",
                     min=5,
                     max=100,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/, tacit",
                     info="Interior partition thermal mass (J/Km2)",
                 ),
@@ -608,6 +669,8 @@ class Schema:
                     path="Slab",
                     min=5,
                     max=200,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior slab thermal mass (J/Km2)",
                 ),
@@ -616,6 +679,8 @@ class Schema:
                     path="Facade",
                     min=0.1,
                     max=15,
+                    mean=8,
+                    std=5,
                     source="ComStock, tacit knowledge",
                     info="Facade R-value",
                 ),
@@ -624,6 +689,8 @@ class Schema:
                     path="Roof",
                     min=0.1,
                     max=15,
+                    mean=8,
+                    std=5,
                     source="ComStock, tacit knowledge",
                     info="Roof R-value",
                 ),
@@ -632,6 +699,8 @@ class Schema:
                     path="Partition",
                     min=0.1,
                     max=10,
+                    mean=5,
+                    std=3,
                     source="Tacit knowledge",
                     info="Partition R-value",
                 ),
@@ -640,6 +709,8 @@ class Schema:
                     path="Slab",
                     min=0.1,
                     max=15,
+                    mean=8,
+                    std=3,
                     source="ComStock, tacit knowledge",
                     info="Slab R-value",
                 ),
@@ -760,6 +831,7 @@ class Schema:
             value: np.ndarray | float, n-dim, will be flattened and stored in the storage vector
         """
         parameter = self[parameter]
+        value = parameter.clip(value)
         start = parameter.start_storage
         end = start + parameter.len_storage
         if isinstance(value, np.ndarray):
@@ -780,6 +852,7 @@ class Schema:
             value: np.ndarray | float, n-dim, will be flattened and stored in the storage vector
         """
         parameter = self[parameter]
+        value = parameter.clip(value)
         start = parameter.start_storage
         end = start + parameter.len_storage
 
