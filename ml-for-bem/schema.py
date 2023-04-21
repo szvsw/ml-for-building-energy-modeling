@@ -23,10 +23,7 @@ class ShoeboxConfiguration:
         "roof_2_footprint",
         "footprint_2_ground",
         "shading_fact",
-        "wwr_n",
-        "wwr_e",
-        "wwr_s",
-        "wwr_w",
+        "wwr",
         "orientation",
     )
 
@@ -99,8 +96,8 @@ class WhiteboxSimulation:
         """
         Method for constructing the actual shoebox simulation object
         """
-        # TODO: implement wwr parser
-        wwr_map = {0: 0, 90: 0, 180: 1, 270: 0}  # N is 0, E is 90
+        # TODO: implement orientation rotator
+        wwr_map = {0: 0, 90: 0, 180: self.shoebox_config.wwr, 270: 0}  # N is 0, E is 90
         # Convert to coords
         width = self.shoebox_config.width
         depth = self.shoebox_config.height / self.shoebox_config.facade_2_footprint
@@ -144,13 +141,13 @@ class WhiteboxSimulation:
         for surface in sb.getsurfaces(surface_type="roof"):
             name = surface.Name
             name = name.replace("Roof", "Ceiling")
-            sb.add_adiabatic_to_surface(surface, name, self.shoebox_config.roof_2_footprint)
+            # sb.add_adiabatic_to_surface(surface, name, self.shoebox_config.roof_2_footprint)
         for surface in sb.getsurfaces(surface_type="floor"):
             name = surface.Name
             name = name.replace("Floor", "Int Floor")
-            sb.add_adiabatic_to_surface(
-                surface, name, self.shoebox_config.footprint_2_ground
-            )
+            # sb.add_adiabatic_to_surface(
+            #     surface, name, self.shoebox_config.footprint_2_ground
+            # )
         # Internal partition and glazing
         # Orientation
 
@@ -516,29 +513,29 @@ class Schema:
                 ),
                 ShoeboxGeometryParameter(
                     name="facade_2_footprint",
-                    min=0.5,
-                    max=5,
+                    min=0.01,
+                    max=2,
                     source="dogan_shoeboxer_2017",
                     info="Facade to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="perim_2_footprint",
-                    min=0,
-                    max=2,
+                    min=0.01,
+                    max=0.5,
                     source="dogan_shoeboxer_2017",
                     info="Perimeter to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="roof_2_footprint",
-                    min=0,
-                    max=1.5,
+                    min=0.01,
+                    max=1,
                     source="dogan_shoeboxer_2017",
                     info="Roof to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="footprint_2_ground",
-                    min=0,
-                    max=1.5,
+                    min=0.01,
+                    max=1,
                     source="dogan_shoeboxer_2017",
                     info="Footprint to ground ratio (unitless)",
                 ),
@@ -549,28 +546,10 @@ class Schema:
                     info="Shading fact (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="wwr_n",
-                    min=0,
-                    max=1,
-                    info="Window-to-wall Ratio, N (unitless)",
-                ),
-                ShoeboxGeometryParameter(
-                    name="wwr_e",
-                    min=0,
-                    max=1,
-                    info="Window-to-wall Ratio, E (unitless)",
-                ),
-                ShoeboxGeometryParameter(
-                    name="wwr_s",
-                    min=0,
-                    max=1,
-                    info="Window-to-wall Ratio, S (unitless)",
-                ),
-                ShoeboxGeometryParameter(
-                    name="wwr_w",
-                    min=0,
-                    max=1,
-                    info="Window-to-wall Ratio, W (unitless)",
+                    name="wwr",
+                    min=0.05,
+                    max=0.9,
+                    info="Window-to-wall Ratio (unitless)",
                 ),
                 ShoeboxOrientationParameter(
                     name="orientation",
