@@ -144,13 +144,13 @@ class WhiteboxSimulation:
         for surface in sb.getsurfaces(surface_type="roof"):
             name = surface.Name
             name = name.replace("Roof", "Ceiling")
-            # sb.add_adiabatic_to_surface(surface, name, zone_params["roof_2_ground"])
+            sb.add_adiabatic_to_surface(surface, name, self.shoebox_config.roof_2_footprint)
         for surface in sb.getsurfaces(surface_type="floor"):
             name = surface.Name
             name = name.replace("Floor", "Int Floor")
-            # sb.add_adiabatic_to_surface(
-            #     surface, name, zone_params["footprint_2_ground"]
-            # )
+            sb.add_adiabatic_to_surface(
+                surface, name, self.shoebox_config.footprint_2_ground
+            )
         # Internal partition and glazing
         # Orientation
 
@@ -459,6 +459,13 @@ class Schema:
         timeseries_outputs: List[TimeSeriesOutput] = None,
     ):
 
+
+        # TODO:
+        # infiltration,
+        # interior thermal mass,
+        # windows - shgc, low-e, u-values,
+        # schedules
+        # 
         if parameters != None:
             self.parameters = parameters
         else:
@@ -593,38 +600,6 @@ class Schema:
                     source="ComStock",
                     info="People Density [people/m2]",
                 ),
-                RValueParameter(
-                    name="FacadeRValue",
-                    path="Facade",
-                    min=0.1,
-                    max=15,
-                    source="ComStock, tacit knowledge",
-                    info="Facade R-value",
-                ),
-                RValueParameter(
-                    name="RoofRValue",
-                    path="Roof",
-                    min=0.1,
-                    max=15,
-                    source="ComStock, tacit knowledge",
-                    info="Roof R-value",
-                ),
-                RValueParameter(
-                    name="PartitionRValue",
-                    path="Partition",
-                    min=0.1,
-                    max=10,
-                    source="Tacit knowledge",
-                    info="Partition R-value",
-                ),
-                RValueParameter(
-                    name="SlabRValue",
-                    path="Slab",
-                    min=0.1,
-                    max=15,
-                    source="ComStock, tacit knowledge",
-                    info="Slab R-value",
-                ),
                 TMassParameter(
                     name="FacadeMass",
                     path="Facade",
@@ -656,6 +631,38 @@ class Schema:
                     max=200,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior slab thermal mass (J/Km2)",
+                ),
+                RValueParameter(
+                    name="FacadeRValue",
+                    path="Facade",
+                    min=0.1,
+                    max=15,
+                    source="ComStock, tacit knowledge",
+                    info="Facade R-value",
+                ),
+                RValueParameter(
+                    name="RoofRValue",
+                    path="Roof",
+                    min=0.1,
+                    max=15,
+                    source="ComStock, tacit knowledge",
+                    info="Roof R-value",
+                ),
+                RValueParameter(
+                    name="PartitionRValue",
+                    path="Partition",
+                    min=0.1,
+                    max=10,
+                    source="Tacit knowledge",
+                    info="Partition R-value",
+                ),
+                RValueParameter(
+                    name="SlabRValue",
+                    path="Slab",
+                    min=0.1,
+                    max=15,
+                    source="ComStock, tacit knowledge",
+                    info="Slab R-value",
                 ),
                 SchemaParameter(
                     name="schedules_seed",
