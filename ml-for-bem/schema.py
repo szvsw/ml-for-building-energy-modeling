@@ -282,10 +282,10 @@ class SchemaParameter:
             val: np.ndarray, unnormalized data
         """
         return val
-    
+
     def clip(self, val):
         """
-        Clip values to the input range if defined. 
+        Clip values to the input range if defined.
         This method does nothing, descendents should implement if needed.
         Args:
             val: np.ndarray, data to clip
@@ -317,10 +317,10 @@ class NumericParameter(SchemaParameter):
 
     def __init__(self, min=0, max=1, mean=0.5, std=0.25, **kwargs):
         super().__init__(**kwargs)
-        self.min   = min
-        self.max   = max
-        self.mean  = mean
-        self.std   = std 
+        self.min = min
+        self.max = max
+        self.mean = mean
+        self.std = std
         self.range = self.max - self.min
 
     def normalize(self, value):
@@ -331,7 +331,7 @@ class NumericParameter(SchemaParameter):
 
     def clip(self, val):
         """
-        Clip values to the input range if defined. 
+        Clip values to the input range if defined.
         This method does nothing, descendents should implement if needed.
         Args:
             val: np.ndarray, data to clip
@@ -480,12 +480,11 @@ class Schema:
         timeseries_outputs: List[TimeSeriesOutput] = None,
     ):
 
-
         # TODO:
         # interior thermal mass,
         # windows - shgc, low-e, u-values,
         # schedules
-        # 
+        #
         if parameters != None:
             self.parameters = parameters
         else:
