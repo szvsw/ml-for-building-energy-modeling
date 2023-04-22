@@ -48,10 +48,11 @@ operations = [
     "sin_1_freq",
     "sin_1_phase",
     "synthetic",
-    "on/off"
+    "on/off",
 ]
 
-op_indices = {name: i for i,name in enumerate(operations)}
+op_indices = {name: i for i, name in enumerate(operations)}
+
 
 def get_schedules(template, zones=template_zones, paths=schedule_paths):
     """
@@ -65,12 +66,13 @@ def get_schedules(template, zones=template_zones, paths=schedule_paths):
     """
     total_zones = len(zones)
     total_paths = len(paths)
-    total_scheds = total_zones*total_paths
-    scheds = np.zeros(shape=(total_scheds,8760))
-    for i,zone in enumerate(zones):
-        for j,path in enumerate(paths):
-            scheds[i*total_paths + j] = get_sched_values(template, [zone]+path)
+    total_scheds = total_zones * total_paths
+    scheds = np.zeros(shape=(total_scheds, 8760))
+    for i, zone in enumerate(zones):
+        for j, path in enumerate(paths):
+            scheds[i * total_paths + j] = get_sched_values(template, [zone] + path)
     return scheds
+
 
 def get_sched_values(template, path):
     """
@@ -84,12 +86,13 @@ def get_sched_values(template, path):
         schedule: an archetypal UmiSchedule
     """
     sched = reduce(lambda x, y: x[y], [template] + path)
-    assert 'fraction' in sched.Type.Name.lower()
+    assert "fraction" in sched.Type.Name.lower()
     return sched.all_values
+
 
 def mutate_timeseries(series, operations, seed):
     """
-    Takes in a matrix of time series and a matrix of operations to 
+    Takes in a matrix of time series and a matrix of operations to
     apply to the time series, along with a seed for reproducible randomization
 
     Args:
@@ -109,23 +112,23 @@ def mutate_timeseries(series, operations, seed):
     else:
         n = series.shape[0]
         n_series = 1
-    t_cycle = np.linspace(0, 2*np.pi, n)
+    t_cycle = np.linspace(0, 2 * np.pi, n)
     for i in range(n_series):
-        rev           = operations[i, op_indices["reverse"]]
-        roll          = operations[i, op_indices["roll"]]
-        invert        = operations[i, op_indices["invert"]]
-        scale         = operations[i, op_indices["scale"]]
-        bias          = operations[i, op_indices["bias"]]
-        noise         = operations[i, op_indices["noise"]]
+        rev = operations[i, op_indices["reverse"]]
+        roll = operations[i, op_indices["roll"]]
+        invert = operations[i, op_indices["invert"]]
+        scale = operations[i, op_indices["scale"]]
+        bias = operations[i, op_indices["bias"]]
+        noise = operations[i, op_indices["noise"]]
 
         sin_overwrite = operations[i, op_indices["sin_overwrite"]]
-        sin_bias      = operations[i, op_indices["sin_bias"]]
-        sin_0_amp     = operations[i, op_indices["sin_0_amp"]]
-        sin_0_freq    = operations[i, op_indices["sin_0_freq"]]
-        sin_0_phase   = operations[i, op_indices["sin_0_phase"]]
-        sin_1_amp     = operations[i, op_indices["sin_1_amp"]]
-        sin_1_freq    = operations[i, op_indices["sin_1_freq"]]
-        sin_1_phase   = operations[i, op_indices["sin_0_phase"]]
+        sin_bias = operations[i, op_indices["sin_bias"]]
+        sin_0_amp = operations[i, op_indices["sin_0_amp"]]
+        sin_0_freq = operations[i, op_indices["sin_0_freq"]]
+        sin_0_phase = operations[i, op_indices["sin_0_phase"]]
+        sin_1_amp = operations[i, op_indices["sin_1_amp"]]
+        sin_1_freq = operations[i, op_indices["sin_1_freq"]]
+        sin_1_phase = operations[i, op_indices["sin_0_phase"]]
 
         # TODO: Unimplemented
         synthetic = operations[i, op_indices["synthetic"]]
@@ -141,8 +144,8 @@ def mutate_timeseries(series, operations, seed):
 
         """Handle Inverting"""
         if invert == 1:
-            series[i] = 1-series[i]
-        
+            series[i] = 1 - series[i]
+
         """Handle Scaling"""
         series[i] *= scale
         series[i] = np.clip(series[i], 0, 1)
@@ -151,16 +154,19 @@ def mutate_timeseries(series, operations, seed):
         series[i] += bias
         series[i] = np.clip(series[i], 0, 1)
 
-
         """Handle Noise"""
-        series[i] += np.random.rand(n)*noise
+        series[i] += np.random.rand(n) * noise
         series[i] = np.clip(series[i], 0, 1)
 
         """Handle Sine"""
         if sin_overwrite == 1:
             series[i] = 0
 
-        series[i] += sin_0_amp * (0.5*np.sin(sin_0_freq*(t_cycle + sin_0_phase))+0.5) + sin_1_amp * (0.5*np.sin(sin_1_freq*(t_cycle + sin_1_phase))+0.5) + sin_bias
+        series[i] += (
+            sin_0_amp * (0.5 * np.sin(sin_0_freq * (t_cycle + sin_0_phase)) + 0.5)
+            + sin_1_amp * (0.5 * np.sin(sin_1_freq * (t_cycle + sin_1_phase)) + 0.5)
+            + sin_bias
+        )
         series[i] = np.clip(series[i], 0, 1)
 
         """Handle Consts"""
@@ -170,6 +176,7 @@ def mutate_timeseries(series, operations, seed):
             series[i] = np.zeros(n)
 
     return series
+
 
 def extract_schedules_from_flattened_vectors(vecs, start, n_schedules):
     """
@@ -182,16 +189,14 @@ def extract_schedules_from_flattened_vectors(vecs, start, n_schedules):
         scheds: (n_design_vectors, n_schedules, 8760) - a tensor with the schedules extracted
     """
     # TODO: change to torch
-    scheds = vecs[:,start:start+n_schedules*8760]
+    scheds = vecs[:, start : start + n_schedules * 8760]
     return scheds.reshape(-1, n_schedules, 8760)
-
-
 
 
 if __name__ == "__main__":
 
     # Open a template lib
-    template_path = os.path.join('benchmark/data', 'BostonTemplateLibrary.json')
+    template_path = os.path.join("benchmark/data", "BostonTemplateLibrary.json")
     templates = UmiTemplateLibrary.open(template_path)
 
     # Pick a template for testing
@@ -204,32 +209,36 @@ if __name__ == "__main__":
     # Paths to get in chosen zones
     paths = [
         ["Loads", "EquipmentAvailabilitySchedule"],
-        ["Loads", "LightsAvailabilitySchedule"]
+        ["Loads", "LightsAvailabilitySchedule"],
     ]
-    
+
     # Fetch schedules
-    scheds = get_schedules(template,zones=zones, paths=paths)
-    scheds_b = get_schedules(template,zones=zones, paths=paths) # get an alternate copy for testing some of the tensor ops
+    scheds = get_schedules(template, zones=zones, paths=paths)
+    scheds_b = get_schedules(
+        template, zones=zones, paths=paths
+    )  # get an alternate copy for testing some of the tensor ops
 
     # set a seed - this will be stored in the building's design vector
     seed = 42
 
     # mutate the time series
     res = mutate_timeseries(
-        series=scheds, 
-        operations=np.array([
-            [0, 0, 0, 1.0, 0.0, 0.00, 1, 0, 0.5, 1, 0, 0.25, 365, 0, 0, 0], 
-            [0, 0, 0, 0.0, 0.0, 1.00, 0, 0, 0.0, 0, 0, 0.0, 0.0, 0, 0, 0], 
-        ]),
-        seed=seed
+        series=scheds,
+        operations=np.array(
+            [
+                [0, 0, 0, 1.0, 0.0, 0.00, 1, 0, 0.5, 1, 0, 0.25, 365, 0, 0, 0],
+                [0, 0, 0, 0.0, 0.0, 1.00, 0, 0, 0.0, 0, 0, 0.0, 0.0, 0, 0, 0],
+            ]
+        ),
+        seed=seed,
     )
 
     # plut the mutations
     for i in range(scheds.shape[0]):
-        figs, axs = plt.subplots(1,2)
-        axs[0].plot(scheds[i, :7*24])
+        figs, axs = plt.subplots(1, 2)
+        axs[0].plot(scheds[i, : 7 * 24])
         plt.title("Original/Mutated")
-        axs[1].plot(res[i, :7*24])
+        axs[1].plot(res[i, : 7 * 24])
     plt.show()
 
     # create some dummy vectors
@@ -237,9 +246,16 @@ if __name__ == "__main__":
     dummy_end = np.zeros(100)
     # stack data into an array of flattened design vectors to replicate batch training
     # shape = (n_design_vectors, n_parameters_per_vector)
-    design_vectors = np.stack([np.concatenate([ dummy_start, scheds.flatten(), dummy_end]), np.concatenate([ dummy_start, scheds_b.flatten(), dummy_end])])
+    design_vectors = np.stack(
+        [
+            np.concatenate([dummy_start, scheds.flatten(), dummy_end]),
+            np.concatenate([dummy_start, scheds_b.flatten(), dummy_end]),
+        ]
+    )
     print(design_vectors.shape)
     # extract schedules from design vectors as tensor, similar to a multi-channel image, but in 1D (pytorch expects shape=(n_samples, channels, spatial_dimension))
     # shape = (n_design_vectors, n_schedules, 8760)
-    schedule_tensor = extract_schedules_from_flattened_vectors(design_vectors,start=100,n_schedules=2)
+    schedule_tensor = extract_schedules_from_flattened_vectors(
+        design_vectors, start=100, n_schedules=2
+    )
     print(schedule_tensor.shape)
