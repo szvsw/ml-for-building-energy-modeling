@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from functools import reduce
 
 from archetypal import UmiTemplateLibrary
-from archetypal.template import schedule
+from archetypal.template.schedule import UmiSchedule
 
 schedule_paths = [
     ["Loads", "EquipmentAvailabilitySchedule"],
@@ -177,6 +177,38 @@ def mutate_timeseries(series, operations, seed):
 
     return series
 
+def update_schedule_objects(template, timeseries, zones=template_zones, paths=schedule_paths, id=0):
+    """
+    This method takes in a template and a matrix of timeseries along with a map for where the the timeseries apply to.
+    It then creates new schedules and overwrites the old ones with the appropriate schedules.
+    This is to prevent shared schedules from creating a (deterministic) race condition.
+
+    Args:
+        template (archetypal BuildingTemplate): The building template to udpate
+        timeseries (np.ndarray): A matrix of timeseries to use (shape=(n_schedules,8760))
+        zones (List[str]): a list of zones to update
+        paths (List[List[str]]): a list of paths within those zones
+        id (int | str): an id to add to the unique names of the new schedules
+    Returns:
+        None
+    """
+    total_zones = len(zones)
+    total_paths = len(paths)
+    total_scheds = total_zones * total_paths
+    if total_scheds == 1:
+        assert timeseries.shape == (8760)
+    else:
+        assert timeseries.shape == (total_scheds, 8760)
+    for i,zone in enumerate(zones):
+        for j,path in enumerate(paths):
+            schedule_array = timeseries[i*total_paths + j]
+            name = ".".join([str(id), zone, *path])
+            new_schedule = UmiSchedule.from_values(Name=name, Values=schedule_array)
+            target_schedule_attr = path[-1]
+            parent_path = [template,  zone, *path]
+            parent_path = parent_path[:-1]
+            parent = reduce(lambda a,b: a[b], parent_path)
+            setattr(parent, target_schedule_attr, new_schedule)
 
 def extract_schedules_from_flattened_vectors(vecs, start, n_schedules):
     """

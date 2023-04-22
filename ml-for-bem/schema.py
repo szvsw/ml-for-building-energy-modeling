@@ -6,8 +6,10 @@ import pandas as pd
 
 from archetypal import UmiTemplateLibrary
 from archetypal.idfclass.sql import Sql
+from archetypal.template.schedule import UmiSchedule
 from pyumi.shoeboxer.shoebox import ShoeBox
-from schedules import schedule_paths, operations
+
+from schedules import schedule_paths, operations, get_schedules, mutate_timeseries, update_schedule_objects
 
 
 class ShoeboxConfiguration:
@@ -426,16 +428,32 @@ class SchedulesParameters(SchemaParameter):
     __slots__ = ()
     paths = schedule_paths
     operations = operations
+    op_indices = {operation: ix for ix,operation in enumerate(operations)}
 
     def __init__(self, **kwargs):
         super().__init__(
             name="schedules",
             dtype="matrix",
-            shape_storage=(len(schedule_paths), len(operations)),
-            shape_ml=(len(schedule_paths), 8760),
+            shape_storage=(len(self.paths), len(self.operations)),
+            shape_ml=(len(self.paths), 8760),
             **kwargs,
         )
+    
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        Mutate a template's schedules according to a deterministic sequence of operations stored in the 
+        storage vector
 
+        Args:
+            whitebox_sim (WhiteboxSimulation): the simulation object with template to configure.
+        """
+        # TODO: avoid double mutation of recycled schedule
+        seed = int(whitebox_sim.schema["schedules_seed"].extract_storage_values(whitebox_sim.storage_vector))
+        schedules = get_schedules(whitebox_sim.template, zones=["Core"], paths=self.paths)
+        operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
+        new_schedules = mutate_timeseries(schedules, operations_map, seed)
+        update_schedule_objects(whitebox_sim.template, timeseries=new_schedules, zones=["Core"], paths=self.paths, id=seed)
+        update_schedule_objects(whitebox_sim.template, timeseries=new_schedules, zones=["Perimeter"], paths=self.paths, id=seed)
 
 class TimeSeriesOutput:
     __slots__ = (
@@ -807,7 +825,11 @@ class Schema:
         Returns:
             storage_vector: np.ndarray, 1-dim, shape=(len(storage_vector))
         """
-        return np.zeros(shape=self.storage_vec_len)
+        empty_vec = np.zeros(shape=self.storage_vec_len)
+        schedules = self["schedules"].extract_storage_values(empty_vec)
+        schedules[:, SchedulesParameters.op_indices["scale"]] = 1
+        self.update_storage_vector(empty_vec, "schedules", schedules)
+        return empty_vec
 
     def generate_empty_storage_batch(self, n):
         """
@@ -818,7 +840,11 @@ class Schema:
         Returns:
             storage_batch: np.ndarray, 2-dim, shape=(n_vectors_in_batch, len(storage_vector))
         """
-        return np.zeros(shape=(n, self.storage_vec_len))
+        # TODO: implement schedule ops initializer
+        empty_tensor = np.zeros(shape=(n, self.storage_vec_len))
+        schedules = self["schedules"].extract_storage_values_batch(empty_tensor)
+        schedules[:, :, SchedulesParameters.op_indices["scale"]] = 1
+        return empty_tensor
 
     def update_storage_vector(self, storage_vector, parameter, value):
         """
