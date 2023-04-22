@@ -203,7 +203,7 @@ def update_schedule_objects(template, timeseries, zones=template_zones, paths=sc
         for j,path in enumerate(paths):
             schedule_array = timeseries[i*total_paths + j]
             name = ".".join([str(id), zone, *path])
-            new_schedule = UmiSchedule.from_values(Name=name, Values=schedule_array)
+            new_schedule = UmiSchedule.from_values(Name=name, Values=schedule_array).to_year_week_day()[0]
             target_schedule_attr = path[-1]
             parent_path = [template,  zone, *path]
             parent_path = parent_path[:-1]
