@@ -409,6 +409,7 @@ class BuildingTemplateParameter(NumericParameter):
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         Updates whitebox simulation's direct building template parameters.
+
         Args:
             whitebox_sim: WhiteboxSimulation
         """
@@ -427,9 +428,22 @@ class RValueParameter(BuildingTemplateParameter):
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
-        TODO: Implement
+        This method updates the simulation objects (archetypal template, shoebox config)
+        by extracting values for this parameter from the sim's storage vector and using this
+        parameter's logic to update the appropriate objects.
+        Updates whitebox simulation's r value parameter by inferring the insulation layer and updating its
+        thickness automaticaly.
+
+        Args:
+            whitebox_sim: WhiteboxSimulation
         """
-        pass
+        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        for zone in ["Perimeter", "Core"]:
+            zone_obj = getattr(whitebox_sim.template, zone)
+            constructions = zone_obj.Constructions
+            construction = getattr(constructions, self.path[0])
+            # TODO: make sure units are correct!!!
+            construction.r_value = value
 
 
 class TMassParameter(BuildingTemplateParameter):
