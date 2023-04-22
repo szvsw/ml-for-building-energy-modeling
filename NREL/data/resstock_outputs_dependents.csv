@@ -1,4 +1,4 @@
-Column1,output,dependencies,Column2,,,
+Column1,output,dependencies,selection,,,
 67,HVAC Heating Type,"['ASHRAE IECC Climate Zone 2004 - 2A Split', 'Heating Fuel', 'Vintage']",4,,0,no
 124,Window Areas,['Geometry Building Type Height'],0,,1,yes
 28,ASHRAE IECC Climate Zone 2004,[],3,,2,future
