@@ -10,6 +10,7 @@ def upload_to_bucket(blob_name, file_name):
     blob = bucket.blob(blob_name)
     blob.upload_from_filename(file_name)
 
+
 def download_from_bucket(blob_name, file_name):
     blob = bucket.blob(blob_name)
     blob.download_to_filename(file_name)

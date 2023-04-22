@@ -22,7 +22,8 @@ from schedules import (
     update_schedule_objects,
 )
 
-data_path= Path(os.path.dirname(os.path.abspath(__file__))) / "data" 
+data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
+
 
 class ShoeboxConfiguration:
     """
@@ -107,7 +108,9 @@ class WhiteboxSimulation:
         """
         # TODO: improve this to use a specific map rather than a globber
         cityidx = self.schema["base_epw"].extract_storage_values(self.storage_vector)
-        globber =data_path / "epws" / "city_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
+        globber = (
+            data_path / "epws" / "city_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
+        )
         files = glob(str(globber))
         self.epw_path = data_path / files[0]
 
