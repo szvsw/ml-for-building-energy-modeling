@@ -163,13 +163,15 @@ class WhiteboxSimulation:
         for surface in sb.getsurfaces(surface_type="roof"):
             name = surface.Name
             name = name.replace("Roof", "Ceiling")
-            # sb.add_adiabatic_to_surface(surface, name, self.shoebox_config.roof_2_footprint)
+            sb.add_adiabatic_to_surface(
+                surface, name, self.shoebox_config.roof_2_footprint
+            )
         for surface in sb.getsurfaces(surface_type="floor"):
             name = surface.Name
             name = name.replace("Floor", "Int Floor")
-            # sb.add_adiabatic_to_surface(
-            #     surface, name, self.shoebox_config.footprint_2_ground
-            # )
+            sb.add_adiabatic_to_surface(
+                surface, name, self.shoebox_config.footprint_2_ground
+            )
         # Internal partition and glazing
         # Orientation
 
