@@ -212,7 +212,6 @@ class SchemaParameter:
 
     __slots__ = (
         "name",
-        "target_object_key",
         "dtype",
         "start_storage",
         "start_ml",
@@ -232,13 +231,11 @@ class SchemaParameter:
         source=None,
         shape_storage=(1,),
         shape_ml=(1,),
-        target_object_key=None,
         dtype="scalar",
     ):
         self.name = name
         self.info = info
         self.source = source
-        self.target_object_key = target_object_key
         self.dtype = dtype
 
         self.shape_storage = shape_storage
@@ -577,6 +574,11 @@ class Schema:
                     dtype="index",
                     shape_ml=(0,),
                     info="Lookup index of EPW file to use.",
+                ),
+                OneHotParameter(
+                    name="program_type",
+                    count=8,
+                    info="Indicator of program type",
                 ),
                 ShoeboxGeometryParameter(
                     name="width",
