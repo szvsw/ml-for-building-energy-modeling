@@ -9,7 +9,13 @@ from archetypal.idfclass.sql import Sql
 from archetypal.template.schedule import UmiSchedule
 from pyumi.shoeboxer.shoebox import ShoeBox
 
-from schedules import schedule_paths, operations, get_schedules, mutate_timeseries, update_schedule_objects
+from schedules import (
+    schedule_paths,
+    operations,
+    get_schedules,
+    mutate_timeseries,
+    update_schedule_objects,
+)
 
 
 class ShoeboxConfiguration:
@@ -153,7 +159,7 @@ class WhiteboxSimulation:
         # Internal partition and glazing
         # Orientation
 
-        # todo - confirm that these do not need to be moved inside of simulate parallel process
+        # TODO: - confirm that these do not need to be moved inside of simulate parallel process
         outputs = [
             timeseries.to_output_dict() for timeseries in self.schema.timeseries_outputs
         ]
@@ -428,7 +434,7 @@ class SchedulesParameters(SchemaParameter):
     __slots__ = ()
     paths = schedule_paths
     operations = operations
-    op_indices = {operation: ix for ix,operation in enumerate(operations)}
+    op_indices = {operation: ix for ix, operation in enumerate(operations)}
 
     def __init__(self, **kwargs):
         super().__init__(
@@ -438,22 +444,41 @@ class SchedulesParameters(SchemaParameter):
             shape_ml=(len(self.paths), 8760),
             **kwargs,
         )
-    
+
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
-        Mutate a template's schedules according to a deterministic sequence of operations stored in the 
+        Mutate a template's schedules according to a deterministic sequence of operations stored in the
         storage vector
 
         Args:
             whitebox_sim (WhiteboxSimulation): the simulation object with template to configure.
         """
         # TODO: avoid double mutation of recycled schedule
-        seed = int(whitebox_sim.schema["schedules_seed"].extract_storage_values(whitebox_sim.storage_vector))
-        schedules = get_schedules(whitebox_sim.template, zones=["Core"], paths=self.paths)
+        seed = int(
+            whitebox_sim.schema["schedules_seed"].extract_storage_values(
+                whitebox_sim.storage_vector
+            )
+        )
+        schedules = get_schedules(
+            whitebox_sim.template, zones=["Core"], paths=self.paths
+        )
         operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
         new_schedules = mutate_timeseries(schedules, operations_map, seed)
-        update_schedule_objects(whitebox_sim.template, timeseries=new_schedules, zones=["Core"], paths=self.paths, id=seed)
-        update_schedule_objects(whitebox_sim.template, timeseries=new_schedules, zones=["Perimeter"], paths=self.paths, id=seed)
+        update_schedule_objects(
+            whitebox_sim.template,
+            timeseries=new_schedules,
+            zones=["Core"],
+            paths=self.paths,
+            id=seed,
+        )
+        update_schedule_objects(
+            whitebox_sim.template,
+            timeseries=new_schedules,
+            zones=["Perimeter"],
+            paths=self.paths,
+            id=seed,
+        )
+
 
 class TimeSeriesOutput:
     __slots__ = (

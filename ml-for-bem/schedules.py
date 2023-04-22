@@ -177,7 +177,10 @@ def mutate_timeseries(series, operations, seed):
 
     return series
 
-def update_schedule_objects(template, timeseries, zones=template_zones, paths=schedule_paths, id=0):
+
+def update_schedule_objects(
+    template, timeseries, zones=template_zones, paths=schedule_paths, id=0
+):
     """
     This method takes in a template and a matrix of timeseries along with a map for where the the timeseries apply to.
     It then creates new schedules and overwrites the old ones with the appropriate schedules.
@@ -199,16 +202,19 @@ def update_schedule_objects(template, timeseries, zones=template_zones, paths=sc
         assert timeseries.shape == (8760)
     else:
         assert timeseries.shape == (total_scheds, 8760)
-    for i,zone in enumerate(zones):
-        for j,path in enumerate(paths):
-            schedule_array = timeseries[i*total_paths + j]
+    for i, zone in enumerate(zones):
+        for j, path in enumerate(paths):
+            schedule_array = timeseries[i * total_paths + j]
             name = ".".join([str(id), zone, *path])
-            new_schedule = UmiSchedule.from_values(Name=name, Values=schedule_array).to_year_week_day()[0]
+            new_schedule = UmiSchedule.from_values(
+                Name=name, Values=schedule_array
+            ).to_year_week_day()[0]
             target_schedule_attr = path[-1]
-            parent_path = [template,  zone, *path]
+            parent_path = [template, zone, *path]
             parent_path = parent_path[:-1]
-            parent = reduce(lambda a,b: a[b], parent_path)
+            parent = reduce(lambda a, b: a[b], parent_path)
             setattr(parent, target_schedule_attr, new_schedule)
+
 
 def extract_schedules_from_flattened_vectors(vecs, start, n_schedules):
     """
