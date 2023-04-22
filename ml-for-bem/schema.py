@@ -6,8 +6,16 @@ import pandas as pd
 
 from archetypal import UmiTemplateLibrary
 from archetypal.idfclass.sql import Sql
+from archetypal.template.schedule import UmiSchedule
 from pyumi.shoeboxer.shoebox import ShoeBox
-from schedules import schedule_paths, operations
+
+from schedules import (
+    schedule_paths,
+    operations,
+    get_schedules,
+    mutate_timeseries,
+    update_schedule_objects,
+)
 
 
 class ShoeboxConfiguration:
@@ -151,7 +159,7 @@ class WhiteboxSimulation:
         # Internal partition and glazing
         # Orientation
 
-        # todo - confirm that these do not need to be moved inside of simulate parallel process
+        # TODO: - confirm that these do not need to be moved inside of simulate parallel process
         outputs = [
             timeseries.to_output_dict() for timeseries in self.schema.timeseries_outputs
         ]
@@ -283,6 +291,17 @@ class SchemaParameter:
         """
         return val
 
+    def clip(self, val):
+        """
+        Clip values to the input range if defined.
+        This method does nothing, descendents should implement if needed.
+        Args:
+            val: np.ndarray, data to clip
+        Returns:
+            val: np.ndarray, clipped data
+        """
+        return val
+
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
         This method updates the simulation objects (archetypal template, shoebox config)
@@ -302,12 +321,14 @@ class NumericParameter(SchemaParameter):
     to gain the ability to normalize/unnormalize
     """
 
-    __slots__ = ("min", "max", "range")
+    __slots__ = ("min", "max", "range", "mean", "std")
 
-    def __init__(self, min=0, max=1, **kwargs):
+    def __init__(self, min=0, max=1, mean=0.5, std=0.25, **kwargs):
         super().__init__(**kwargs)
         self.min = min
         self.max = max
+        self.mean = mean
+        self.std = std
         self.range = self.max - self.min
 
     def normalize(self, value):
@@ -315,6 +336,17 @@ class NumericParameter(SchemaParameter):
 
     def unnormalize(self, value):
         return value * self.range + self.min
+
+    def clip(self, val):
+        """
+        Clip values to the input range if defined.
+        This method does nothing, descendents should implement if needed.
+        Args:
+            val: np.ndarray, data to clip
+        Returns:
+            val: np.ndarray, clipped data
+        """
+        return np.clip(val, self.min, self.max)
 
 
 class OneHotParameter(SchemaParameter):
@@ -402,14 +434,49 @@ class SchedulesParameters(SchemaParameter):
     __slots__ = ()
     paths = schedule_paths
     operations = operations
+    op_indices = {operation: ix for ix, operation in enumerate(operations)}
 
     def __init__(self, **kwargs):
         super().__init__(
             name="schedules",
             dtype="matrix",
-            shape_storage=(len(schedule_paths), len(operations)),
-            shape_ml=(len(schedule_paths), 8760),
+            shape_storage=(len(self.paths), len(self.operations)),
+            shape_ml=(len(self.paths), 8760),
             **kwargs,
+        )
+
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        Mutate a template's schedules according to a deterministic sequence of operations stored in the
+        storage vector
+
+        Args:
+            whitebox_sim (WhiteboxSimulation): the simulation object with template to configure.
+        """
+        # TODO: avoid double mutation of recycled schedule
+        seed = int(
+            whitebox_sim.schema["schedules_seed"].extract_storage_values(
+                whitebox_sim.storage_vector
+            )
+        )
+        schedules = get_schedules(
+            whitebox_sim.template, zones=["Core"], paths=self.paths
+        )
+        operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
+        new_schedules = mutate_timeseries(schedules, operations_map, seed)
+        update_schedule_objects(
+            whitebox_sim.template,
+            timeseries=new_schedules,
+            zones=["Core"],
+            paths=self.paths,
+            id=seed,
+        )
+        update_schedule_objects(
+            whitebox_sim.template,
+            timeseries=new_schedules,
+            zones=["Perimeter"],
+            paths=self.paths,
+            id=seed,
         )
 
 
@@ -456,13 +523,11 @@ class Schema:
         timeseries_outputs: List[TimeSeriesOutput] = None,
     ):
 
-
         # TODO:
-        # infiltration,
         # interior thermal mass,
         # windows - shgc, low-e, u-values,
         # schedules
-        # 
+        #
         if parameters != None:
             self.parameters = parameters
         else:
@@ -501,6 +566,8 @@ class Schema:
                     name="width",
                     min=3,
                     max=12,
+                    mean=5,
+                    std=1,
                     source="battini_shoeboxing_2023",
                     info="Width [m]",
                 ),
@@ -508,6 +575,8 @@ class Schema:
                     name="height",
                     min=2.5,
                     max=6,
+                    mean=3,
+                    std=0.5,
                     source="ComStock",
                     info="Height [m]",
                 ),
@@ -515,13 +584,17 @@ class Schema:
                     name="facade_2_footprint",
                     min=0.01,
                     max=2,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Facade to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="perim_2_footprint",
                     min=0.01,
-                    max=0.5,
+                    max=1,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Perimeter to footprint ratio (unitless)",
                 ),
@@ -529,6 +602,8 @@ class Schema:
                     name="roof_2_footprint",
                     min=0.01,
                     max=1,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Roof to footprint ratio (unitless)",
                 ),
@@ -536,6 +611,8 @@ class Schema:
                     name="footprint_2_ground",
                     min=0.01,
                     max=1,
+                    mean=0.5,
+                    std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Footprint to ground ratio (unitless)",
                 ),
@@ -543,12 +620,16 @@ class Schema:
                     name="shading_fact",
                     min=0,
                     max=1,
+                    mean=0.1,
+                    std=0.33,
                     info="Shading fact (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="wwr",
                     min=0.05,
                     max=0.9,
+                    mean=0.3,
+                    std=0.25,
                     info="Window-to-wall Ratio (unitless)",
                 ),
                 ShoeboxOrientationParameter(
@@ -560,6 +641,8 @@ class Schema:
                     path="Loads.LightingPowerDensity",
                     min=0,
                     max=20,
+                    mean=10,
+                    std=6,
                     source="ComStock",
                     info="Lighting Power Density [W/m2]",
                 ),
@@ -568,6 +651,8 @@ class Schema:
                     path="Loads.EquipmentPowerDensity",
                     min=0.1,
                     max=30,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
+                    mean=10,
+                    std=6,
                     source="ComStock",
                     info="Equipment Power Density [W/m2]",
                 ),
@@ -576,14 +661,28 @@ class Schema:
                     path="Loads.PeopleDensity",
                     min=0,
                     max=2,
+                    mean=0.1,
+                    std=0.1,
                     source="ComStock",
                     info="People Density [people/m2]",
+                ),
+                BuildingTemplateParameter(
+                    name="Infiltration",
+                    path="Ventilation.Infiltration",
+                    min=0.1,
+                    max=4,
+                    mean=2,
+                    std=1,
+                    source="tacit",
+                    info="Infiltration rate [ach]",
                 ),
                 TMassParameter(
                     name="FacadeMass",
                     path="Facade",
                     min=5,
                     max=200,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior wall thermal mass (J/Km2)",
                 ),
@@ -592,6 +691,8 @@ class Schema:
                     path="Roof",
                     min=5,
                     max=200,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior roof thermal mass (J/Km2)",
                 ),
@@ -600,6 +701,8 @@ class Schema:
                     path="Partition",
                     min=5,
                     max=100,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/, tacit",
                     info="Interior partition thermal mass (J/Km2)",
                 ),
@@ -608,6 +711,8 @@ class Schema:
                     path="Slab",
                     min=5,
                     max=200,
+                    mean=30,
+                    std=30,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior slab thermal mass (J/Km2)",
                 ),
@@ -616,6 +721,8 @@ class Schema:
                     path="Facade",
                     min=0.1,
                     max=15,
+                    mean=8,
+                    std=5,
                     source="ComStock, tacit knowledge",
                     info="Facade R-value",
                 ),
@@ -624,6 +731,8 @@ class Schema:
                     path="Roof",
                     min=0.1,
                     max=15,
+                    mean=8,
+                    std=5,
                     source="ComStock, tacit knowledge",
                     info="Roof R-value",
                 ),
@@ -632,6 +741,8 @@ class Schema:
                     path="Partition",
                     min=0.1,
                     max=10,
+                    mean=5,
+                    std=3,
                     source="Tacit knowledge",
                     info="Partition R-value",
                 ),
@@ -640,6 +751,8 @@ class Schema:
                     path="Slab",
                     min=0.1,
                     max=15,
+                    mean=8,
+                    std=3,
                     source="ComStock, tacit knowledge",
                     info="Slab R-value",
                 ),
@@ -737,7 +850,11 @@ class Schema:
         Returns:
             storage_vector: np.ndarray, 1-dim, shape=(len(storage_vector))
         """
-        return np.zeros(shape=self.storage_vec_len)
+        empty_vec = np.zeros(shape=self.storage_vec_len)
+        schedules = self["schedules"].extract_storage_values(empty_vec)
+        schedules[:, SchedulesParameters.op_indices["scale"]] = 1
+        self.update_storage_vector(empty_vec, "schedules", schedules)
+        return empty_vec
 
     def generate_empty_storage_batch(self, n):
         """
@@ -748,7 +865,11 @@ class Schema:
         Returns:
             storage_batch: np.ndarray, 2-dim, shape=(n_vectors_in_batch, len(storage_vector))
         """
-        return np.zeros(shape=(n, self.storage_vec_len))
+        # TODO: implement schedule ops initializer
+        empty_tensor = np.zeros(shape=(n, self.storage_vec_len))
+        schedules = self["schedules"].extract_storage_values_batch(empty_tensor)
+        schedules[:, :, SchedulesParameters.op_indices["scale"]] = 1
+        return empty_tensor
 
     def update_storage_vector(self, storage_vector, parameter, value):
         """
@@ -760,6 +881,7 @@ class Schema:
             value: np.ndarray | float, n-dim, will be flattened and stored in the storage vector
         """
         parameter = self[parameter]
+        value = parameter.clip(value)
         start = parameter.start_storage
         end = start + parameter.len_storage
         if isinstance(value, np.ndarray):
@@ -780,6 +902,7 @@ class Schema:
             value: np.ndarray | float, n-dim, will be flattened and stored in the storage vector
         """
         parameter = self[parameter]
+        value = parameter.clip(value)
         start = parameter.start_storage
         end = start + parameter.len_storage
 
