@@ -133,3 +133,7 @@ ml-for-bem/cache/
 ipynb/cache/
 credentials/*.json
 ml-for-bem/data/**/*.hdf5
+pyumi/
+
+# Data
+NREL/data/ComStock/
