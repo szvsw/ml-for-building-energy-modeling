@@ -22,6 +22,8 @@ from schedules import (
     update_schedule_objects,
 )
 
+from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
+
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
 
 
@@ -82,18 +84,46 @@ class WhiteboxSimulation:
         """
         Method for loading a template based off id in storage vector.
         """
-        # TODO: for now defaulting to boston template library.
-        template_lib = self.schema["base_template_lib"].extract_storage_values(
+        template_lib_idx = self.schema["climate_zone"].extract_storage_values(
             self.storage_vector
         )
 
-        template_id = self.schema["base_template"].extract_storage_values(
+        template_lib_idx = int(template_lib_idx)
+
+        template_lib_path = data_path / "template_libs" / "cz_libs" / f"{CLIMATEZONES_LIST[template_lib_idx]}.json"
+
+        vintage = self.schema["vintage"].extract_storage_values(
             self.storage_vector
         )
 
-        # TODO: consider migrating away from independent loaders, but ensure there are no race conditions
-        lib = UmiTemplateLibrary.open("./data/template_libs/BostonTemplateLibrary.json")
-        self.template = lib.BuildingTemplates[int(template_id)]
+        vintage_idx = 0
+        if vintage < 1940:
+            pass
+        elif vintage < 1980:
+            vintage_idx = 1 
+        elif vintage < 2004:
+            vintage_idx = 2
+        else:
+            vintage_idx = 3
+
+        program_type = self.schema["program_type"].extract_storage_values(
+            self.storage_vector
+        )
+
+        template_idx =  len(RESTYPES)* vintage_idx + int(program_type)
+
+        """
+        0a - template library
+            single family, pre-1940
+            multi family pre 1940
+            multi big family pre 1940
+            multi bigger family pre 1940
+            single family pre 1980
+
+        """
+
+        lib = UmiTemplateLibrary.open(template_lib_path)
+        self.template = lib.BuildingTemplates[template_idx]
 
     def update_parameters(self):
         """
