@@ -1,4 +1,9 @@
+import os
+import json
+from glob import glob
+
 from functools import reduce
+from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -16,6 +21,8 @@ from schedules import (
     mutate_timeseries,
     update_schedule_objects,
 )
+
+data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
 
 
 class ShoeboxConfiguration:
@@ -96,9 +103,16 @@ class WhiteboxSimulation:
             parameter.mutate_simulation_object(self)
 
     def build_epw_path(self):
-        """Method for building the epw path"""
-        # TODO: implement, for now just defaults to montreal
-        self.epw_path = "./data/epws/CAN_PQ_Montreal.Intl.AP.716270_CWEC.epw"
+        """
+        Method for building the epw path
+        """
+        # TODO: improve this to use a specific map rather than a globber
+        cityidx = self.schema["base_epw"].extract_storage_values(self.storage_vector)
+        globber = (
+            data_path / "epws" / "city_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
+        )
+        files = glob(str(globber))
+        self.epw_path = data_path / files[0]
 
     def build_shoebox(self):
         """
@@ -149,13 +163,15 @@ class WhiteboxSimulation:
         for surface in sb.getsurfaces(surface_type="roof"):
             name = surface.Name
             name = name.replace("Roof", "Ceiling")
-            # sb.add_adiabatic_to_surface(surface, name, self.shoebox_config.roof_2_footprint)
+            sb.add_adiabatic_to_surface(
+                surface, name, self.shoebox_config.roof_2_footprint
+            )
         for surface in sb.getsurfaces(surface_type="floor"):
             name = surface.Name
             name = name.replace("Floor", "Int Floor")
-            # sb.add_adiabatic_to_surface(
-            #     surface, name, self.shoebox_config.footprint_2_ground
-            # )
+            sb.add_adiabatic_to_surface(
+                surface, name, self.shoebox_config.footprint_2_ground
+            )
         # Internal partition and glazing
         # Orientation
 
@@ -196,7 +212,6 @@ class SchemaParameter:
 
     __slots__ = (
         "name",
-        "target_object_key",
         "dtype",
         "start_storage",
         "start_ml",
@@ -216,13 +231,11 @@ class SchemaParameter:
         source=None,
         shape_storage=(1,),
         shape_ml=(1,),
-        target_object_key=None,
         dtype="scalar",
     ):
         self.name = name
         self.info = info
         self.source = source
-        self.target_object_key = target_object_key
         self.dtype = dtype
 
         self.shape_storage = shape_storage
@@ -396,6 +409,7 @@ class BuildingTemplateParameter(NumericParameter):
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         Updates whitebox simulation's direct building template parameters.
+
         Args:
             whitebox_sim: WhiteboxSimulation
         """
@@ -414,9 +428,22 @@ class RValueParameter(BuildingTemplateParameter):
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
-        TODO: Implement
+        This method updates the simulation objects (archetypal template, shoebox config)
+        by extracting values for this parameter from the sim's storage vector and using this
+        parameter's logic to update the appropriate objects.
+        Updates whitebox simulation's r value parameter by inferring the insulation layer and updating its
+        thickness automaticaly.
+
+        Args:
+            whitebox_sim: WhiteboxSimulation
         """
-        pass
+        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        for zone in ["Perimeter", "Core"]:
+            zone_obj = getattr(whitebox_sim.template, zone)
+            constructions = zone_obj.Constructions
+            construction = getattr(constructions, self.path[0])
+            # TODO: make sure units are correct!!!
+            construction.r_value = value
 
 
 class TMassParameter(BuildingTemplateParameter):
@@ -544,17 +571,29 @@ class Schema:
                     shape_ml=(0,),
                     info="variation_id of design",
                 ),
-                SchemaParameter(
-                    name="base_template_lib",
-                    dtype="index",
-                    shape_ml=(0,),
-                    info="Lookup index of template library to use.",
+                OneHotParameter(
+                    name="program_type",
+                    count=19,
+                    info="Indicator of program type",
                 ),
-                SchemaParameter(
-                    name="base_template",
-                    dtype="index",
-                    shape_ml=(0,),
-                    info="Lookup index of template to use.",
+                NumericParameter(
+                    name="vintage",
+                    info="The year of construction",
+                    min=1940,
+                    max=2020,
+                    mean=1980,
+                    std=20,
+                ),
+                OneHotParameter(
+                    name="has_electic_heating",
+                    count=1,
+                    info="Whether or not it has electric heating",
+                    shape_ml=(0,)
+                ),
+                OneHotParameter(
+                    name="climate_zone",
+                    count=15,
+                    info="Lookup index of template library to use.",
                 ),
                 SchemaParameter(
                     name="base_epw",
@@ -635,6 +674,56 @@ class Schema:
                 ShoeboxOrientationParameter(
                     name="orientation",
                     info="Shoebox Orientation",
+                ),
+                BuildingTemplateParameter(
+                    name="HeatingSetpoint",
+                    path="Conditioning.HeatingSetpoint",
+                    min=14,
+                    max=30,
+                    mean=21,
+                    std=4,
+                    info="Heating setpoint",
+                    shape_ml=(0,)
+                ),
+                BuildingTemplateParameter(
+                    name="CoolingSetpoint",
+                    path="Conditioning.CoolingSetpoint",
+                    min=14,
+                    max=30,
+                    mean=22,
+                    std=4,
+                    info="Cooling setpoint",
+                    shape_ml=(0,)
+                ),
+                BuildingTemplateParameter(
+                    name="HeatingCoeffOfPerf",
+                    path="Conditioning.HeatingCoeffOfPerf",
+                    min=0.9,
+                    max=5,
+                    mean=1,
+                    std=1,
+                    source="tacit",
+                    info="heating cop",
+                ),
+                BuildingTemplateParameter(
+                    name="CoolingCoeffOfPerf",
+                    path="Conditioning.CoolingCoeffOfPerf",
+                    min=2.5,
+                    max=5,
+                    mean=3,
+                    std=1,
+                    source="tacit",
+                    info="cooling cop",
+                ),
+                BuildingTemplateParameter(
+                    name="FlowRatePerFloorArea",
+                    path="DomesticHotWater.FlowRatePerFloorArea",
+                    min=0,
+                    max=0.002,
+                    mean=0.0005,
+                    std=0.0001,
+                    source="ComStock",
+                    info="Lighting Power Density [W/m2]",
                 ),
                 BuildingTemplateParameter(
                     name="LightingPowerDensity",
