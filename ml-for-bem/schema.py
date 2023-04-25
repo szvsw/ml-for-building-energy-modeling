@@ -14,6 +14,8 @@ from archetypal.idfclass.sql import Sql
 from archetypal.template.schedule import UmiSchedule
 from pyumi.shoeboxer.shoebox import ShoeBox
 
+from archetypal.template.constructions.window_construction import WindowConstruction
+
 from schedules import (
     schedule_paths,
     operations,
@@ -486,6 +488,54 @@ class TMassParameter(BuildingTemplateParameter):
         """
         pass
 
+class WindowParameter(NumericParameter):
+    def __init__(self, **kwargs):
+        super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
+        self.min = np.array(self.min)
+        self.max = np.array(self.max)
+    
+    def normalize(self, values):
+        # TODO:
+        pass
+
+    def unnormalize(self, value):
+        # TODO:
+        pass
+
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        """
+        This method updates the simulation objects (archetypal template, shoebox config)
+        by extracting values for this parameter from the sim's storage vector and using this
+        parameter's logic to update the appropriate objects.
+        Updates whitebox simulation's r value parameter by inferring the insulation layer and updating its
+        thickness automaticaly.
+
+        Args:
+            whitebox_sim: WhiteboxSimulation
+        """
+        # Get the var id and batch id for naming purposes
+        variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(whitebox_sim.storage_vector)
+        batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(whitebox_sim.storage_vector)
+
+        # get the three values for u/shgc/vlt
+        values = self.extract_storage_values(whitebox_sim.storage_vector)
+
+        # separate them
+        u_value = values[0]
+        shgc = values[1]
+        vlt = values[2]
+
+        # create a new single layer window that has the properties from special single layer material
+        window = WindowConstruction.from_shgc(
+            Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
+            solar_heat_gain_coefficient=shgc,
+            u_factor=u_value,
+            visible_transmittance=vlt
+        )
+
+        # Update the window
+        whitebox_sim.template.Windows.Construction = window
+
 
 class SchedulesParameters(SchemaParameter):
     __slots__ = ()
@@ -816,16 +866,6 @@ class Schema:
                     info="Exterior roof thermal mass (J/Km2)",
                 ),
                 TMassParameter(
-                    name="PartitionMass",
-                    path="Partition",
-                    min=5,
-                    max=100,
-                    mean=30,
-                    std=30,
-                    source="https://www.designingbuildings.co.uk/, tacit",
-                    info="Interior partition thermal mass (J/Km2)",
-                ),
-                TMassParameter(
                     name="SlabMass",
                     path="Slab",
                     min=5,
@@ -856,16 +896,6 @@ class Schema:
                     info="Roof R-value",
                 ),
                 RValueParameter(
-                    name="PartitionRValue",
-                    path="Partition",
-                    min=0.1,
-                    max=10,
-                    mean=5,
-                    std=3,
-                    source="Tacit knowledge",
-                    info="Partition R-value",
-                ),
-                RValueParameter(
                     name="SlabRValue",
                     path="Slab",
                     min=0.1,
@@ -874,6 +904,13 @@ class Schema:
                     std=3,
                     source="ComStock, tacit knowledge",
                     info="Slab R-value",
+                ),
+                WindowParameter(
+                    name="WindowSettings",
+                    min=(0.3,0.05,0.05),
+                    max=(7.0,0.99,0.99),
+                    source="climate studio",
+                    info="U-value (m2K/W), shgc, vlt"
                 ),
                 SchemaParameter(
                     name="schedules_seed",
