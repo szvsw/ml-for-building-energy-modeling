@@ -3,6 +3,7 @@
 # TODO: Cladding?
 
 import os
+from pathlib import Path
 import numpy as np
 
 from eppy.bunch_subclass import EpBunch
@@ -79,6 +80,7 @@ if __name__ == "__main__":
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "BostonTemplateLibrary.json"
     )
+    out_path = Path(os.path.split(template_path)[0]) / "constructions_lib.json"
 
     seed_template = UmiTemplateLibrary.open(template_path)
 
@@ -91,4 +93,7 @@ if __name__ == "__main__":
         GasMaterials=GasMaterials,
         GlazingMaterials=GlazingMaterials,
     )
+
     print(template.GlazingMaterials)
+
+    template.save(out_path)
