@@ -571,28 +571,35 @@ class Schema:
                     shape_ml=(0,),
                     info="variation_id of design",
                 ),
-                SchemaParameter(
-                    name="base_template_lib",
-                    dtype="index",
-                    shape_ml=(0,),
-                    info="Lookup index of template library to use.",
+                OneHotParameter(
+                    name="program_type",
+                    count=19,
+                    info="Indicator of program type",
                 ),
-                SchemaParameter(
-                    name="base_template",
-                    dtype="index",
-                    shape_ml=(0,),
-                    info="Lookup index of template to use.",
+                NumericParameter(
+                    name="vintage",
+                    info="The year of construction",
+                    min=1940,
+                    max=2020,
+                    mean=1980,
+                    std=20,
+                ),
+                OneHotParameter(
+                    name="has_electic_heating",
+                    count=1,
+                    info="Whether or not it has electric heating",
+                    shape_ml=(0,)
+                ),
+                OneHotParameter(
+                    name="climate_zone",
+                    count=15,
+                    info="Lookup index of template library to use.",
                 ),
                 SchemaParameter(
                     name="base_epw",
                     dtype="index",
                     shape_ml=(0,),
                     info="Lookup index of EPW file to use.",
-                ),
-                OneHotParameter(
-                    name="program_type",
-                    count=8,
-                    info="Indicator of program type",
                 ),
                 ShoeboxGeometryParameter(
                     name="width",
@@ -667,6 +674,56 @@ class Schema:
                 ShoeboxOrientationParameter(
                     name="orientation",
                     info="Shoebox Orientation",
+                ),
+                BuildingTemplateParameter(
+                    name="HeatingSetpoint",
+                    path="Conditioning.HeatingSetpoint",
+                    min=14,
+                    max=30,
+                    mean=21,
+                    std=4,
+                    info="Heating setpoint",
+                    shape_ml=(0,)
+                ),
+                BuildingTemplateParameter(
+                    name="CoolingSetpoint",
+                    path="Conditioning.CoolingSetpoint",
+                    min=14,
+                    max=30,
+                    mean=22,
+                    std=4,
+                    info="Cooling setpoint",
+                    shape_ml=(0,)
+                ),
+                BuildingTemplateParameter(
+                    name="HeatingCoeffOfPerf",
+                    path="Conditioning.HeatingCoeffOfPerf",
+                    min=0.9,
+                    max=5,
+                    mean=1,
+                    std=1,
+                    source="tacit",
+                    info="heating cop",
+                ),
+                BuildingTemplateParameter(
+                    name="CoolingCoeffOfPerf",
+                    path="Conditioning.CoolingCoeffOfPerf",
+                    min=2.5,
+                    max=5,
+                    mean=3,
+                    std=1,
+                    source="tacit",
+                    info="cooling cop",
+                ),
+                BuildingTemplateParameter(
+                    name="FlowRatePerFloorArea",
+                    path="DomesticHotWater.FlowRatePerFloorArea",
+                    min=0,
+                    max=0.002,
+                    mean=0.0005,
+                    std=0.0001,
+                    source="ComStock",
+                    info="Lighting Power Density [W/m2]",
                 ),
                 BuildingTemplateParameter(
                     name="LightingPowerDensity",
