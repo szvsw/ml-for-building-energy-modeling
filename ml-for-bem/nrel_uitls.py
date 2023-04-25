@@ -104,6 +104,8 @@ CLIMATEZONES = {
     "8A": 18,
 }
 
+CLIMATEZONES_LIST = list(CLIMATEZONES.keys())
+
 
 RESTYPES = {
     "Single-Family Detached": 0,
