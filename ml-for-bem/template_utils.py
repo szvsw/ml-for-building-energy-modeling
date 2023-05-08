@@ -570,7 +570,12 @@ class minimumTemplate(UmiTemplateLibrary):
             )
         self.save(
             path_or_buf=os.path.join(
-                os.getcwd(), "ml-for-bem", "data", "template_libs", name + ".json"
+                os.getcwd(),
+                "ml-for-bem",
+                "data",
+                "template_libs",
+                "cz_libs",
+                name + ".json",
             )
         )
 
