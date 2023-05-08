@@ -135,6 +135,6 @@ ml-for-bem/cache/
 ipynb/cache/
 credentials/*.json
 ml-for-bem/data/**/*.hdf5
-
-# Data
+ml-for-bem/data/epws/city_epws_indexed/**.epw
+ml-for-bem/data/epws/city_epws_indexed.zip
 NREL/data/ComStock/
