@@ -115,15 +115,15 @@ RESTYPES = {
 # TODO: replace numbers with archetypal template id
 WINDTYPES = {
     "Single, Clear, Metal": 0,
-    "Single, Clear, Non-metal": 1,
-    "Single, Clear, Metal, Exterior Clear Storm": 2,
-    "Single, Clear, Non-metal, Exterior Clear Storm": 3,
-    "Double, Clear, Metal, Air": 4,
-    "Double, Clear, Non-metal, Air": 5,
-    "Double, Clear, Metal, Air, Exterior Clear Storm": 6,
-    "Double, Clear, Non-metal, Air, Exterior Clear Storm": 7,
-    "Double, Low-E, Non-metal, Air, M-Gain": 8,
-    "Triple, Low-E, Non-metal, Air, L-Gain": 9,
+    "Single, Clear, Non-metal": 0,
+    "Single, Clear, Metal, Exterior Clear Storm": 1,
+    "Single, Clear, Non-metal, Exterior Clear Storm": 1,
+    "Double, Clear, Metal, Air": 1,
+    "Double, Clear, Non-metal, Air": 1,
+    "Double, Clear, Metal, Air, Exterior Clear Storm": 3,
+    "Double, Clear, Non-metal, Air, Exterior Clear Storm": 3,
+    "Double, Low-E, Non-metal, Air, M-Gain": 2,
+    "Triple, Low-E, Non-metal, Air, L-Gain": 4,
 }
 
 LIGHTTYPES = {
@@ -271,7 +271,7 @@ class ResStockConfiguration:
         i = columns.index(name)
         self.out[:, i] = data
 
-    def get_city_idx(self):
+    def get_city_idx(self):  # TODO: citymap.json
         c = self.samples.filter(regex="City").merge(
             self.cities, left_on="City", right_on="city", how="left"
         )
