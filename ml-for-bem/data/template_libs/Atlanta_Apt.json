@@ -1,648 +1,293 @@
 {
   "GasMaterials": [
     {
-      "$id": "1",
+      "$id": "2327796469568",
       "Category": "Gases",
       "Type": "AIR",
-      "Conductivity": 0.0,
+      "Conductivity": 0.024,
       "Cost": 0.0,
-      "Density": 0.0,
+      "Density": 1.2930656163292633,
       "EmbodiedCarbon": 0.0,
       "EmbodiedEnergy": 0.0,
-      "SubstitutionRatePattern": [],
-      "SubstitutionTimestep": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
       "TransportCarbon": 0.0,
       "TransportDistance": 0.0,
       "TransportEnergy": 0.0,
       "Comments": null,
       "DataSource": null,
       "Name": "AIR"
-    },
-    {
-      "$id": "2",
-      "Category": "Gases",
-      "Type": "ARGON",
-      "Conductivity": 0.0,
-      "Cost": 0.0,
-      "Density": 0.0,
-      "EmbodiedCarbon": 0.0,
-      "EmbodiedEnergy": 0.0,
-      "SubstitutionRatePattern": [],
-      "SubstitutionTimestep": 0.0,
-      "TransportCarbon": 0.0,
-      "TransportDistance": 0.0,
-      "TransportEnergy": 0.0,
-      "Comments": null,
-      "DataSource": null,
-      "Name": "ARGON"
-    },
-    {
-      "$id": "3",
-      "Category": "Gases",
-      "Type": "KRYPTON",
-      "Conductivity": 0.0,
-      "Cost": 0.0,
-      "Density": 0.0,
-      "EmbodiedCarbon": 0.0,
-      "EmbodiedEnergy": 0.0,
-      "SubstitutionRatePattern": [],
-      "SubstitutionTimestep": 0.0,
-      "TransportCarbon": 0.0,
-      "TransportDistance": 0.0,
-      "TransportEnergy": 0.0,
-      "Comments": null,
-      "DataSource": null,
-      "Name": "KRYPTON"
-    },
-    {
-      "$id": "4",
-      "Category": "Gases",
-      "Type": "XENON",
-      "Conductivity": 0.0,
-      "Cost": 0.0,
-      "Density": 0.0,
-      "EmbodiedCarbon": 0.0,
-      "EmbodiedEnergy": 0.0,
-      "SubstitutionRatePattern": [],
-      "SubstitutionTimestep": 0.0,
-      "TransportCarbon": 0.0,
-      "TransportDistance": 0.0,
-      "TransportEnergy": 0.0,
-      "Comments": null,
-      "DataSource": null,
-      "Name": "XENON"
-    },
-    {
-      "$id": "5",
-      "Category": "Gases",
-      "Type": "SF6",
-      "Conductivity": 0.0,
-      "Cost": 0.0,
-      "Density": 0.0,
-      "EmbodiedCarbon": 0.0,
-      "EmbodiedEnergy": 0.0,
-      "SubstitutionRatePattern": [],
-      "SubstitutionTimestep": 0.0,
-      "TransportCarbon": 0.0,
-      "TransportDistance": 0.0,
-      "TransportEnergy": 0.0,
-      "Comments": null,
-      "DataSource": null,
-      "Name": "SF6"
     }
   ],
   "GlazingMaterials": [
     {
-      "$id": "6",
+      "$id": "140272721139776",
       "DirtFactor": 1.0,
       "IREmissivityBack": 0.84,
       "IREmissivityFront": 0.84,
-      "IRTransmittance": 0.01,
-      "SolarReflectanceBack": 0.07,
-      "SolarReflectanceFront": 0.07,
-      "SolarTransmittance": 0.83,
-      "VisibleReflectanceBack": 0.08,
-      "VisibleReflectanceFront": 0.08,
-      "VisibleTransmittance": 0.89,
-      "Conductivity": 0.9,
+      "IRTransmittance": 0.0,
+      "SolarReflectanceBack": 0.57,
+      "SolarReflectanceFront": 0.57,
+      "SolarTransmittance": 0.21,
+      "VisibleReflectanceBack": 0.26,
+      "VisibleReflectanceFront": 0.17,
+      "VisibleTransmittance": 0.21,
+      "Conductivity": 0.12,
       "Cost": 0.0,
       "Density": 2500.0,
-      "EmbodiedCarbon": 5.06,
-      "EmbodiedEnergy": 96.1,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
       "SubstitutionRatePattern": [
-        0.2
+        1.0
       ],
-      "SubstitutionTimestep": 50.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
+      "SubstitutionTimestep": 0.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
       "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Glass_Clear_Metal"
-    },
-    {
-      "$id": "7",
-      "DirtFactor": 1.0,
-      "IREmissivityBack": 0.84,
-      "IREmissivityFront": 0.84,
-      "IRTransmittance": 0.01,
-      "SolarReflectanceBack": 0.43,
-      "SolarReflectanceFront": 0.27,
-      "SolarTransmittance": 0.11,
-      "VisibleReflectanceBack": 0.35,
-      "VisibleReflectanceFront": 0.31,
-      "VisibleTransmittance": 0.14,
-      "Conductivity": 0.9,
-      "Cost": 0.0,
-      "Density": 2500.0,
-      "EmbodiedCarbon": 5.06,
-      "EmbodiedEnergy": 96.1,
-      "SubstitutionRatePattern": [
-        0.2
-      ],
-      "SubstitutionTimestep": 50.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Glass_Clear_Fiberglass"
-    },
-    {
-      "$id": "8",
-      "DirtFactor": 1.0,
-      "IREmissivityBack": 0.84,
-      "IREmissivityFront": 0.84,
-      "IRTransmittance": 0.01,
-      "SolarReflectanceBack": 0.22,
-      "SolarReflectanceFront": 0.19,
-      "SolarTransmittance": 0.63,
-      "VisibleReflectanceBack": 0.08,
-      "VisibleReflectanceFront": 0.06,
-      "VisibleTransmittance": 0.85,
-      "Conductivity": 0.9,
-      "Cost": 0.0,
-      "Density": 2500.0,
-      "EmbodiedCarbon": 5.06,
-      "EmbodiedEnergy": 96.1,
-      "SubstitutionRatePattern": [
-        0.2
-      ],
-      "SubstitutionTimestep": 50.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Glass_Clear_LoE_Fiberglass"
+      "Comments": "Properties calculated from Simple Glazing System with SHGC=0.300, UFactor=2.612 and Tvis=0.212",
+      "DataSource": null,
+      "Name": "NonRes Fixed Assembly Window"
     }
   ],
   "OpaqueMaterials": [
     {
-      "$id": "9",
+      "$id": "140272713212688",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Smooth",
+      "SolarAbsorptance": 0.92,
+      "SpecificHeat": 830.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.92,
+      "Conductivity": 0.16,
+      "Cost": 0.0,
+      "Density": 784.9,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "1/2IN Gypsum"
+    },
+    {
+      "$id": "140272713213648",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "MediumRough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 836.8,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 0.049,
+      "Cost": 0.0,
+      "Density": 265.0,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "AtticFloor NonRes Insulation"
+    },
+    {
+      "$id": "140272821401296",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "VeryRough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 100.5,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.8,
+      "Conductivity": 0.02436,
+      "Cost": 0.0,
+      "Density": 1.275,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "CP02 CARPET PAD"
+    },
+    {
+      "$id": "140272821401056",
       "MoistureDiffusionResistance": 50.0,
       "Roughness": "Rough",
       "SolarAbsorptance": 0.7,
-      "SpecificHeat": 840.0,
+      "SpecificHeat": 836.8,
       "ThermalEmittance": 0.9,
       "VisibleAbsorptance": 0.7,
-      "Conductivity": 1.25,
+      "Conductivity": 1.311,
       "Cost": 0.0,
-      "Density": 880.0,
-      "EmbodiedCarbon": 0.08,
-      "EmbodiedEnergy": 0.71,
+      "Density": 2240.0,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 0.0,
       "SubstitutionRatePattern": [
-        0.2
+        1.0
       ],
-      "SubstitutionTimestep": 50.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
       "Category": "Uncategorized",
       "Comments": null,
-      "DataSource": "default",
-      "Name": "Concrete_Block_Light"
+      "DataSource": null,
+      "Name": "HW CONCRETE"
+    },
+    {
+      "$id": "140272821402496",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "MediumSmooth",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 418.4,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.3,
+      "Conductivity": 45.01,
+      "Cost": 0.0,
+      "Density": 7680.0,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "Metal Decking"
+    },
+    {
+      "$id": "140272821402016",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "VeryRough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 1460.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 0.16,
+      "Cost": 0.0,
+      "Density": 1121.0,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "Roof Membrane"
+    },
+    {
+      "$id": "140272821403216",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "MediumSmooth",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 1210.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 0.12,
+      "Cost": 0.0,
+      "Density": 540.0,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "Std Wood 6inch"
     },
     {
       "$id": "10",
       "MoistureDiffusionResistance": 50.0,
       "Roughness": "Rough",
-      "SolarAbsorptance": 0.7,
-      "SpecificHeat": 840.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.7,
-      "Conductivity": 1.77,
-      "Cost": 0.0,
-      "Density": 1900.0,
-      "EmbodiedCarbon": 0.08,
-      "EmbodiedEnergy": 0.71,
-      "SubstitutionRatePattern": [
-        0.2
-      ],
-      "SubstitutionTimestep": 50.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Concrete_Block_Heavy"
-    },
-    {
-      "$id": "11",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.7,
-      "SpecificHeat": 1000.0,
-      "ThermalEmittance": 0.01,
-      "VisibleAbsorptance": 0.7,
-      "Conductivity": 0.1,
-      "Cost": 0.0,
-      "Density": 1.2,
-      "EmbodiedCarbon": 0.0,
-      "EmbodiedEnergy": 0.0,
-      "SubstitutionRatePattern": [
-        1.0
-      ],
-      "SubstitutionTimestep": 100.0,
-      "TransportCarbon": 0.0,
-      "TransportDistance": 0.0,
-      "TransportEnergy": 0.0,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Air_Wall_3cm"
-    },
-    {
-      "$id": "12",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.7,
-      "SpecificHeat": 840.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.7,
-      "Conductivity": 1.75,
-      "Cost": 0.0,
-      "Density": 2400.0,
-      "EmbodiedCarbon": 0.24,
-      "EmbodiedEnergy": 2.12,
-      "SubstitutionRatePattern": [
-        1.0
-      ],
-      "SubstitutionTimestep": 100.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Concrete_Dense"
-    },
-    {
-      "$id": "13",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.7,
-      "SpecificHeat": 1040.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.7,
-      "Conductivity": 1.65,
-      "Cost": 0.0,
-      "Density": 2100.0,
-      "EmbodiedCarbon": 0.24,
-      "EmbodiedEnergy": 2.12,
-      "SubstitutionRatePattern": [
-        1.0
-      ],
-      "SubstitutionTimestep": 100.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Concrete_Light"
-    },
-    {
-      "$id": "14",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.6,
-      "SpecificHeat": 840.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.6,
-      "Conductivity": 0.16,
-      "Cost": 0.0,
-      "Density": 950.0,
-      "EmbodiedCarbon": 0.38,
-      "EmbodiedEnergy": 6.75,
-      "SubstitutionRatePattern": [
-        0.02,
-        0.1,
-        1.0
-      ],
-      "SubstitutionTimestep": 20.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Gypsum_Board"
-    },
-    {
-      "$id": "15",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.5,
-      "SpecificHeat": 920.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.5,
-      "Conductivity": 0.41,
-      "Cost": 0.0,
-      "Density": 1000.0,
-      "EmbodiedCarbon": 0.22,
-      "EmbodiedEnergy": 3.0,
-      "SubstitutionRatePattern": [
-        0.2
-      ],
-      "SubstitutionTimestep": 50.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Clay_Brick_H"
-    },
-    {
-      "$id": "16",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.7,
-      "SpecificHeat": 1000.0,
-      "ThermalEmittance": 0.01,
-      "VisibleAbsorptance": 0.7,
-      "Conductivity": 0.7,
-      "Cost": 0.0,
-      "Density": 1.2,
-      "EmbodiedCarbon": 0.0,
-      "EmbodiedEnergy": 0.0,
-      "SubstitutionRatePattern": [
-        1.0
-      ],
-      "SubstitutionTimestep": 100.0,
-      "TransportCarbon": 0.0,
-      "TransportDistance": 0.0,
-      "TransportEnergy": 0.0,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Air_Floor_15cm"
-    },
-    {
-      "$id": "17",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
       "SolarAbsorptance": 0.4,
-      "SpecificHeat": 840.0,
+      "SpecificHeat": 500.0,
       "ThermalEmittance": 0.9,
       "VisibleAbsorptance": 0.4,
-      "Conductivity": 0.8,
+      "Conductivity": 45.3,
       "Cost": 0.0,
-      "Density": 2243.0,
-      "EmbodiedCarbon": 0.59,
-      "EmbodiedEnergy": 9.0,
+      "Density": 7830.0,
+      "EmbodiedCarbon": 1.37,
+      "EmbodiedEnergy": 20.1,
       "SubstitutionRatePattern": [
-        0.5,
-        1.0
+        1
       ],
-      "SubstitutionTimestep": 20.0,
+      "SubstitutionTimestep": 100.0,
       "TransportCarbon": 0.067,
       "TransportDistance": 500.0,
       "TransportEnergy": 0.94,
       "Category": "Uncategorized",
       "Comments": null,
-      "DataSource": "default",
-      "Name": "Ceramic_Tile"
+      "DataSource": "BostonTemplateLibrary.json",
+      "Name": "Steel General"
     },
     {
-      "$id": "18",
+      "$id": "140272713212208",
       "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.6,
-      "SpecificHeat": 1200.0,
-      "ThermalEmittance": 0.6,
-      "VisibleAbsorptance": 0.6,
-      "Conductivity": 0.037,
-      "Cost": 0.0,
-      "Density": 40.0,
-      "EmbodiedCarbon": 2.7,
-      "EmbodiedEnergy": 86.4,
-      "SubstitutionRatePattern": [
-        0.02,
-        0.1,
-        1.0
-      ],
-      "SubstitutionTimestep": 20.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "XPS_Board"
-    },
-    {
-      "$id": "19",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.7,
-      "SpecificHeat": 1880.0,
+      "Roughness": "MediumSmooth",
+      "SolarAbsorptance": 0.78,
+      "SpecificHeat": 1210.0,
       "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.7,
+      "VisibleAbsorptance": 0.78,
       "Conductivity": 0.11,
       "Cost": 0.0,
-      "Density": 540.0,
-      "EmbodiedCarbon": 0.81,
-      "EmbodiedEnergy": 15.0,
-      "SubstitutionRatePattern": [
-        0.2
-      ],
-      "SubstitutionTimestep": 30.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Plywood_Board"
-    },
-    {
-      "$id": "20",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.6,
-      "SpecificHeat": 840.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.6,
-      "Conductivity": 0.043,
-      "Cost": 0.0,
-      "Density": 12.0,
-      "EmbodiedCarbon": 1.35,
-      "EmbodiedEnergy": 28.0,
-      "SubstitutionRatePattern": [
-        0.5
-      ],
-      "SubstitutionTimestep": 30.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 1000.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Fiberglass_Batts"
-    },
-    {
-      "$id": "21",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.6,
-      "SpecificHeat": 1200.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.6,
-      "Conductivity": 0.14,
-      "Cost": 0.0,
-      "Density": 650.0,
+      "Density": 544.6,
       "EmbodiedCarbon": 0.45,
-      "EmbodiedEnergy": 7.5,
-      "SubstitutionRatePattern": [
-        0.1,
-        0.1,
-        1.0
-      ],
-      "SubstitutionTimestep": 20.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Wood_Stud"
-    },
-    {
-      "$id": "22",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.6,
-      "SpecificHeat": 1630.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.6,
-      "Conductivity": 0.13,
-      "Cost": 0.0,
-      "Density": 496.0,
-      "EmbodiedCarbon": 0.45,
-      "EmbodiedEnergy": 7.5,
-      "SubstitutionRatePattern": [
-        0.1,
-        0.1,
-        1.0
-      ],
-      "SubstitutionTimestep": 20.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Softwood_General"
-    },
-    {
-      "$id": "23",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.6,
-      "SpecificHeat": 1260.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.6,
-      "Conductivity": 1.59,
-      "Cost": 0.0,
-      "Density": 1920.0,
-      "EmbodiedCarbon": 0.032,
-      "EmbodiedEnergy": 0.55,
-      "SubstitutionRatePattern": [
-        1.0
-      ],
-      "SubstitutionTimestep": 30.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Slate_Tile"
-    },
-    {
-      "$id": "24",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.6,
-      "SpecificHeat": 1300.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.6,
-      "Conductivity": 0.04,
-      "Cost": 0.0,
-      "Density": 592.0,
-      "EmbodiedCarbon": 0.47,
-      "EmbodiedEnergy": 7.8,
-      "SubstitutionRatePattern": [
-        1.0
-      ],
-      "SubstitutionTimestep": 30.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
-      "Category": "Uncategorized",
-      "Comments": null,
-      "DataSource": "default",
-      "Name": "Wood_Shingle"
-    },
-    {
-      "$id": "25",
-      "MoistureDiffusionResistance": 50.0,
-      "Roughness": "Rough",
-      "SolarAbsorptance": 0.7,
-      "SpecificHeat": 1000.0,
-      "ThermalEmittance": 0.9,
-      "VisibleAbsorptance": 0.7,
-      "Conductivity": 0.16,
-      "Cost": 0.0,
-      "Density": 1380.0,
-      "EmbodiedCarbon": 2.41,
-      "EmbodiedEnergy": 77.2,
+      "EmbodiedEnergy": 0.0,
       "SubstitutionRatePattern": [
         1.0
       ],
       "SubstitutionTimestep": 20.0,
-      "TransportCarbon": 0.067,
-      "TransportDistance": 500.0,
-      "TransportEnergy": 0.94,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
       "Category": "Uncategorized",
       "Comments": null,
-      "DataSource": "default",
-      "Name": "Vinyl_Cladding"
+      "DataSource": null,
+      "Name": "Wood Siding"
     }
   ],
   "OpaqueConstructions": [
     {
-      "$id": "26",
+      "$id": "140272711300416",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "140272821403216"
           },
-          "Thickness": 0.2
-        },
-        {
-          "Material": {
-            "$ref": "19"
-          },
-          "Thickness": 0.015
-        },
-        {
-          "Material": {
-            "$ref": "20"
-          },
-          "Thickness": 0.1
-        },
-        {
-          "Material": {
-            "$ref": "14"
-          },
-          "Thickness": 0.015
+          "Thickness": 0.15
         }
       ],
       "AssemblyCarbon": 0.0,
@@ -650,43 +295,89 @@
       "AssemblyEnergy": 0.0,
       "DisassemblyCarbon": 0.0,
       "DisassemblyEnergy": 0.0,
-      "Category": "Facade",
-      "Comments": "concrete, plywood, batt, gypsum",
-      "DataSource": "default",
-      "Name": "Heavy_Fac_Construction"
+      "Category": "Internal Mass",
+      "Comments": null,
+      "DataSource": "None",
+      "Name": "G SW Apartment Internal Mass"
     },
     {
-      "$id": "27",
+      "$id": "140272711300096",
       "Layers": [
         {
           "Material": {
-            "$ref": "25"
-          },
-          "Thickness": 0.003
-        },
-        {
-          "Material": {
-            "$ref": "19"
+            "$ref": "140272821402016"
           },
           "Thickness": 0.01
         },
         {
           "Material": {
-            "$ref": "21"
+            "$ref": "140272713213648"
           },
-          "Thickness": 0.015
+          "Thickness": 0.17
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "140272821402496"
           },
-          "Thickness": 0.1
+          "Thickness": 0.002
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Roof",
+      "Comments": null,
+      "DataSource": "None",
+      "Name": "IEAD Res Roof_3"
+    },
+    {
+      "$id": "140272711300256",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "140272821401296"
+          },
+          "Thickness": 0.005
         },
         {
           "Material": {
-            "$ref": "14"
+            "$ref": "140272821401056"
           },
-          "Thickness": 0.015
+          "Thickness": 0.102
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Slab",
+      "Comments": null,
+      "DataSource": "None",
+      "Name": "INT-FLOOR-UNDERSIDE_7"
+    },
+    {
+      "$id": "140272711299456",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "140272713212208"
+          },
+          "Thickness": 0.01
+        },
+        {
+          "Material": {
+            "$ref": "140272713213648"
+          },
+          "Thickness": 0.141
+        },
+        {
+          "Material": {
+            "$ref": "140272713212688"
+          },
+          "Thickness": 0.013
         }
       ],
       "AssemblyCarbon": 0.0,
@@ -695,20 +386,72 @@
       "DisassemblyCarbon": 0.0,
       "DisassemblyEnergy": 0.0,
       "Category": "Facade",
-      "Comments": "cladding, plywood, wood stud, batt, gypsum",
-      "DataSource": "default",
-      "Name": "Light_fac_Construction"
+      "Comments": null,
+      "DataSource": "None",
+      "Name": "Steel Frame Res Ext Wall"
+    },
+    {
+      "$id": "140272711299616",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "140272821401056"
+          },
+          "Thickness": 0.102
+        },
+        {
+          "Material": {
+            "$ref": "140272821401296"
+          },
+          "Thickness": 0.005
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Ground",
+      "Comments": null,
+      "DataSource": "None",
+      "Name": "ext-slab_12"
+    },
+    {
+      "$id": "140272711299776",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "140272713212688"
+          },
+          "Thickness": 0.013
+        },
+        {
+          "Material": {
+            "$ref": "140272713212688"
+          },
+          "Thickness": 0.013
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Partition",
+      "Comments": null,
+      "DataSource": "None",
+      "Name": "int-walls_18"
     }
   ],
   "WindowConstructions": [
     {
-      "$id": "28",
+      "$id": "140272711302976",
       "Layers": [
         {
           "Material": {
-            "$ref": "6"
+            "$ref": "140272721139776"
           },
-          "Thickness": 0.004
+          "Thickness": 0.024
         }
       ],
       "AssemblyCarbon": 0.0,
@@ -717,165 +460,341 @@
       "DisassemblyCarbon": 0.0,
       "DisassemblyEnergy": 0.0,
       "Category": "Single",
-      "Comments": "default",
-      "DataSource": "default",
-      "Name": "Single_Clear_Metal"
-    },
-    {
-      "$id": "29",
-      "Layers": [
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        },
-        {
-          "Material": {
-            "$ref": "1"
-          },
-          "Thickness": 0.006
-        },
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        }
-      ],
-      "AssemblyCarbon": 0.0,
-      "AssemblyCost": 0.0,
-      "AssemblyEnergy": 0.0,
-      "DisassemblyCarbon": 0.0,
-      "DisassemblyEnergy": 0.0,
-      "Category": "Double",
-      "Comments": "default",
-      "DataSource": "default",
-      "Name": "Double_Clear"
-    },
-    {
-      "$id": "30",
-      "Layers": [
-        {
-          "Material": {
-            "$ref": "8"
-          },
-          "Thickness": 0.003
-        },
-        {
-          "Material": {
-            "$ref": "1"
-          },
-          "Thickness": 0.006
-        },
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        }
-      ],
-      "AssemblyCarbon": 0.0,
-      "AssemblyCost": 0.0,
-      "AssemblyEnergy": 0.0,
-      "DisassemblyCarbon": 0.0,
-      "DisassemblyEnergy": 0.0,
-      "Category": "Double",
-      "Comments": "default",
-      "DataSource": "default",
-      "Name": "Double_LoE"
-    },
-    {
-      "$id": "31",
-      "Layers": [
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        },
-        {
-          "Material": {
-            "$ref": "1"
-          },
-          "Thickness": 0.006
-        },
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        },
-        {
-          "Material": {
-            "$ref": "1"
-          },
-          "Thickness": 0.006
-        },
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        }
-      ],
-      "AssemblyCarbon": 0.0,
-      "AssemblyCost": 0.0,
-      "AssemblyEnergy": 0.0,
-      "DisassemblyCarbon": 0.0,
-      "DisassemblyEnergy": 0.0,
-      "Category": "Double",
-      "Comments": "default",
-      "DataSource": "default",
-      "Name": "Triple_Clear"
-    },
-    {
-      "$id": "32",
-      "Layers": [
-        {
-          "Material": {
-            "$ref": "8"
-          },
-          "Thickness": 0.003
-        },
-        {
-          "Material": {
-            "$ref": "1"
-          },
-          "Thickness": 0.006
-        },
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        },
-        {
-          "Material": {
-            "$ref": "1"
-          },
-          "Thickness": 0.006
-        },
-        {
-          "Material": {
-            "$ref": "6"
-          },
-          "Thickness": 0.003
-        }
-      ],
-      "AssemblyCarbon": 0.0,
-      "AssemblyCost": 0.0,
-      "AssemblyEnergy": 0.0,
-      "DisassemblyCarbon": 0.0,
-      "DisassemblyEnergy": 0.0,
-      "Category": "Double",
-      "Comments": "default",
-      "DataSource": "default",
-      "Name": "Triple_LoE"
+      "Comments": null,
+      "DataSource": null,
+      "Name": "Window Res Operable"
     }
   ],
-  "StructureDefinitions": [],
+  "StructureDefinitions": [
+    {
+      "$id": "51",
+      "MassRatios": [
+        {
+          "HighLoadRatio": 305.0,
+          "Material": {
+            "$ref": "10"
+          },
+          "NormalRatio": 305.0
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "RefBldgStand-aloneRetailPre1980.idf",
+      "Name": "RefBldgStand-aloneRetailPre1980_StructureDefinition"
+    }
+  ],
   "DaySchedules": [
+    {
+      "$id": "140272711953984",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0.08,
+        0.04,
+        0.01,
+        0.01,
+        0.04,
+        0.27,
+        0.94,
+        1.0,
+        0.96,
+        0.84,
+        0.76,
+        0.61,
+        0.53,
+        0.47,
+        0.41,
+        0.47,
+        0.55,
+        0.73,
+        0.86,
+        0.82,
+        0.75,
+        0.61,
+        0.53,
+        0.29
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_APT_DHW_SCH_00"
+    },
+    {
+      "$id": "140272711954112",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0.08,
+        0.04,
+        0.01,
+        0.01,
+        0.04,
+        0.27,
+        0.94,
+        1.0,
+        0.96,
+        0.84,
+        0.76,
+        0.61,
+        0.53,
+        0.47,
+        0.41,
+        0.47,
+        0.55,
+        0.73,
+        0.86,
+        0.82,
+        0.75,
+        0.61,
+        0.53,
+        0.29
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_APT_DHW_SCH_00_1"
+    },
+    {
+      "$id": "140272711954240",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0.08,
+        0.04,
+        0.01,
+        0.01,
+        0.04,
+        0.27,
+        0.94,
+        1.0,
+        0.96,
+        0.84,
+        0.76,
+        0.61,
+        0.53,
+        0.47,
+        0.41,
+        0.47,
+        0.55,
+        0.73,
+        0.86,
+        0.82,
+        0.75,
+        0.61,
+        0.53,
+        0.29
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_APT_DHW_SCH_00_2"
+    },
+    {
+      "$id": "140272711950912",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0.08,
+        0.04,
+        0.01,
+        0.01,
+        0.04,
+        0.27,
+        0.94,
+        1.0,
+        0.96,
+        0.84,
+        0.76,
+        0.61,
+        0.53,
+        0.47,
+        0.41,
+        0.47,
+        0.55,
+        0.73,
+        0.86,
+        0.82,
+        0.75,
+        0.61,
+        0.53,
+        0.29
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_APT_DHW_SCH_00_3"
+    },
+    {
+      "$id": "140272712017344",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0.08,
+        0.04,
+        0.01,
+        0.01,
+        0.04,
+        0.27,
+        0.94,
+        1.0,
+        0.96,
+        0.84,
+        0.76,
+        0.61,
+        0.53,
+        0.47,
+        0.41,
+        0.47,
+        0.55,
+        0.73,
+        0.86,
+        0.82,
+        0.75,
+        0.61,
+        0.53,
+        0.29
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_APT_DHW_SCH_00_4"
+    },
+    {
+      "$id": "140272712017472",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0.08,
+        0.04,
+        0.01,
+        0.01,
+        0.04,
+        0.27,
+        0.94,
+        1.0,
+        0.96,
+        0.84,
+        0.76,
+        0.61,
+        0.53,
+        0.47,
+        0.41,
+        0.47,
+        0.55,
+        0.73,
+        0.86,
+        0.82,
+        0.75,
+        0.61,
+        0.53,
+        0.29
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_APT_DHW_SCH_00_5"
+    },
+    {
+      "$id": "140272712017600",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0.08,
+        0.04,
+        0.01,
+        0.01,
+        0.04,
+        0.27,
+        0.94,
+        1.0,
+        0.96,
+        0.84,
+        0.76,
+        0.61,
+        0.53,
+        0.47,
+        0.41,
+        0.47,
+        0.55,
+        0.73,
+        0.86,
+        0.82,
+        0.75,
+        0.61,
+        0.53,
+        0.29
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_APT_DHW_SCH_00_6"
+    },
+    {
+      "$id": "66",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "Comments": "Year Week Day schedules created from: \n- AlwaysOff: mean daily min:0.00 mean:0.00 max:0.00 ",
+      "DataSource": "RefBldgStand-aloneRetailPre1980.idf",
+      "Name": "d_AlwaysOff_000"
+    },
+    {
+      "$id": "67",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "Comments": "Year Week Day schedules created from: \n- AlwaysOn: mean daily min:1.00 mean:1.00 max:1.00 ",
+      "DataSource": "RefBldgStand-aloneRetailPre1980.idf",
+      "Name": "d_AlwaysOn_000"
+    },
     {
       "$id": "140272712016832",
       "Category": "Day",
@@ -908,7 +827,7 @@
       ],
       "Comments": null,
       "DataSource": null,
-      "Name": "d_Res_1"
+      "Name": "d_Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62_00"
     },
     {
       "$id": "140272712018752",
@@ -942,7 +861,7 @@
       ],
       "Comments": null,
       "DataSource": null,
-      "Name": "d_Res_2"
+      "Name": "d_Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62_00_1"
     },
     {
       "$id": "140272699894336",
@@ -976,7 +895,7 @@
       ],
       "Comments": null,
       "DataSource": null,
-      "Name": "d_Res_3"
+      "Name": "d_Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62_00_10"
     },
     {
       "$id": "140272712017984",
@@ -4687,283 +4606,97 @@
   ],
   "WeekSchedules": [
     {
-      "$id": "140272721197088",
+      "$id": "140271862218816",
       "Category": "Week",
       "Days": [
         {
-          "$ref": "140272711257024"
+          "$ref": "140272711953984"
         },
         {
-          "$ref": "140272711255616"
+          "$ref": "140272711954112"
         },
         {
-          "$ref": "140272711256128"
+          "$ref": "140272711954240"
         },
         {
-          "$ref": "140272711256768"
+          "$ref": "140272711950912"
         },
         {
-          "$ref": "140272711257152"
+          "$ref": "140272712017344"
         },
         {
-          "$ref": "140272711256512"
+          "$ref": "140272712017472"
         },
         {
-          "$ref": "140272711256384"
+          "$ref": "140272712017600"
         }
       ],
       "Type": "Fraction",
       "Comments": null,
       "DataSource": null,
-      "Name": "w_resScheds_1"
+      "Name": "w_APT_DHW_SCH_00"
     },
     {
-      "$id": "140272721195936",
+      "$id": "81",
       "Category": "Week",
       "Days": [
         {
-          "$ref": "140272711254848"
+          "$ref": "66"
         },
         {
-          "$ref": "140272711257408"
+          "$ref": "66"
         },
         {
-          "$ref": "140272711257664"
+          "$ref": "66"
         },
         {
-          "$ref": "140272711257920"
+          "$ref": "66"
         },
         {
-          "$ref": "140272711257792"
+          "$ref": "66"
         },
         {
-          "$ref": "140272711256256"
+          "$ref": "66"
         },
         {
-          "$ref": "140272711255360"
+          "$ref": "66"
         }
       ],
       "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_2"
+      "Comments": "Year Week Day schedules created from:\n- AlwaysOff: mean daily min:0.00 mean:0.00 max:0.00 ",
+      "DataSource": "RefBldgStand-aloneRetailPre1980.idf",
+      "Name": "w_AlwaysOff_1"
     },
     {
-      "$id": "140272721196512",
+      "$id": "85",
       "Category": "Week",
       "Days": [
         {
-          "$ref": "140272711254208"
+          "$ref": "67"
         },
         {
-          "$ref": "140272711254080"
+          "$ref": "67"
         },
         {
-          "$ref": "140272711196736"
+          "$ref": "67"
         },
         {
-          "$ref": "140272711196864"
+          "$ref": "67"
         },
         {
-          "$ref": "140272711196992"
+          "$ref": "67"
         },
         {
-          "$ref": "140272711197120"
+          "$ref": "67"
         },
         {
-          "$ref": "140272711197504"
+          "$ref": "67"
         }
       ],
       "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_3"
-    },
-    {
-      "$id": "140272721351872",
-      "Category": "Week",
-      "Days": [
-        {
-          "$ref": "140272711197760"
-        },
-        {
-          "$ref": "140272711198016"
-        },
-        {
-          "$ref": "140272711198144"
-        },
-        {
-          "$ref": "140272711198272"
-        },
-        {
-          "$ref": "140272711197632"
-        },
-        {
-          "$ref": "140272711198400"
-        },
-        {
-          "$ref": "140272711198528"
-        }
-      ],
-      "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_4"
-    },
-    {
-      "$id": "140272721195792",
-      "Category": "Week",
-      "Days": [
-        {
-          "$ref": "140272711956416"
-        },
-        {
-          "$ref": "140272711955392"
-        },
-        {
-          "$ref": "140272711956032"
-        },
-        {
-          "$ref": "140272711955904"
-        },
-        {
-          "$ref": "140272711956160"
-        },
-        {
-          "$ref": "140272711955776"
-        },
-        {
-          "$ref": "140272711954752"
-        }
-      ],
-      "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_5"
-    },
-    {
-      "$id": "140272721195072",
-      "Category": "Week",
-      "Days": [
-        {
-          "$ref": "140272711955008"
-        },
-        {
-          "$ref": "140272711956544"
-        },
-        {
-          "$ref": "140272711956672"
-        },
-        {
-          "$ref": "140272711956800"
-        },
-        {
-          "$ref": "140272711956928"
-        },
-        {
-          "$ref": "140272711957184"
-        },
-        {
-          "$ref": "140272711957312"
-        }
-      ],
-      "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_6"
-    },
-    {
-      "$id": "140271862221120",
-      "Category": "Week",
-      "Days": [
-        {
-          "$ref": "140272711957440"
-        },
-        {
-          "$ref": "140272711957824"
-        },
-        {
-          "$ref": "140272711957696"
-        },
-        {
-          "$ref": "140272711475520"
-        },
-        {
-          "$ref": "140272711475776"
-        },
-        {
-          "$ref": "140272711476032"
-        },
-        {
-          "$ref": "140272711476288"
-        }
-      ],
-      "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_7"
-    },
-    {
-      "$id": "140271862220256",
-      "Category": "Week",
-      "Days": [
-        {
-          "$ref": "140272711475648"
-        },
-        {
-          "$ref": "140272711098432"
-        },
-        {
-          "$ref": "140272711098560"
-        },
-        {
-          "$ref": "140272711098816"
-        },
-        {
-          "$ref": "140272711099072"
-        },
-        {
-          "$ref": "140272711098944"
-        },
-        {
-          "$ref": "140272711099200"
-        }
-      ],
-      "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_8"
-    },
-    {
-      "$id": "140271862219104",
-      "Category": "Week",
-      "Days": [
-        {
-          "$ref": "140272712016320"
-        },
-        {
-          "$ref": "140272712018624"
-        },
-        {
-          "$ref": "140272712016704"
-        },
-        {
-          "$ref": "140272712018880"
-        },
-        {
-          "$ref": "140272712016576"
-        },
-        {
-          "$ref": "140272712016832"
-        },
-        {
-          "$ref": "140272712018752"
-        }
-      ],
-      "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "w_resScheds_9"
+      "Comments": "Year Week Day schedules created from:\n- AlwaysOn: mean daily min:1.00 mean:1.00 max:1.00 ",
+      "DataSource": "RefBldgStand-aloneRetailPre1980.idf",
+      "Name": "w_AlwaysOn_1"
     },
     {
       "$id": "140271862220832",
@@ -4994,7 +4727,7 @@
       "Type": "Fraction",
       "Comments": null,
       "DataSource": null,
-      "Name": "w_resScheds_10"
+      "Name": "w_Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62_00"
     },
     {
       "$id": "140271862221408",
@@ -5025,7 +4758,7 @@
       "Type": "Fraction",
       "Comments": null,
       "DataSource": null,
-      "Name": "w_resScheds_11"
+      "Name": "w_Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62_01"
     },
     {
       "$id": "140271862222272",
@@ -5056,191 +4789,469 @@
       "Type": "Fraction",
       "Comments": null,
       "DataSource": null,
-      "Name": "w_resScheds_12"
+      "Name": "w_Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62_02"
+    },
+    {
+      "$id": "140271862219104",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272712016320"
+        },
+        {
+          "$ref": "140272712018624"
+        },
+        {
+          "$ref": "140272712016704"
+        },
+        {
+          "$ref": "140272712018880"
+        },
+        {
+          "$ref": "140272712016576"
+        },
+        {
+          "$ref": "140272712016832"
+        },
+        {
+          "$ref": "140272712018752"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62_03"
+    },
+    {
+      "$id": "140272721195072",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711955008"
+        },
+        {
+          "$ref": "140272711956544"
+        },
+        {
+          "$ref": "140272711956672"
+        },
+        {
+          "$ref": "140272711956800"
+        },
+        {
+          "$ref": "140272711956928"
+        },
+        {
+          "$ref": "140272711957184"
+        },
+        {
+          "$ref": "140272711957312"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_38bf70b31c275624806a652b28156f33_00"
+    },
+    {
+      "$id": "140271862221120",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711957440"
+        },
+        {
+          "$ref": "140272711957824"
+        },
+        {
+          "$ref": "140272711957696"
+        },
+        {
+          "$ref": "140272711475520"
+        },
+        {
+          "$ref": "140272711475776"
+        },
+        {
+          "$ref": "140272711476032"
+        },
+        {
+          "$ref": "140272711476288"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_38bf70b31c275624806a652b28156f33_01"
+    },
+    {
+      "$id": "140271862220256",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711475648"
+        },
+        {
+          "$ref": "140272711098432"
+        },
+        {
+          "$ref": "140272711098560"
+        },
+        {
+          "$ref": "140272711098816"
+        },
+        {
+          "$ref": "140272711099072"
+        },
+        {
+          "$ref": "140272711098944"
+        },
+        {
+          "$ref": "140272711099200"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_38bf70b31c275624806a652b28156f33_02"
+    },
+    {
+      "$id": "140272721195792",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711956416"
+        },
+        {
+          "$ref": "140272711955392"
+        },
+        {
+          "$ref": "140272711956032"
+        },
+        {
+          "$ref": "140272711955904"
+        },
+        {
+          "$ref": "140272711956160"
+        },
+        {
+          "$ref": "140272711955776"
+        },
+        {
+          "$ref": "140272711954752"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_38bf70b31c275624806a652b28156f33_03"
+    },
+    {
+      "$id": "140272721195936",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711254848"
+        },
+        {
+          "$ref": "140272711257408"
+        },
+        {
+          "$ref": "140272711257664"
+        },
+        {
+          "$ref": "140272711257920"
+        },
+        {
+          "$ref": "140272711257792"
+        },
+        {
+          "$ref": "140272711256256"
+        },
+        {
+          "$ref": "140272711255360"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_d9ea55dfde3d2cf29255a35e45c46b11_00"
+    },
+    {
+      "$id": "140272721196512",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711254208"
+        },
+        {
+          "$ref": "140272711254080"
+        },
+        {
+          "$ref": "140272711196736"
+        },
+        {
+          "$ref": "140272711196864"
+        },
+        {
+          "$ref": "140272711196992"
+        },
+        {
+          "$ref": "140272711197120"
+        },
+        {
+          "$ref": "140272711197504"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_d9ea55dfde3d2cf29255a35e45c46b11_01"
+    },
+    {
+      "$id": "140272721351872",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711197760"
+        },
+        {
+          "$ref": "140272711198016"
+        },
+        {
+          "$ref": "140272711198144"
+        },
+        {
+          "$ref": "140272711198272"
+        },
+        {
+          "$ref": "140272711197632"
+        },
+        {
+          "$ref": "140272711198400"
+        },
+        {
+          "$ref": "140272711198528"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_d9ea55dfde3d2cf29255a35e45c46b11_02"
+    },
+    {
+      "$id": "140272721197088",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272711257024"
+        },
+        {
+          "$ref": "140272711255616"
+        },
+        {
+          "$ref": "140272711256128"
+        },
+        {
+          "$ref": "140272711256768"
+        },
+        {
+          "$ref": "140272711257152"
+        },
+        {
+          "$ref": "140272711256512"
+        },
+        {
+          "$ref": "140272711256384"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_d9ea55dfde3d2cf29255a35e45c46b11_03"
+    },
+    {
+      "$id": "140271842119536",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272709638976"
+        },
+        {
+          "$ref": "140272709638848"
+        },
+        {
+          "$ref": "140272709638592"
+        },
+        {
+          "$ref": "140272709638336"
+        },
+        {
+          "$ref": "140272709638080"
+        },
+        {
+          "$ref": "140272709638208"
+        },
+        {
+          "$ref": "140272709637952"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_e7ec4ed65306c6ad7c5371fad82b1016_00"
+    },
+    {
+      "$id": "140271842139872",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272709637696"
+        },
+        {
+          "$ref": "140272709637184"
+        },
+        {
+          "$ref": "140272709636800"
+        },
+        {
+          "$ref": "140272709636928"
+        },
+        {
+          "$ref": "140272709637056"
+        },
+        {
+          "$ref": "140272709637440"
+        },
+        {
+          "$ref": "140272709636416"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_e7ec4ed65306c6ad7c5371fad82b1016_01"
+    },
+    {
+      "$id": "140271842136704",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272709636288"
+        },
+        {
+          "$ref": "140272709636672"
+        },
+        {
+          "$ref": "140272709636160"
+        },
+        {
+          "$ref": "140272709640000"
+        },
+        {
+          "$ref": "140272709639872"
+        },
+        {
+          "$ref": "140272721954752"
+        },
+        {
+          "$ref": "140272697812544"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_e7ec4ed65306c6ad7c5371fad82b1016_02"
+    },
+    {
+      "$id": "140271842139152",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "140272709639488"
+        },
+        {
+          "$ref": "140272093658944"
+        },
+        {
+          "$ref": "140272093658432"
+        },
+        {
+          "$ref": "140272093658176"
+        },
+        {
+          "$ref": "140272093658816"
+        },
+        {
+          "$ref": "140272093658688"
+        },
+        {
+          "$ref": "140272093658560"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_Combined_UmiSchedule_e7ec4ed65306c6ad7c5371fad82b1016_03"
     }
   ],
   "YearSchedules": [
     {
-      "$id": "140272710823360",
+      "$id": "140272712017856",
       "Category": "Year",
       "Parts": [
         {
           "FromDay": 1,
           "FromMonth": 1,
-          "ToDay": 18,
-          "ToMonth": 2,
-          "Schedule": {
-            "$ref": "140272721197088"
-          }
-        },
-        {
-          "FromDay": 19,
-          "FromMonth": 2,
-          "ToDay": 25,
-          "ToMonth": 2,
-          "Schedule": {
-            "$ref": "140272721195936"
-          }
-        },
-        {
-          "FromDay": 26,
-          "FromMonth": 2,
-          "ToDay": 1,
-          "ToMonth": 7,
-          "Schedule": {
-            "$ref": "140272721197088"
-          }
-        },
-        {
-          "FromDay": 2,
-          "FromMonth": 7,
-          "ToDay": 8,
-          "ToMonth": 7,
-          "Schedule": {
-            "$ref": "140272721196512"
-          }
-        },
-        {
-          "FromDay": 9,
-          "FromMonth": 7,
-          "ToDay": 2,
-          "ToMonth": 9,
-          "Schedule": {
-            "$ref": "140272721197088"
-          }
-        },
-        {
-          "FromDay": 3,
-          "FromMonth": 9,
-          "ToDay": 9,
-          "ToMonth": 9,
-          "Schedule": {
-            "$ref": "140272721195936"
-          }
-        },
-        {
-          "FromDay": 10,
-          "FromMonth": 9,
-          "ToDay": 18,
-          "ToMonth": 11,
-          "Schedule": {
-            "$ref": "140272721197088"
-          }
-        },
-        {
-          "FromDay": 19,
-          "FromMonth": 11,
-          "ToDay": 25,
-          "ToMonth": 11,
-          "Schedule": {
-            "$ref": "140272721351872"
-          }
-        },
-        {
-          "FromDay": 26,
-          "FromMonth": 11,
           "ToDay": 31,
           "ToMonth": 12,
           "Schedule": {
-            "$ref": "140272721197088"
+            "$ref": "140271862218816"
           }
         }
       ],
       "Type": "Fraction",
       "Comments": null,
       "DataSource": null,
-      "Name": "Res_Occ_Sched"
+      "Name": "APT_DHW_SCH"
     },
     {
-      "$id": "140272711254720",
+      "$id": "110",
       "Category": "Year",
       "Parts": [
         {
           "FromDay": 1,
           "FromMonth": 1,
-          "ToDay": 18,
-          "ToMonth": 2,
-          "Schedule": {
-            "$ref": "140272721195792"
-          }
-        },
-        {
-          "FromDay": 19,
-          "FromMonth": 2,
-          "ToDay": 25,
-          "ToMonth": 2,
-          "Schedule": {
-            "$ref": "140272721195072"
-          }
-        },
-        {
-          "FromDay": 26,
-          "FromMonth": 2,
-          "ToDay": 1,
-          "ToMonth": 7,
-          "Schedule": {
-            "$ref": "140272721195792"
-          }
-        },
-        {
-          "FromDay": 2,
-          "FromMonth": 7,
-          "ToDay": 8,
-          "ToMonth": 7,
-          "Schedule": {
-            "$ref": "140271862221120"
-          }
-        },
-        {
-          "FromDay": 9,
-          "FromMonth": 7,
-          "ToDay": 2,
-          "ToMonth": 9,
-          "Schedule": {
-            "$ref": "140272721195792"
-          }
-        },
-        {
-          "FromDay": 3,
-          "FromMonth": 9,
-          "ToDay": 9,
-          "ToMonth": 9,
-          "Schedule": {
-            "$ref": "140272721195072"
-          }
-        },
-        {
-          "FromDay": 10,
-          "FromMonth": 9,
-          "ToDay": 18,
-          "ToMonth": 11,
-          "Schedule": {
-            "$ref": "140272721195792"
-          }
-        },
-        {
-          "FromDay": 19,
-          "FromMonth": 11,
-          "ToDay": 25,
-          "ToMonth": 11,
-          "Schedule": {
-            "$ref": "140271862220256"
-          }
-        },
-        {
-          "FromDay": 26,
-          "FromMonth": 11,
           "ToDay": 31,
           "ToMonth": 12,
           "Schedule": {
-            "$ref": "140272721195792"
+            "$ref": "81"
           }
         }
       ],
       "Type": "Fraction",
-      "Comments": null,
-      "DataSource": null,
-      "Name": "Res_Lights_Sched"
+      "Comments": "Year Week Day schedules created from: \n- AlwaysOff: mean daily min:0.00 mean:0.00 max:0.00 ",
+      "DataSource": "RefBldgStand-aloneRetailPre1980.idf",
+      "Name": "AlwaysOff_1"
+    },
+    {
+      "$id": "114",
+      "Category": "Year",
+      "Parts": [
+        {
+          "FromDay": 1,
+          "FromMonth": 1,
+          "ToDay": 31,
+          "ToMonth": 12,
+          "Schedule": {
+            "$ref": "85"
+          }
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": "Year Week Day schedules created from: \n- AlwaysOn: mean daily min:1.00 mean:1.00 max:1.00 ",
+      "DataSource": "RefBldgStand-aloneRetailPre1980.idf",
+      "Name": "AlwaysOn_1"
     },
     {
       "$id": "140272711954880",
@@ -5331,15 +5342,514 @@
       "Type": "Fraction",
       "Comments": null,
       "DataSource": null,
-      "Name": "Res_Equip_Sched"
+      "Name": "Combined_UmiSchedule_204c940d355b96f902d3060ddfab9f62"
+    },
+    {
+      "$id": "140272711254720",
+      "Category": "Year",
+      "Parts": [
+        {
+          "FromDay": 1,
+          "FromMonth": 1,
+          "ToDay": 18,
+          "ToMonth": 2,
+          "Schedule": {
+            "$ref": "140272721195792"
+          }
+        },
+        {
+          "FromDay": 19,
+          "FromMonth": 2,
+          "ToDay": 25,
+          "ToMonth": 2,
+          "Schedule": {
+            "$ref": "140272721195072"
+          }
+        },
+        {
+          "FromDay": 26,
+          "FromMonth": 2,
+          "ToDay": 1,
+          "ToMonth": 7,
+          "Schedule": {
+            "$ref": "140272721195792"
+          }
+        },
+        {
+          "FromDay": 2,
+          "FromMonth": 7,
+          "ToDay": 8,
+          "ToMonth": 7,
+          "Schedule": {
+            "$ref": "140271862221120"
+          }
+        },
+        {
+          "FromDay": 9,
+          "FromMonth": 7,
+          "ToDay": 2,
+          "ToMonth": 9,
+          "Schedule": {
+            "$ref": "140272721195792"
+          }
+        },
+        {
+          "FromDay": 3,
+          "FromMonth": 9,
+          "ToDay": 9,
+          "ToMonth": 9,
+          "Schedule": {
+            "$ref": "140272721195072"
+          }
+        },
+        {
+          "FromDay": 10,
+          "FromMonth": 9,
+          "ToDay": 18,
+          "ToMonth": 11,
+          "Schedule": {
+            "$ref": "140272721195792"
+          }
+        },
+        {
+          "FromDay": 19,
+          "FromMonth": 11,
+          "ToDay": 25,
+          "ToMonth": 11,
+          "Schedule": {
+            "$ref": "140271862220256"
+          }
+        },
+        {
+          "FromDay": 26,
+          "FromMonth": 11,
+          "ToDay": 31,
+          "ToMonth": 12,
+          "Schedule": {
+            "$ref": "140272721195792"
+          }
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "Combined_UmiSchedule_38bf70b31c275624806a652b28156f33"
+    },
+    {
+      "$id": "140272710823360",
+      "Category": "Year",
+      "Parts": [
+        {
+          "FromDay": 1,
+          "FromMonth": 1,
+          "ToDay": 18,
+          "ToMonth": 2,
+          "Schedule": {
+            "$ref": "140272721197088"
+          }
+        },
+        {
+          "FromDay": 19,
+          "FromMonth": 2,
+          "ToDay": 25,
+          "ToMonth": 2,
+          "Schedule": {
+            "$ref": "140272721195936"
+          }
+        },
+        {
+          "FromDay": 26,
+          "FromMonth": 2,
+          "ToDay": 1,
+          "ToMonth": 7,
+          "Schedule": {
+            "$ref": "140272721197088"
+          }
+        },
+        {
+          "FromDay": 2,
+          "FromMonth": 7,
+          "ToDay": 8,
+          "ToMonth": 7,
+          "Schedule": {
+            "$ref": "140272721196512"
+          }
+        },
+        {
+          "FromDay": 9,
+          "FromMonth": 7,
+          "ToDay": 2,
+          "ToMonth": 9,
+          "Schedule": {
+            "$ref": "140272721197088"
+          }
+        },
+        {
+          "FromDay": 3,
+          "FromMonth": 9,
+          "ToDay": 9,
+          "ToMonth": 9,
+          "Schedule": {
+            "$ref": "140272721195936"
+          }
+        },
+        {
+          "FromDay": 10,
+          "FromMonth": 9,
+          "ToDay": 18,
+          "ToMonth": 11,
+          "Schedule": {
+            "$ref": "140272721197088"
+          }
+        },
+        {
+          "FromDay": 19,
+          "FromMonth": 11,
+          "ToDay": 25,
+          "ToMonth": 11,
+          "Schedule": {
+            "$ref": "140272721351872"
+          }
+        },
+        {
+          "FromDay": 26,
+          "FromMonth": 11,
+          "ToDay": 31,
+          "ToMonth": 12,
+          "Schedule": {
+            "$ref": "140272721197088"
+          }
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "Combined_UmiSchedule_d9ea55dfde3d2cf29255a35e45c46b11"
+    },
+    {
+      "$id": "140272702120768",
+      "Category": "Year",
+      "Parts": [
+        {
+          "FromDay": 1,
+          "FromMonth": 1,
+          "ToDay": 18,
+          "ToMonth": 2,
+          "Schedule": {
+            "$ref": "140271842139152"
+          }
+        },
+        {
+          "FromDay": 19,
+          "FromMonth": 2,
+          "ToDay": 25,
+          "ToMonth": 2,
+          "Schedule": {
+            "$ref": "140271842119536"
+          }
+        },
+        {
+          "FromDay": 26,
+          "FromMonth": 2,
+          "ToDay": 1,
+          "ToMonth": 7,
+          "Schedule": {
+            "$ref": "140271842139152"
+          }
+        },
+        {
+          "FromDay": 2,
+          "FromMonth": 7,
+          "ToDay": 8,
+          "ToMonth": 7,
+          "Schedule": {
+            "$ref": "140271842139872"
+          }
+        },
+        {
+          "FromDay": 9,
+          "FromMonth": 7,
+          "ToDay": 2,
+          "ToMonth": 9,
+          "Schedule": {
+            "$ref": "140271842139152"
+          }
+        },
+        {
+          "FromDay": 3,
+          "FromMonth": 9,
+          "ToDay": 9,
+          "ToMonth": 9,
+          "Schedule": {
+            "$ref": "140271842119536"
+          }
+        },
+        {
+          "FromDay": 10,
+          "FromMonth": 9,
+          "ToDay": 18,
+          "ToMonth": 11,
+          "Schedule": {
+            "$ref": "140271842139152"
+          }
+        },
+        {
+          "FromDay": 19,
+          "FromMonth": 11,
+          "ToDay": 25,
+          "ToMonth": 11,
+          "Schedule": {
+            "$ref": "140271842136704"
+          }
+        },
+        {
+          "FromDay": 26,
+          "FromMonth": 11,
+          "ToDay": 31,
+          "ToMonth": 12,
+          "Schedule": {
+            "$ref": "140271842139152"
+          }
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "Combined_UmiSchedule_e7ec4ed65306c6ad7c5371fad82b1016"
     }
   ],
-  "DomesticHotWaterSettings": [],
-  "VentilationSettings": [],
-  "ZoneConditionings": [],
-  "ZoneConstructionSets": [],
-  "ZoneLoads": [],
-  "Zones": [],
-  "BuildingTemplates": [],
-  "WindowSettings": []
+  "DomesticHotWaterSettings": [
+    {
+      "$id": "140271862219536",
+      "FlowRatePerFloorArea": 0.0001493,
+      "IsOn": true,
+      "WaterSchedule": {
+        "$ref": "140272712017856"
+      },
+      "WaterSupplyTemperature": 43.3,
+      "WaterTemperatureInlet": 0.1687,
+      "Category": "RefBldgMidriseApartmentNew2004_v1.4_7.2_8A_USA_AK_FAIRBANKS.idf",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "G SW Apartment_DHW"
+    }
+  ],
+  "VentilationSettings": [
+    {
+      "$id": "140272708530240",
+      "Afn": false,
+      "IsBuoyancyOn": false,
+      "Infiltration": 0.149,
+      "IsInfiltrationOn": true,
+      "IsNatVentOn": false,
+      "IsScheduledVentilationOn": false,
+      "NatVentMaxRelHumidity": 90.0,
+      "NatVentMaxOutdoorAirTemp": 30.0,
+      "NatVentMinOutdoorAirTemp": 0.0,
+      "NatVentSchedule": {
+        "$ref": "114"
+      },
+      "NatVentZoneTempSetpoint": 18.0,
+      "ScheduledVentilationAch": 0.0,
+      "ScheduledVentilationSchedule": {
+        "$ref": "110"
+      },
+      "ScheduledVentilationSetpoint": 18.0,
+      "IsWindOn": false,
+      "Category": "",
+      "Comments": "Object composed of a combination of these objects:\nM SE Apartment_VentilationSetting\n- T SE Apartment_VentilationSetting\n- Combined_VentilationSetting_8775524547791\n- M S1 Apartment_VentilationSetting\n- G S1 Apartment_VentilationSetting\n- Combined_VentilationSetting_8775500182472\n- T SW Apartment_VentilationSetting\n- Combined_VentilationSetting_8775524545326\n- M N2 Apartment_VentilationSetting\n- T NE Apartment_VentilationSetting\n- M N1 Apartment_VentilationSetting\n- T Corridor_VentilationSetting\n- G SW Apartment_VentilationSetting\n- Combined_VentilationSetting_8775500171317\n- Combined_VentilationSetting_8775500171401\n- T S1 Apartment_VentilationSetting\n- Combined_VentilationSetting_8775500171338\n- Combined_VentilationSetting_8775524538989\n- G N1 Apartment_VentilationSetting\n- Combined_VentilationSetting_8775524547644\n- G N2 Apartment_VentilationSetting\n- T N1 Apartment_VentilationSetting\n- G S2 Apartment_VentilationSetting\n- Combined_VentilationSetting_8775524547623\n- Combined_VentilationSetting_8775524545466\n- M S2 Apartment_VentilationSetting\n- T NW Apartment_VentilationSetting\n- G Corridor_VentilationSetting\n- Combined_VentilationSetting_8775524545382\n- M Corridor_VentilationSetting\n- Combined_VentilationSetting_8775500171345\n- Combined_VentilationSetting_8775524545312\n- Combined_VentilationSetting_8775524545522\n- M NW Apartment_VentilationSetting\n- Combined_VentilationSetting_8775524539129\n- T S2 Apartment_VentilationSetting\n- Combined_VentilationSetting_8775524547770\n- M SW Apartment_VentilationSetting\n- Combined_VentilationSetting_8775500171478\n- M NE Apartment_VentilationSetting\n- Combined_VentilationSetting_8775500171443\n- Combined_VentilationSetting_8775524538891\n- Combined_VentilationSetting_8775524539045\n- T N2 Apartment_VentilationSetting\n- Combined_VentilationSetting_8775524545431\n- Combined_VentilationSetting_8775500171485",
+      "DataSource": null,
+      "Name": "Combined_VentilationSetting_8775500185695"
+    }
+  ],
+  "ZoneConditionings": [
+    {
+      "$id": "140272720839328",
+      "CoolingSchedule": {
+        "$ref": "140272702120768"
+      },
+      "CoolingCoeffOfPerf": 3.7,
+      "CoolingSetpoint": 25.5,
+      "CoolingLimitType": 0,
+      "CoolingFuelType": 1,
+      "EconomizerType": 0,
+      "HeatingCoeffOfPerf": 0.77,
+      "HeatingLimitType": 0,
+      "HeatingFuelType": 2,
+      "HeatingSchedule": {
+        "$ref": "140272702120768"
+      },
+      "HeatingSetpoint": 20.6,
+      "HeatRecoveryEfficiencyLatent": 0.65,
+      "HeatRecoveryEfficiencySensible": 0.7,
+      "HeatRecoveryType": 0,
+      "IsCoolingOn": true,
+      "IsHeatingOn": true,
+      "IsMechVentOn": false,
+      "MaxCoolFlow": 100.0,
+      "MaxCoolingCapacity": 100.0,
+      "MaxHeatFlow": 100.0,
+      "MaxHeatingCapacity": 100.0,
+      "MechVentSchedule": {
+        "$ref": "114"
+      },
+      "MinFreshAirPerArea": 0.0,
+      "MinFreshAirPerPerson": 0.0,
+      "Category": "",
+      "Comments": "Object composed of a combination of these objects:\nG Corridor_ZoneConditioning\n- Combined_ZoneConditioning_8786174899628\n- Combined_ZoneConditioning_8786146446813\n- T SE Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786174899586\n- T SW Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146402420\n- Combined_ZoneConditioning_8786174925947\n- T NE Apartment_ZoneConditioning\n- G SW Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786174904797\n- Combined_ZoneConditioning_8786174899474\n- G N2 Apartment_ZoneConditioning\n- T S1 Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146402504\n- G S2 Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146446778\n- Combined_ZoneConditioning_8786174907108\n- Combined_ZoneConditioning_8786174926059\n- G NE Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146446659\n- Office_ZoneConditioning\n- G S1 Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146402539\n- Combined_ZoneConditioning_8786174906940\n- M Corridor_ZoneConditioning\n- Combined_ZoneConditioning_8786174899509\n- Combined_ZoneConditioning_8786146446799\n- Combined_ZoneConditioning_8786174926024\n- T N2 Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146402546\n- M SE Apartment_ZoneConditioning\n- M N2 Apartment_ZoneConditioning\n- T N1 Apartment_ZoneConditioning\n- M S2 Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146402448\n- M NE Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786174904769\n- M NW Apartment_ZoneConditioning\n- M SW Apartment_ZoneConditioning\n- Combined_ZoneConditioning_8786146402336\n- Combined_ZoneConditioning_8786174926010\n- Combined_ZoneConditioning_8786146402525\n- Combined_ZoneConditioning_8786146446631\n- T Corridor_ZoneConditioning\n- T NW Apartment_ZoneConditioning\n- G N1 Apartment_ZoneConditioning\n- T S2 Apartment_ZoneConditioning\n- M S1 Apartment_ZoneConditioning\n- M N1 Apartment_ZoneConditioning",
+      "DataSource": null,
+      "Name": "Combined_ZoneConditioning_8786174904741"
+    }
+  ],
+  "ZoneConstructionSets": [
+    {
+      "$id": "140272093627968",
+      "Facade": {
+        "$ref": "140272711299456"
+      },
+      "Ground": {
+        "$ref": "140272711299616"
+      },
+      "Partition": {
+        "$ref": "140272711299776"
+      },
+      "Roof": {
+        "$ref": "140272711300096"
+      },
+      "Slab": {
+        "$ref": "140272711300256"
+      },
+      "IsFacadeAdiabatic": false,
+      "IsGroundAdiabatic": false,
+      "IsPartitionAdiabatic": false,
+      "IsRoofAdiabatic": false,
+      "IsSlabAdiabatic": false,
+      "Category": "",
+      "Comments": "Object composed of a combination of these objects:\nCombined_ZoneConstructionSet_8775500171485\n- M N1 Apartment_ZoneConstructionSet\n- M SE Apartment_ZoneConstructionSet\n- M SW Apartment_ZoneConstructionSet\n- Combined_ZoneConstructionSet_8775524547644\n- M N2 Apartment_ZoneConstructionSet\n- Combined_ZoneConstructionSet_8775500171317\n- T SW Apartment_ZoneConstructionSet\n- M S1 Apartment_ZoneConstructionSet\n- Combined_ZoneConstructionSet_8775524547791\n- Combined_ZoneConstructionSet_8775500171478\n- Combined_ZoneConstructionSet_8775524547770\n- M S2 Apartment_ZoneConstructionSet\n- G SW Apartment_ZoneConstructionSet\n- M NE Apartment_ZoneConstructionSet\n- Combined_ZoneConstructionSet_8775500171443\n- M NW Apartment_ZoneConstructionSet\n- Combined_ZoneConstructionSet_8775524547623",
+      "DataSource": null,
+      "Name": "Combined_ZoneConstructionSet_8775524538989"
+    }
+  ],
+  "ZoneLoads": [
+    {
+      "$id": "140272110639200",
+      "DimmingType": 1,
+      "EquipmentAvailabilitySchedule": {
+        "$ref": "140272711954880"
+      },
+      "EquipmentPowerDensity": 12.6,
+      "IlluminanceTarget": 500.0,
+      "LightingPowerDensity": 4.29,
+      "LightsAvailabilitySchedule": {
+        "$ref": "140272711254720"
+      },
+      "OccupancySchedule": {
+        "$ref": "140272710823360"
+      },
+      "IsEquipmentOn": true,
+      "IsLightingOn": true,
+      "IsPeopleOn": true,
+      "PeopleDensity": 0.0281,
+      "Category": "",
+      "Comments": "Object composed of a combination of these objects:\nCombined_ZoneLoad_8775500171317\n- M NE Apartment_ZoneLoad\n- Combined_ZoneLoad_8775500182430\n- Combined_ZoneLoad_8775524538891\n- Combined_ZoneLoad_8775500171478\n- Combined_ZoneLoad_8775524547770\n- Combined_ZoneLoad_8775524547623\n- G N1 Apartment_ZoneLoad\n- Combined_ZoneLoad_8775500171485\n- M S1 Apartment_ZoneLoad\n- Combined_ZoneLoad_8775524545382\n- Combined_ZoneLoad_8775524516226\n- Office_ZoneLoad\n- Combined_ZoneLoad_8775500171345\n- Combined_ZoneLoad_8775500182472\n- Combined_ZoneLoad_8775524545522\n- M SW Apartment_ZoneLoad\n- Combined_ZoneLoad_8775500171338\n- G SW Apartment_ZoneLoad\n- T S1 Apartment_ZoneLoad\n- M SE Apartment_ZoneLoad\n- Combined_ZoneLoad_8775524545431\n- M N1 Apartment_ZoneLoad\n- T S2 Apartment_ZoneLoad\n- Combined_ZoneLoad_8775524539129\n- T SW Apartment_ZoneLoad\n- Combined_ZoneLoad_8775524547644\n- G S2 Apartment_ZoneLoad\n- G S1 Apartment_ZoneLoad\n- M N2 Apartment_ZoneLoad\n- T NE Apartment_ZoneLoad\n- M NW Apartment_ZoneLoad\n- G N2 Apartment_ZoneLoad\n- Combined_ZoneLoad_8775500171443\n- Combined_ZoneLoad_8775524538989\n- T NW Apartment_ZoneLoad\n- T N1 Apartment_ZoneLoad\n- Combined_ZoneLoad_8775524545312\n- T Corridor_ZoneLoad\n- Combined_ZoneLoad_8775500182486\n- Combined_ZoneLoad_8775524547791\n- Combined_ZoneLoad_8775524545466\n- Combined_ZoneLoad_8775500171401\n- T N2 Apartment_ZoneLoad\n- M S2 Apartment_ZoneLoad\n- Combined_ZoneLoad_8775524539045\n- Combined_ZoneLoad_8775524545326\n- M Corridor_ZoneLoad\n- G NE Apartment_ZoneLoad\n- G NW Apartment_ZoneLoad\n- T SE Apartment_ZoneLoad\n- G Corridor_ZoneLoad",
+      "DataSource": null,
+      "Name": "Combined_ZoneLoad_8775500185695"
+    }
+  ],
+  "Zones": [
+    {
+      "$id": "140272106271984",
+      "Conditioning": {
+        "$ref": "140272720839328"
+      },
+      "Constructions": {
+        "$ref": "140272093627968"
+      },
+      "DaylightMeshResolution": 1.0,
+      "DaylightWorkplaneHeight": 0.8,
+      "DomesticHotWater": {
+        "$ref": "140271862219536"
+      },
+      "InternalMassConstruction": {
+        "$ref": "140272711300416"
+      },
+      "InternalMassExposedPerFloorArea": 174.0,
+      "Loads": {
+        "$ref": "140272110639200"
+      },
+      "Ventilation": {
+        "$ref": "140272708530240"
+      },
+      "Category": "RefBldgMidriseApartmentNew2004_v1.4_7.2_3A_USA_GA_ATLANTA.idf",
+      "Comments": "Object composed of a combination of these objects:\nG SW Apartment\n- Combined_ZoneDefinition_8786146446778\n- M NE Apartment\n- Combined_ZoneDefinition_8786146402336\n- M NW Apartment\n- Combined_ZoneDefinition_8786146402539\n- Combined_ZoneDefinition_8786174925947\n- T SE Apartment\n- Combined_ZoneDefinition_8786146402448\n- Combined_ZoneDefinition_8786146402525\n- M S2 Apartment\n- Combined_ZoneDefinition_8786174899509\n- Combined_ZoneDefinition_8786174906940\n- Combined_ZoneDefinition_8786174904769\n- Office\n- T SW Apartment\n- Combined_ZoneDefinition_8786174907108\n- M N1 Apartment\n- M N2 Apartment\n- T NW Apartment\n- M SW Apartment\n- Combined_ZoneDefinition_8786174891706\n- M SE Apartment\n- T NE Apartment\n- Combined_ZoneDefinition_8786146402420\n- Combined_ZoneDefinition_8786174926010\n- G NW Apartment\n- Combined_ZoneDefinition_8786146402504\n- G S2 Apartment\n- Combined_ZoneDefinition_8786174904797\n- Combined_ZoneDefinition_8786174926059\n- Combined_ZoneDefinition_8786146446659\n- T S1 Apartment\n- Combined_ZoneDefinition_8786174899474\n- G N1 Apartment\n- M S1 Apartment\n- Combined_ZoneDefinition_8786174899628\n- Combined_ZoneDefinition_8786174926024\n- G S1 Apartment\n- M Corridor\n- G Corridor\n- T S2 Apartment\n- T N1 Apartment\n- G NE Apartment\n- Combined_ZoneDefinition_8786146446799\n- T Corridor\n- T N2 Apartment\n- Combined_ZoneDefinition_8786146446631\n- Combined_ZoneDefinition_8786146402546\n- Combined_ZoneDefinition_8786174899586\n- G N2 Apartment\n- Combined_ZoneDefinition_8786146446813",
+      "DataSource": null,
+      "Name": "RefBldgMidriseApartmentNew2004_v1.4_7.2_3A_USA_GA_ATLANTA_ZoneDefinition"
+    }
+  ],
+  "WindowSettings": [
+    {
+      "$id": "140272110051632",
+      "AfnDischargeC": 0.65,
+      "AfnTempSetpoint": 20.0,
+      "AfnWindowAvailability": {
+        "$ref": "110"
+      },
+      "Construction": {
+        "$ref": "140272711302976"
+      },
+      "IsShadingSystemOn": false,
+      "IsVirtualPartition": false,
+      "IsZoneMixingOn": false,
+      "OperableArea": 0.8,
+      "ShadingSystemAvailabilitySchedule": {
+        "$ref": "114"
+      },
+      "ShadingSystemSetpoint": 180.0,
+      "ShadingSystemTransmittance": 0.5,
+      "ShadingSystemType": 0,
+      "Type": 0,
+      "ZoneMixingAvailabilitySchedule": {
+        "$ref": "110"
+      },
+      "ZoneMixingDeltaTemperature": 2.0,
+      "ZoneMixingFlowRate": 0.001,
+      "Category": "RefBldgMidriseApartmentNew2004_v1.4_7.2_8A_USA_AK_FAIRBANKS.idf",
+      "Comments": null,
+      "DataSource": "RefBldgMidriseApartmentNew2004_v1.4_7.2_8A_USA_AK_FAIRBANKS.idf",
+      "Name": "GWindow1"
+    }
+  ],
+  "BuildingTemplates": [
+    {
+      "Core": {
+        "$ref": "140272106271984"
+      },
+      "Lifespan": 60,
+      "PartitionRatio": 0.35,
+      "Perimeter": {
+        "$ref": "140272106271984"
+      },
+      "Structure": {
+        "$ref": "51"
+      },
+      "Windows": {
+        "$ref": "140272110051632"
+      },
+      "Category": "Uncategorized",
+      "Comments": "WWR calculated for original model: \n         wall_area  window_area       wwr  wwr_rounded_%\nAzimuth                                                 \n180          564.8         83.2  0.147309             10\n270          206.2         31.2  0.151309             20\n0            564.8         83.2  0.147309             10\n90           206.2         33.4  0.161979             20\nwhere East=90, South=180, West=270, North=0\n",
+      "DataSource": null,
+      "Name": "RefBldgMidriseApartmentNew2004_v1.4_7.2_3A_USA_GA_ATLANTA",
+      "YearFrom": null,
+      "YearTo": null,
+      "Country": [
+        "USA"
+      ],
+      "ClimateZone": [
+        "3A"
+      ],
+      "Authors": [],
+      "AuthorEmails": [],
+      "Version": "v1.0"
+    }
+  ]
 }
