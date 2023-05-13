@@ -377,6 +377,9 @@ class NumericParameter(SchemaParameter):
         self.max = max
         self.mean = mean
         self.std = std
+        print(self.info)
+        print(self.max)
+        print(self.min)
         self.range = self.max - self.min
 
     def normalize(self, value):
@@ -493,10 +496,11 @@ class TMassParameter(BuildingTemplateParameter):
 
 
 class WindowParameter(NumericParameter):
-    def __init__(self, **kwargs):
+    def __init__(self, min, max, **kwargs):
         super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
-        self.min = np.array(self.min)
-        self.max = np.array(self.max)
+        self.min = np.array(min)
+        self.max = np.array(min)
+        self.range = self.max-self.min
 
     def normalize(self, values):
         # TODO:
