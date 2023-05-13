@@ -377,9 +377,6 @@ class NumericParameter(SchemaParameter):
         self.max = max
         self.mean = mean
         self.std = std
-        print(self.info)
-        print(self.max)
-        print(self.min)
         self.range = self.max - self.min
 
     def normalize(self, value):
