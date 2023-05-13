@@ -500,7 +500,7 @@ class WindowParameter(NumericParameter):
         super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
         self.min = np.array(min)
         self.max = np.array(min)
-        self.range = self.max-self.min
+        self.range = self.max - self.min
 
     def normalize(self, values):
         # TODO:
