@@ -1,0 +1,889 @@
+{
+  "GasMaterials": [
+    {
+      "$id": "1",
+      "Category": "Gases",
+      "Type": "AIR",
+      "Conductivity": 0.0,
+      "Cost": 0.0,
+      "Density": 0.0,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [],
+      "SubstitutionTimestep": 0.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Comments": null,
+      "DataSource": null,
+      "Name": "AIR"
+    },
+    {
+      "$id": "2",
+      "Category": "Gases",
+      "Type": "ARGON",
+      "Conductivity": 0.0,
+      "Cost": 0.0,
+      "Density": 0.0,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [],
+      "SubstitutionTimestep": 0.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Comments": null,
+      "DataSource": null,
+      "Name": "ARGON"
+    },
+    {
+      "$id": "3",
+      "Category": "Gases",
+      "Type": "KRYPTON",
+      "Conductivity": 0.0,
+      "Cost": 0.0,
+      "Density": 0.0,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [],
+      "SubstitutionTimestep": 0.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Comments": null,
+      "DataSource": null,
+      "Name": "KRYPTON"
+    },
+    {
+      "$id": "4",
+      "Category": "Gases",
+      "Type": "XENON",
+      "Conductivity": 0.0,
+      "Cost": 0.0,
+      "Density": 0.0,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [],
+      "SubstitutionTimestep": 0.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Comments": null,
+      "DataSource": null,
+      "Name": "XENON"
+    },
+    {
+      "$id": "5",
+      "Category": "Gases",
+      "Type": "SF6",
+      "Conductivity": 0.0,
+      "Cost": 0.0,
+      "Density": 0.0,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [],
+      "SubstitutionTimestep": 0.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Comments": null,
+      "DataSource": null,
+      "Name": "SF6"
+    }
+  ],
+  "GlazingMaterials": [
+    {
+      "$id": "6",
+      "DirtFactor": 1.0,
+      "IREmissivityBack": 0.84,
+      "IREmissivityFront": 0.84,
+      "IRTransmittance": 0.01,
+      "SolarReflectanceBack": 0.07,
+      "SolarReflectanceFront": 0.07,
+      "SolarTransmittance": 0.83,
+      "VisibleReflectanceBack": 0.08,
+      "VisibleReflectanceFront": 0.08,
+      "VisibleTransmittance": 0.89,
+      "Conductivity": 0.9,
+      "Cost": 0.0,
+      "Density": 2500.0,
+      "EmbodiedCarbon": 5.06,
+      "EmbodiedEnergy": 96.1,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 50.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Glass_Clear_Metal"
+    },
+    {
+      "$id": "7",
+      "DirtFactor": 1.0,
+      "IREmissivityBack": 0.84,
+      "IREmissivityFront": 0.84,
+      "IRTransmittance": 0.01,
+      "SolarReflectanceBack": 0.43,
+      "SolarReflectanceFront": 0.27,
+      "SolarTransmittance": 0.11,
+      "VisibleReflectanceBack": 0.35,
+      "VisibleReflectanceFront": 0.31,
+      "VisibleTransmittance": 0.14,
+      "Conductivity": 0.9,
+      "Cost": 0.0,
+      "Density": 2500.0,
+      "EmbodiedCarbon": 5.06,
+      "EmbodiedEnergy": 96.1,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 50.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Glass_Clear_Fiberglass"
+    },
+    {
+      "$id": "8",
+      "DirtFactor": 1.0,
+      "IREmissivityBack": 0.84,
+      "IREmissivityFront": 0.84,
+      "IRTransmittance": 0.01,
+      "SolarReflectanceBack": 0.22,
+      "SolarReflectanceFront": 0.19,
+      "SolarTransmittance": 0.63,
+      "VisibleReflectanceBack": 0.08,
+      "VisibleReflectanceFront": 0.06,
+      "VisibleTransmittance": 0.85,
+      "Conductivity": 0.9,
+      "Cost": 0.0,
+      "Density": 2500.0,
+      "EmbodiedCarbon": 5.06,
+      "EmbodiedEnergy": 96.1,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 50.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Glass_Clear_LoE_Fiberglass"
+    }
+  ],
+  "OpaqueMaterials": [
+    {
+      "$id": "9",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 1.25,
+      "Cost": 0.0,
+      "Density": 880.0,
+      "EmbodiedCarbon": 0.08,
+      "EmbodiedEnergy": 0.71,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 50.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Concrete_Block_Light"
+    },
+    {
+      "$id": "10",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 1.77,
+      "Cost": 0.0,
+      "Density": 1900.0,
+      "EmbodiedCarbon": 0.08,
+      "EmbodiedEnergy": 0.71,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 50.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Concrete_Block_Heavy"
+    },
+    {
+      "$id": "11",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 1000.0,
+      "ThermalEmittance": 0.01,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 0.1,
+      "Cost": 0.0,
+      "Density": 1.2,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Air_Wall_3cm"
+    },
+    {
+      "$id": "12",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 1.75,
+      "Cost": 0.0,
+      "Density": 2400.0,
+      "EmbodiedCarbon": 0.24,
+      "EmbodiedEnergy": 2.12,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Concrete_Dense"
+    },
+    {
+      "$id": "13",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 1040.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 1.65,
+      "Cost": 0.0,
+      "Density": 2100.0,
+      "EmbodiedCarbon": 0.24,
+      "EmbodiedEnergy": 2.12,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Concrete_Light"
+    },
+    {
+      "$id": "14",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.16,
+      "Cost": 0.0,
+      "Density": 950.0,
+      "EmbodiedCarbon": 0.38,
+      "EmbodiedEnergy": 6.75,
+      "SubstitutionRatePattern": [
+        0.02,
+        0.1,
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Gypsum_Board"
+    },
+    {
+      "$id": "15",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.5,
+      "SpecificHeat": 920.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.5,
+      "Conductivity": 0.41,
+      "Cost": 0.0,
+      "Density": 1000.0,
+      "EmbodiedCarbon": 0.22,
+      "EmbodiedEnergy": 3.0,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 50.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Clay_Brick_H"
+    },
+    {
+      "$id": "16",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 1000.0,
+      "ThermalEmittance": 0.01,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 0.7,
+      "Cost": 0.0,
+      "Density": 1.2,
+      "EmbodiedCarbon": 0.0,
+      "EmbodiedEnergy": 0.0,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
+      "TransportCarbon": 0.0,
+      "TransportDistance": 0.0,
+      "TransportEnergy": 0.0,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Air_Floor_15cm"
+    },
+    {
+      "$id": "17",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.4,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.4,
+      "Conductivity": 0.8,
+      "Cost": 0.0,
+      "Density": 2243.0,
+      "EmbodiedCarbon": 0.59,
+      "EmbodiedEnergy": 9.0,
+      "SubstitutionRatePattern": [
+        0.5,
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Ceramic_Tile"
+    },
+    {
+      "$id": "18",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 1200.0,
+      "ThermalEmittance": 0.6,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.037,
+      "Cost": 0.0,
+      "Density": 40.0,
+      "EmbodiedCarbon": 2.7,
+      "EmbodiedEnergy": 86.4,
+      "SubstitutionRatePattern": [
+        0.02,
+        0.1,
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "XPS_Board"
+    },
+    {
+      "$id": "19",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 1880.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 0.11,
+      "Cost": 0.0,
+      "Density": 540.0,
+      "EmbodiedCarbon": 0.81,
+      "EmbodiedEnergy": 15.0,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 30.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Plywood_Board"
+    },
+    {
+      "$id": "20",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.043,
+      "Cost": 0.0,
+      "Density": 12.0,
+      "EmbodiedCarbon": 1.35,
+      "EmbodiedEnergy": 28.0,
+      "SubstitutionRatePattern": [
+        0.5
+      ],
+      "SubstitutionTimestep": 30.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 1000.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Fiberglass_Batts"
+    },
+    {
+      "$id": "21",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 1200.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.14,
+      "Cost": 0.0,
+      "Density": 650.0,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 7.5,
+      "SubstitutionRatePattern": [
+        0.1,
+        0.1,
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Wood_Stud"
+    },
+    {
+      "$id": "22",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 1630.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.13,
+      "Cost": 0.0,
+      "Density": 496.0,
+      "EmbodiedCarbon": 0.45,
+      "EmbodiedEnergy": 7.5,
+      "SubstitutionRatePattern": [
+        0.1,
+        0.1,
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Softwood_General"
+    },
+    {
+      "$id": "23",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 1260.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 1.59,
+      "Cost": 0.0,
+      "Density": 1920.0,
+      "EmbodiedCarbon": 0.032,
+      "EmbodiedEnergy": 0.55,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 30.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Slate_Tile"
+    },
+    {
+      "$id": "24",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 1300.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.04,
+      "Cost": 0.0,
+      "Density": 592.0,
+      "EmbodiedCarbon": 0.47,
+      "EmbodiedEnergy": 7.8,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 30.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Wood_Shingle"
+    },
+    {
+      "$id": "25",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 1000.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 0.16,
+      "Cost": 0.0,
+      "Density": 1380.0,
+      "EmbodiedCarbon": 2.41,
+      "EmbodiedEnergy": 77.2,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 20.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Vinyl_Cladding"
+    }
+  ],
+  "OpaqueConstructions": [
+    {
+      "$id": "26",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "12"
+          },
+          "Thickness": 0.2
+        },
+        {
+          "Material": {
+            "$ref": "19"
+          },
+          "Thickness": 0.015
+        },
+        {
+          "Material": {
+            "$ref": "20"
+          },
+          "Thickness": 0.1
+        },
+        {
+          "Material": {
+            "$ref": "14"
+          },
+          "Thickness": 0.015
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Facade",
+      "Comments": "concrete, plywood, batt, gypsum",
+      "DataSource": "default",
+      "Name": "Heavy_Fac_Construction"
+    },
+    {
+      "$id": "27",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "25"
+          },
+          "Thickness": 0.003
+        },
+        {
+          "Material": {
+            "$ref": "19"
+          },
+          "Thickness": 0.01
+        },
+        {
+          "Material": {
+            "$ref": "21"
+          },
+          "Thickness": 0.015
+        },
+        {
+          "Material": {
+            "$ref": "20"
+          },
+          "Thickness": 0.1
+        },
+        {
+          "Material": {
+            "$ref": "14"
+          },
+          "Thickness": 0.015
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Facade",
+      "Comments": "cladding, plywood, wood stud, batt, gypsum",
+      "DataSource": "default",
+      "Name": "Light_fac_Construction"
+    }
+  ],
+  "WindowConstructions": [
+    {
+      "$id": "28",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.004
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Single",
+      "Comments": "default",
+      "DataSource": "default",
+      "Name": "Single_Clear_Metal"
+    },
+    {
+      "$id": "29",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        },
+        {
+          "Material": {
+            "$ref": "1"
+          },
+          "Thickness": 0.006
+        },
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Double",
+      "Comments": "default",
+      "DataSource": "default",
+      "Name": "Double_Clear"
+    },
+    {
+      "$id": "30",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "8"
+          },
+          "Thickness": 0.003
+        },
+        {
+          "Material": {
+            "$ref": "1"
+          },
+          "Thickness": 0.006
+        },
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Double",
+      "Comments": "default",
+      "DataSource": "default",
+      "Name": "Double_LoE"
+    },
+    {
+      "$id": "31",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        },
+        {
+          "Material": {
+            "$ref": "1"
+          },
+          "Thickness": 0.006
+        },
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        },
+        {
+          "Material": {
+            "$ref": "1"
+          },
+          "Thickness": 0.006
+        },
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Double",
+      "Comments": "default",
+      "DataSource": "default",
+      "Name": "Triple_Clear"
+    },
+    {
+      "$id": "32",
+      "Layers": [
+        {
+          "Material": {
+            "$ref": "8"
+          },
+          "Thickness": 0.003
+        },
+        {
+          "Material": {
+            "$ref": "1"
+          },
+          "Thickness": 0.006
+        },
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        },
+        {
+          "Material": {
+            "$ref": "1"
+          },
+          "Thickness": 0.006
+        },
+        {
+          "Material": {
+            "$ref": "6"
+          },
+          "Thickness": 0.003
+        }
+      ],
+      "AssemblyCarbon": 0.0,
+      "AssemblyCost": 0.0,
+      "AssemblyEnergy": 0.0,
+      "DisassemblyCarbon": 0.0,
+      "DisassemblyEnergy": 0.0,
+      "Category": "Double",
+      "Comments": "default",
+      "DataSource": "default",
+      "Name": "Triple_LoE"
+    }
+  ],
+  "StructureDefinitions": [],
+  "DaySchedules": [],
+  "WeekSchedules": [],
+  "YearSchedules": [],
+  "DomesticHotWaterSettings": [],
+  "VentilationSettings": [],
+  "ZoneConditionings": [],
+  "ZoneConstructionSets": [],
+  "ZoneLoads": [],
+  "Zones": [],
+  "BuildingTemplates": [],
+  "WindowSettings": []
+}
