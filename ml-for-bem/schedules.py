@@ -49,7 +49,9 @@ operations = [
     "sin_1_phase",
     "synthetic",
     "on/off",
-    "uniform_random_daily"
+    "uniform_random_daily",
+    "pulse_period",
+    "pulse_width"
 ]
 
 op_indices = {name: i for i, name in enumerate(operations)}
@@ -136,6 +138,8 @@ def mutate_timeseries(series, operations, seed):
 
         on_off = operations[i, op_indices["on/off"]]
         uniform_random_daily = [i, op_indices["uniform_random_daily"]]
+        pulse_period = operations[i, op_indices["pulse_period"]]
+        pulse_width = [i, op_indices["pulse_width"]]
 
         """Handle Reversing"""
         if rev == 1:
@@ -181,6 +185,14 @@ def mutate_timeseries(series, operations, seed):
         if uniform_random_daily == 1:
             week = np.rand(7*24)
             year = np.tile(week,55)
+            year = year[:8760]
+            series[i] = year
+
+        """Handle Pulse"""
+        if pulse_period > 0:
+            cycle = np.rand(pulse_period)
+            cycle = np.where(cycle > 0.5, 0*cycle+1, 0*cycle)
+            year = np.tile(cycle,int(8760/pulse_period)+2)
             year = year[:8760]
             series[i] = year
 
