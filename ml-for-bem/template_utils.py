@@ -3,6 +3,7 @@
 # TODO: Cladding?
 
 import os
+from pathlib import Path
 import numpy as np
 import re
 import pandas as pd
@@ -588,7 +589,7 @@ class minimumTemplate(UmiTemplateLibrary):
 
 
 if __name__ == "__main__":
-    template_path = os.path.join(
+     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
     buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
@@ -606,25 +607,3 @@ if __name__ == "__main__":
         )
 
         template.construct_cz_templates(cz_df, csv_name.split(".")[0])
-
-
-# umi_template = ar.UmiTemplateLibrary(
-#     name=name,
-#     BuildingTemplates=BuildingTemplates, #
-#     GasMaterials=GasMaterials,
-#     GlazingMaterials=GlazingMaterials,
-#     OpaqueConstructions=OpaqueConstructions,
-#     OpaqueMaterials=OpaqueMaterials,
-#     WindowConstructions=WindowConstructions,
-#     StructureDefinitions=StructureDefinitions,
-#     DaySchedules=DaySchedules,
-#     WeekSchedules=WeekSchedules,
-#     YearSchedules=YearSchedules,
-#     DomesticHotWaterSettings=DomesticHotWaterSettings,
-#     VentilationSettings=VentilationSettings,
-#     WindowSettings=WindowSettings,
-#     ZoneConditionings=ZoneConditionings,
-#     ZoneConstructionSets=ZoneConstructionSets,
-#     ZoneLoads=ZoneLoads,
-#     Zones=Zones,
-# )
