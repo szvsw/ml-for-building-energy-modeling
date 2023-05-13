@@ -97,14 +97,19 @@ class BatchSimulator:
         )
         for ix, result in results.items():
             try:
-                results_hourly_tensor[ix] = result["hourly"].to_numpy(dtype=np.float32).T
-                results_monthly_tensor[ix] = result["monthly"].to_numpy(dtype=np.float32).T
+                results_hourly_tensor[ix] = (
+                    result["hourly"].to_numpy(dtype=np.float32).T
+                )
+                results_monthly_tensor[ix] = (
+                    result["monthly"].to_numpy(dtype=np.float32).T
+                )
             except TypeError:
-                logger.error(f"No simulation data found for BATCH:{self.batch_id}, INDEX:{ix}")
+                logger.error(
+                    f"No simulation data found for BATCH:{self.batch_id}, INDEX:{ix}"
+                )
                 # TODO: Better error handling
-                results_hourly_tensor[ix,:,:] = -1
-                results_monthly_tensor[ix,:,:] = -1
-
+                results_hourly_tensor[ix, :, :] = -1
+                results_monthly_tensor[ix, :, :] = -1
 
         logger.info(f"Writing results to HDF5 for BATCH:{self.batch_id}...")
         with h5py.File(self.results_batch_filepath, "w") as f:

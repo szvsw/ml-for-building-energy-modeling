@@ -92,17 +92,20 @@ class WhiteboxSimulation:
 
         template_lib_idx = int(template_lib_idx)
 
-        template_lib_path = data_path / "template_libs" / "cz_libs" / f"{CLIMATEZONES_LIST[template_lib_idx]}.json"
-
-        vintage = self.schema["vintage"].extract_storage_values(
-            self.storage_vector
+        template_lib_path = (
+            data_path
+            / "template_libs"
+            / "cz_libs"
+            / f"{CLIMATEZONES_LIST[template_lib_idx]}.json"
         )
+
+        vintage = self.schema["vintage"].extract_storage_values(self.storage_vector)
 
         vintage_idx = 0
         if vintage < 1940:
             pass
         elif vintage < 1980:
-            vintage_idx = 1 
+            vintage_idx = 1
         elif vintage < 2004:
             vintage_idx = 2
         else:
@@ -112,7 +115,7 @@ class WhiteboxSimulation:
             self.storage_vector
         )
 
-        template_idx =  len(RESTYPES)* vintage_idx + int(program_type)
+        template_idx = len(RESTYPES) * vintage_idx + int(program_type)
 
         """
         0a - template library
@@ -488,12 +491,13 @@ class TMassParameter(BuildingTemplateParameter):
         """
         pass
 
+
 class WindowParameter(NumericParameter):
     def __init__(self, **kwargs):
         super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
         self.min = np.array(self.min)
         self.max = np.array(self.max)
-    
+
     def normalize(self, values):
         # TODO:
         pass
@@ -514,8 +518,12 @@ class WindowParameter(NumericParameter):
             whitebox_sim: WhiteboxSimulation
         """
         # Get the var id and batch id for naming purposes
-        variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(whitebox_sim.storage_vector)
-        batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(whitebox_sim.storage_vector)
+        variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
+            whitebox_sim.storage_vector
+        )
+        batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
+            whitebox_sim.storage_vector
+        )
 
         # get the three values for u/shgc/vlt
         values = self.extract_storage_values(whitebox_sim.storage_vector)
@@ -530,7 +538,7 @@ class WindowParameter(NumericParameter):
             Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
             solar_heat_gain_coefficient=shgc,
             u_factor=u_value,
-            visible_transmittance=vlt
+            visible_transmittance=vlt,
         )
 
         # Update the window
@@ -757,7 +765,7 @@ class Schema:
                     mean=21,
                     std=4,
                     info="Heating setpoint",
-                    shape_ml=(0,)
+                    shape_ml=(0,),
                 ),
                 BuildingTemplateParameter(
                     name="CoolingSetpoint",
@@ -767,7 +775,7 @@ class Schema:
                     mean=22,
                     std=4,
                     info="Cooling setpoint",
-                    shape_ml=(0,)
+                    shape_ml=(0,),
                 ),
                 BuildingTemplateParameter(
                     name="HeatingCoeffOfPerf",
@@ -901,10 +909,10 @@ class Schema:
                 ),
                 WindowParameter(
                     name="WindowSettings",
-                    min=(0.3,0.05,0.05),
-                    max=(7.0,0.99,0.99),
+                    min=(0.3, 0.05, 0.05),
+                    max=(7.0, 0.99, 0.99),
                     source="climate studio",
-                    info="U-value (m2K/W), shgc, vlt"
+                    info="U-value (m2K/W), shgc, vlt",
                 ),
                 SchemaParameter(
                     name="schedules_seed",
