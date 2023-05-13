@@ -12,14 +12,14 @@ schedule_paths = [
     ["Loads", "EquipmentAvailabilitySchedule"],
     ["Loads", "LightsAvailabilitySchedule"],
     ["Loads", "OccupancySchedule"],
-    ["Conditioning", "CoolingSchedule"],
-    ["Conditioning", "HeatingSchedule"],
+    # ["Conditioning", "MechVentSchedule"],
+    # ["Conditioning", "CoolingSchedule"],
+    # ["Conditioning", "HeatingSchedule"],
     # ["Conditioning", "HeatingSetpointSchedule"],
     # ["Conditioning", "HeatingSetpointSchedule"],
-    ["Conditioning", "MechVentSchedule"],
-    ["DomesticHotWater", "WaterSchedule"],
+    # ["DomesticHotWater", "WaterSchedule"],
     # ["Ventilation", "NatVentSchedule"],
-    ["Ventilation", "ScheduledVentilationSchedule"],
+    # ["Ventilation", "ScheduledVentilationSchedule"],
     # ["Windows", "ZoneMixingAvailabilitySchedule"],
     # ["Windows", "ShadingSystemAvailabilitySchedule"],
     # ["Windows", "AfnWindowAvailabilitySchedule"],
@@ -49,6 +49,7 @@ operations = [
     "sin_1_phase",
     "synthetic",
     "on/off",
+    "uniform_random_daily"
 ]
 
 op_indices = {name: i for i, name in enumerate(operations)}
@@ -134,6 +135,7 @@ def mutate_timeseries(series, operations, seed):
         synthetic = operations[i, op_indices["synthetic"]]
 
         on_off = operations[i, op_indices["on/off"]]
+        uniform_random_daily = [i, op_indices["uniform_random_daily"]]
 
         """Handle Reversing"""
         if rev == 1:
@@ -174,9 +176,15 @@ def mutate_timeseries(series, operations, seed):
             series[i] = np.ones(n)
         elif on_off == -1:
             series[i] = np.zeros(n)
+        
+        """Handle Uniform Random Daily"""
+        if uniform_random_daily == 1:
+            week = np.rand(7*24)
+            year = np.tile(week,55)
+            year = year[:8760]
+            series[i] = year
 
     return series
-
 
 def update_schedule_objects(
     template, timeseries, zones=template_zones, paths=schedule_paths, id=0
