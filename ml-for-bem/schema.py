@@ -665,12 +665,6 @@ class Schema:
                     std=20,
                 ),
                 OneHotParameter(
-                    name="has_electic_heating",
-                    count=1,
-                    info="Whether or not it has electric heating",
-                    shape_ml=(0,)
-                ),
-                OneHotParameter(
                     name="climate_zone",
                     count=15,
                     info="Lookup index of template library to use.",
