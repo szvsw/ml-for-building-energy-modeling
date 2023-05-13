@@ -12,6 +12,7 @@ import pandas as pd
 from archetypal import UmiTemplateLibrary
 from archetypal.idfclass.sql import Sql
 from archetypal.template.schedule import UmiSchedule
+from archetypal.template.materials.material_layer import MaterialLayer
 from pyumi.shoeboxer.shoebox import ShoeBox
 
 from archetypal.template.constructions.window_construction import WindowConstruction
@@ -27,6 +28,8 @@ from schedules import (
 from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
 
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
+
+HIGH_LOW_MASS_THESH = 50000  # J/m2K
 
 
 class ShoeboxConfiguration:
@@ -96,10 +99,12 @@ class WhiteboxSimulation:
             data_path
             / "template_libs"
             / "cz_libs"
-            / f"{CLIMATEZONES_LIST[template_lib_idx]}.json"
+            / "residential"
+            / f"CZ{CLIMATEZONES_LIST[template_lib_idx]}.json"
         )
 
         vintage = self.schema["vintage"].extract_storage_values(self.storage_vector)
+        mass = self.schema["FacadeTMass"].extract_storage_values(self.storage_vector)
 
         vintage_idx = 0
         if vintage < 1940:
@@ -114,12 +119,24 @@ class WhiteboxSimulation:
         program_type = self.schema["program_type"].extract_storage_values(
             self.storage_vector
         )
+        tmass = self.schema["FacadeTMass"].extract_storage_values(self.storage_vector)
 
-        template_idx = len(RESTYPES) * vintage_idx + int(program_type)
+        high_mass = 0
+        if tmass > HIGH_LOW_MASS_THESH:
+            high_mass = 1
+
+        n_programs = len(RESTYPES)
+        n_masses = 2
+        template_idx = (
+            n_programs * n_masses * vintage_idx
+            + int(program_type) * high_mass
+            + high_mass
+        )
 
         """
         0a - template library
-            single family, pre-1940
+            single family, pre-1940 low mass
+            single family pe-1940 high mass
             multi family pre 1940
             multi big family pre 1940
             multi bigger family pre 1940
@@ -463,7 +480,7 @@ class RValueParameter(BuildingTemplateParameter):
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
-        This method updates the simulation objects (archetypal template, shoebox config)
+        Thi updates the simulation objects (archetypal template, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         Updates whitebox simulation's r value parameter by inferring the insulation layer and updating its
@@ -472,13 +489,47 @@ class RValueParameter(BuildingTemplateParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        desired_r_value = self.extract_storage_values(whitebox_sim.storage_vector)
         for zone in ["Perimeter", "Core"]:
             zone_obj = getattr(whitebox_sim.template, zone)
             constructions = zone_obj.Constructions
             construction = getattr(constructions, self.path[0])
             # TODO: make sure units are correct!!!
-            construction.r_value = value
+            # = self.infer_insulation_layer()
+            layers = construction.Layers
+            insulation_layer_ix = None
+            k_min = 999999
+            for i, layer in enumerate(layers):
+                if layer.Material.Conductivity < k_min:
+                    k_min = layer.Material.Conductivity
+                    insulation_layer_ix = i
+
+            i = insulation_layer_ix
+            all_layers_except_insulation_layer = [a for a in layers]
+            all_layers_except_insulation_layer.pop(i)
+            insulation_layer: MaterialLayer = layers[i]
+
+            if desired_r_value <= sum(
+                [a.r_value for a in all_layers_except_insulation_layer]
+            ):
+                raise ValueError(
+                    f"Cannot set assembly r-value smaller than "
+                    f"{sum([a.r_value for a in all_layers_except_insulation_layer])} "
+                    f"because it would result in an insulation of a "
+                    f"negative thickness. Try a higher value or changing the material "
+                    f"layers instead."
+                )
+
+            alpha = float(desired_r_value) / layers.r_value
+            new_r_value = (
+                (
+                    (alpha - 1)
+                    * sum([a.r_value for a in all_layers_except_insulation_layer])
+                )
+            ) + alpha * insulation_layer.r_value
+            insulation_layer.r_value = new_r_value
+            if insulation_layer.Thickness <= 0.003:
+                construction.Layers = all_layers_except_insulation_layer
 
 
 class TMassParameter(BuildingTemplateParameter):
@@ -486,10 +537,23 @@ class TMassParameter(BuildingTemplateParameter):
         super().__init__(path, **kwargs)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        """
-        TODO: Implement
-        """
-        pass
+        heat_capacity_per_wall_area = self.extract_storage_values(
+            whitebox_sim.storage_vector
+        )
+        if heat_capacity_per_wall_area < HIGH_LOW_MASS_THESH:
+            return
+        else:
+            for zone in ["Perimeter", "Core"]:
+                zone_obj = getattr(whitebox_sim.template, zone)
+                constructions = zone_obj.Constructions
+                construction = getattr(constructions, self.path[0])
+
+                layer = construction.Layers[0]  # concrete
+                material = layer.Material
+                cp = material.SpecificHeat
+                rho = material.Density
+                thickness = heat_capacity_per_wall_area / (cp * rho)
+                layer.Thickness = thickness
 
 
 class WindowParameter(NumericParameter):
@@ -593,6 +657,12 @@ class SchedulesParameters(SchemaParameter):
             zones=["Perimeter"],
             paths=self.paths,
             id=seed,
+        )
+        whitebox_sim.template.Perimeter.Conditioning.MechVentSchedule = (
+            whitebox_sim.template.Perimeter.Loads.OccupancySchedule
+        )
+        whitebox_sim.template.Perimeter.DomesticHotWater.WaterSchedule = (
+            whitebox_sim.template.Perimeter.Loads.OccupancySchedule
         )
 
 
@@ -867,16 +937,6 @@ class Schema:
                     std=30,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior roof thermal mass (J/Km2)",
-                ),
-                TMassParameter(
-                    name="SlabMass",
-                    path="Slab",
-                    min=5,
-                    max=200,
-                    mean=30,
-                    std=30,
-                    source="https://www.designingbuildings.co.uk/",
-                    info="Exterior slab thermal mass (J/Km2)",
                 ),
                 RValueParameter(
                     name="FacadeRValue",
