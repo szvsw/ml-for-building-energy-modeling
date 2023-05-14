@@ -302,26 +302,26 @@ class minimumTemplate(UmiTemplateLibrary):
         self.OpaqueConstructions.append(hiMass_facade)
         return hiMass_facade
 
-    def loMass_roof(self, r_val):
-        t = self.insulation.Conductivity * r_val
-        woodShingle = self.OpaqueMaterials[14]  # 23:Slate_Tile
-        loMass_roof = OpaqueConstruction(
-            Name="loMass_roof",
-            Layers=[
-                MaterialLayer(woodShingle, Thickness=0.02),
-                self.plywoodLayer,
-                MaterialLayer(self.insulation, Thickness=t),
-                self.gypsumLayer,
-            ],
-            Surface_Type="Roof",
-            Outside_Boundary_Condition="Outdoors",
-        )
-        self.OpaqueConstructions.append(loMass_roof)
-        return loMass_roof
+    # def loMass_roof(self, r_val):
+    #     t = self.insulation.Conductivity * r_val
+    #     woodShingle = self.OpaqueMaterials[14]  # 23:Slate_Tile
+    #     loMass_roof = OpaqueConstruction(
+    #         Name="loMass_roof",
+    #         Layers=[
+    #             MaterialLayer(woodShingle, Thickness=0.02),
+    #             self.plywoodLayer,
+    #             MaterialLayer(self.insulation, Thickness=t),
+    #             self.gypsumLayer,
+    #         ],
+    #         Surface_Type="Roof",
+    #         Outside_Boundary_Condition="Outdoors",
+    #     )
+    #     self.OpaqueConstructions.append(loMass_roof)
+    #     return loMass_roof
 
     def hiMass_roof(self, r_val):
         t = self.insulation.Conductivity * r_val
-        slateTile = self.OpaqueMaterials[14]  # 23:Slate_Tile
+        # slateTile = self.OpaqueMaterials[14]  # 23:Slate_Tile
         hiMass_roof = OpaqueConstruction(
             Name="hiMass_roof",
             Layers=[
@@ -359,6 +359,7 @@ class minimumTemplate(UmiTemplateLibrary):
             return vent_setting
 
     def conditioning_settings(self, cop_h, cop_c=3.0):
+        cop_h = 1  # OVERRIDE
         copstring = f"{round(cop_h*100)}cop"
 
         for i, x in enumerate(self.ZoneConditionings):
