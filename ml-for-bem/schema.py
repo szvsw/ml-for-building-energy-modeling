@@ -131,7 +131,7 @@ class WhiteboxSimulation:
         n_masses = 2
         template_idx = (
             n_programs * n_masses * vintage_idx
-            + int(program_type) * high_mass
+            + int(program_type) * n_masses
             + high_mass
         )
 
