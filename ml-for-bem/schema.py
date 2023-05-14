@@ -293,14 +293,6 @@ class WhiteboxSimulation:
             "Roof HeatCap:",
             self.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area,
         )
-        print(
-            "Roof Mass:",
-            self.template.Perimeter.Constructions.Roof.heat_capacity_per_wall_area,
-        )
-        print(
-            "Facade Mass:",
-            self.template.Perimeter.Constructions.Facade.heat_capacity_per_wall_area,
-        )
         print("Roof RSI:", self.template.Perimeter.Constructions.Roof.r_value)
         print("Facade RSI:", self.template.Perimeter.Constructions.Facade.r_value)
         print("Slab RSI:", self.template.Perimeter.Constructions.Slab.r_value)
@@ -613,7 +605,7 @@ class TMassParameter(BuildingTemplateParameter):
             cp = material.SpecificHeat
             rho = material.Density
             volumetric_cp = cp * rho
-            old_thermal_mass = construction.heat_capacity_per_area
+            old_thermal_mass = construction.heat_capacity_per_unit_wall_area
             thermal_mass_without_concrete = (
                 old_thermal_mass - concrete_layer.heat_capacity
             )
@@ -621,7 +613,7 @@ class TMassParameter(BuildingTemplateParameter):
                 desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
             ) / volumetric_cp
             # thickness = desired_heat_capacity_per_wall_area / (cp * rho)
-            if thickness < 0.026:
+            if thickness < 0.004:
                 all_layers_except_mass = [a for a in construction.Layers]
                 all_layers_except_mass.pop(0)
                 construction.Layers = all_layers_except_mass
@@ -789,7 +781,6 @@ class Schema:
         parameters: List[SchemaParameter] = None,
         timeseries_outputs: List[TimeSeriesOutput] = None,
     ):
-
         # TODO:
         # interior thermal mass,
         # windows - shgc, low-e, u-values,
