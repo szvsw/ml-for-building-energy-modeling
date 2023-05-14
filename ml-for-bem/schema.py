@@ -593,6 +593,7 @@ class TMassParameter(BuildingTemplateParameter):
             whitebox_sim.storage_vector
         )
         if heat_capacity_per_wall_area < HIGH_LOW_MASS_THESH:
+            # TODO: handle popping roof thermal mass layer if needed
             return
         else:
             for zone in ["Perimeter", "Core"]:
@@ -908,36 +909,26 @@ class Schema:
                     info="Cooling setpoint",
                     shape_ml=(0,),
                 ),
-                BuildingTemplateParameter(
-                    name="HeatingCoeffOfPerf",
-                    path="Conditioning.HeatingCoeffOfPerf",
-                    min=0.9,
-                    max=5,
-                    mean=1,
-                    std=1,
-                    source="tacit",
-                    info="heating cop",
-                ),
-                BuildingTemplateParameter(
-                    name="CoolingCoeffOfPerf",
-                    path="Conditioning.CoolingCoeffOfPerf",
-                    min=2.5,
-                    max=5,
-                    mean=3,
-                    std=1,
-                    source="tacit",
-                    info="cooling cop",
-                ),
-                BuildingTemplateParameter(
-                    name="FlowRatePerFloorArea",
-                    path="DomesticHotWater.FlowRatePerFloorArea",
-                    min=0,
-                    max=0.002,
-                    mean=0.0005,
-                    std=0.0001,
-                    source="ComStock",
-                    info="Lighting Power Density [W/m2]",
-                ),
+                # BuildingTemplateParameter(
+                #     name="HeatingCoeffOfPerf",
+                #     path="Conditioning.HeatingCoeffOfPerf",
+                #     min=0.9,
+                #     max=5,
+                #     mean=1,
+                #     std=1,
+                #     source="tacit",
+                #     info="heating cop",
+                # ),
+                # BuildingTemplateParameter(
+                #     name="CoolingCoeffOfPerf",
+                #     path="Conditioning.CoolingCoeffOfPerf",
+                #     min=2.5,
+                #     max=5,
+                #     mean=3,
+                #     std=1,
+                #     source="tacit",
+                #     info="cooling cop",
+                # ),
                 BuildingTemplateParameter(
                     name="LightingPowerDensity",
                     path="Loads.LightingPowerDensity",
@@ -982,7 +973,7 @@ class Schema:
                     name="FacadeMass",
                     path="Facade",
                     min=1000,
-                    max=300000,
+                    max=400000,
                     mean=50000,
                     std=20000,
                     source="https://www.designingbuildings.co.uk/",
@@ -992,7 +983,7 @@ class Schema:
                     name="RoofMass",
                     path="Roof",
                     min=1000,
-                    max=300000,
+                    max=800000,
                     mean=50000,
                     std=20000,
                     source="https://www.designingbuildings.co.uk/",
@@ -1001,8 +992,8 @@ class Schema:
                 RValueParameter(
                     name="FacadeRValue",
                     path="Facade",
-                    min=0.1,
-                    max=5,
+                    min=0.3,
+                    max=15,
                     mean=2,
                     std=1,
                     source="ComStock, tacit knowledge",
@@ -1011,9 +1002,9 @@ class Schema:
                 RValueParameter(
                     name="RoofRValue",
                     path="Roof",
-                    min=0.1,
-                    max=5,
-                    mean=2,
+                    min=0.3,
+                    max=18,
+                    mean=3.5,
                     std=1,
                     source="ComStock, tacit knowledge",
                     info="Roof R-value",
@@ -1021,8 +1012,8 @@ class Schema:
                 RValueParameter(
                     name="SlabRValue",
                     path="Slab",
-                    min=0.1,
-                    max=5,
+                    min=0.3,
+                    max=15,
                     mean=2,
                     std=1,
                     source="ComStock, tacit knowledge",
