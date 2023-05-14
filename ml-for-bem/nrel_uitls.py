@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import random
 import re
+import os
+import json
 
 columns = [
     "bldg_id",  # numerical
@@ -160,7 +162,7 @@ class ResStockConfiguration:
     Class for configuring numeric vectors from ResStock samples
     """
 
-    def __init__(self, resstock_samples, cities):
+    def __init__(self, resstock_samples, citypath):
         """
         Create a ResStock paramter object
 
@@ -177,6 +179,8 @@ class ResStockConfiguration:
         self.samples = resstock_samples
         # print("IMPORTED SAMPLES")
         # print(self.samples.head())
+        with open(citypath, "r") as f:
+            cities = json.load(f)
         self.cities = cities
         self.clean()
         self.n = self.samples.shape[0]
@@ -276,10 +280,14 @@ class ResStockConfiguration:
         self.out[:, i] = data
 
     def get_city_idx(self):  # TODO: citymap.json
-        c = self.samples.filter(regex="City").merge(
-            self.cities, left_on="City", right_on="city", how="left"
-        )
-        return c["index"]
+        def lookup_city(city_str):
+            return self.cities[city_str]["idx"]
+
+        c = self.samples["City"].copy().apply(lookup_city)
+        # c = self.samples.filter(regex="City").merge(
+        #     self.cities, left_on="City", right_on="city", how="left"
+        # )
+        return c
 
     def get_climatezone(self):
         def lookup_cz(a):
@@ -445,14 +453,13 @@ class ResStockConfiguration:
 
 if __name__ == "__main__":
     filepath = "C:/Users/zoele/Git_Repos/ml-for-building-energy-modeling/NREL/data/ResStock/resstock_filtered.csv"
-    citypath = "C:/Users/zoele/Git_Repos/ml-for-building-energy-modeling/NREL/data/ResStock/cities.csv"
+    citypath = os.path.join(os.getcwd(), "ml-for-bem", "data", "city_map.json")
     resstock_filtered = pd.read_csv(filepath, index_col=0)
-    cities = pd.read_csv(citypath)
-    test = ResStockConfiguration(resstock_filtered, cities)
+    test = ResStockConfiguration(resstock_filtered, citypath)
     # test.get_template_vector()
     df = test.get_template_df()
     # print(test.out[0])
     print(df.head())
-    print(df.describe()["FacadeMass"])
-    print(resstock_filtered.describe())
+    print(df.describe()["base_epw"])
+    # print(resstock_filtered.describe())
     print(test.out.shape)
