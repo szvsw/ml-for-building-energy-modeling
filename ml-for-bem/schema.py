@@ -29,7 +29,7 @@ from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
 
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
 
-HIGH_LOW_MASS_THESH = 50000  # J/m2K
+HIGH_LOW_MASS_THESH = 00000  # J/m2K
 
 
 class ShoeboxConfiguration:
@@ -131,7 +131,7 @@ class WhiteboxSimulation:
         n_masses = 2
         n_vintages = 4
         template_idx = (
-            n_masses * n_vintages * int(program_type) 
+            n_masses * n_vintages * int(program_type)
             + n_masses * vintage_idx
             + mass_flag
         )
@@ -292,6 +292,14 @@ class WhiteboxSimulation:
         print(
             "Roof HeatCap:",
             self.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area,
+        )
+        print(
+            "Roof Mass:",
+            self.template.Perimeter.Constructions.Roof.heat_capacity_per_wall_area,
+        )
+        print(
+            "Facade Mass:",
+            self.template.Perimeter.Constructions.Facade.heat_capacity_per_wall_area,
         )
         print("Roof RSI:", self.template.Perimeter.Constructions.Roof.r_value)
         print("Facade RSI:", self.template.Perimeter.Constructions.Facade.r_value)
@@ -592,24 +600,33 @@ class TMassParameter(BuildingTemplateParameter):
         super().__init__(path, **kwargs)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        heat_capacity_per_wall_area = self.extract_storage_values(
+        desired_heat_capacity_per_wall_area = self.extract_storage_values(
             whitebox_sim.storage_vector
         )
-        if heat_capacity_per_wall_area < HIGH_LOW_MASS_THESH:
-            # TODO: handle popping roof thermal mass layer if needed
-            return
-        else:
-            for zone in ["Perimeter", "Core"]:
-                zone_obj = getattr(whitebox_sim.template, zone)
-                constructions = zone_obj.Constructions
-                construction = getattr(constructions, self.path[0])
+        for zone in ["Perimeter", "Core"]:
+            zone_obj = getattr(whitebox_sim.template, zone)
+            constructions = zone_obj.Constructions
+            construction = getattr(constructions, self.path[0])
 
-                layer = construction.Layers[0]  # concrete
-                material = layer.Material
-                cp = material.SpecificHeat
-                rho = material.Density
-                thickness = heat_capacity_per_wall_area / (cp * rho)
-                layer.Thickness = thickness
+            concrete_layer = construction.Layers[0]  # concrete
+            material = concrete_layer.Material
+            cp = material.SpecificHeat
+            rho = material.Density
+            volumetric_cp = cp * rho
+            old_thermal_mass = construction.heat_capacity_per_area
+            thermal_mass_without_concrete = (
+                old_thermal_mass - concrete_layer.heat_capacity
+            )
+            thickness = (
+                desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
+            ) / volumetric_cp
+            # thickness = desired_heat_capacity_per_wall_area / (cp * rho)
+            if thickness < 0.026:
+                all_layers_except_mass = [a for a in construction.Layers]
+                all_layers_except_mass.pop(0)
+                construction.Layers = all_layers_except_mass
+            else:
+                concrete_layer.Thickness = thickness
 
 
 class WindowParameter(NumericParameter):
