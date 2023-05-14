@@ -104,6 +104,8 @@ class WhiteboxSimulation:
             / f"CZ{CLIMATEZONES_LIST[template_lib_idx]}.json"
         )
 
+        """PROG_{IDX}_VINTAGE_{IDX}_MASS_{0/1}"""
+
         vintage = self.schema["vintage"].extract_storage_values(self.storage_vector)
 
         vintage_idx = 0

@@ -539,7 +539,7 @@ class minimumTemplate(UmiTemplateLibrary):
 
         # BuildingTemplate using Zone, StructureInformation and WindowSetting objects
         building_template_loMass = BuildingTemplate(
-            Name=f"{bld_template_name}_MASS_lo",
+            Name=f"{bld_template_name}_MASS_0",
             Core=coreLo,
             Perimeter=perimLo,
             Structure=self.StructureDefinitions[0],
@@ -548,7 +548,7 @@ class minimumTemplate(UmiTemplateLibrary):
         )
 
         building_template_hiMass = BuildingTemplate(
-            Name=f"{bld_template_name}_MASS_hi",
+            Name=f"{bld_template_name}_MASS_1",
             Core=coreHi,
             Perimeter=perimHi,
             Structure=self.StructureDefinitions[0],
