@@ -61,6 +61,7 @@ class WhiteboxSimulation:
     __slots__ = (
         "schema",
         "storage_vector",
+        "lib",
         "template",
         "epw_path",
         "shoebox_config",
@@ -143,8 +144,14 @@ class WhiteboxSimulation:
 
         """
 
-        lib = UmiTemplateLibrary.open(template_lib_path)
-        self.template = lib.BuildingTemplates[template_idx]
+        self.lib = UmiTemplateLibrary.open(template_lib_path)
+        self.template = self.lib.BuildingTemplates[template_idx]
+        # print("Vintage", vintage, vintage_idx)
+        # print("Program Type", int(program_type))
+        # print("FacadeMass", tmass, high_mass)
+        # print("Template Idx", template_idx)
+        # for bt in self.lib.BuildingTemplates:
+        #     print(bt.Name)
 
     def update_parameters(self):
         """
@@ -252,6 +259,50 @@ class WhiteboxSimulation:
         # ep_df_hourly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Hourly"))
         # ep_df_monthly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Monthly"))
         # ep_df_monthly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Monthly"))
+
+    def summarize(self):
+        print("EPW:", self.epw_path)
+        print("Selected Template:", self.template.Name)
+        print("Heating Setpoint:", self.template.Perimeter.Conditioning.HeatingSetpoint)
+        print("Cooling Setpoint:", self.template.Perimeter.Conditioning.CoolingSetpoint)
+        print(
+            "Equipment Power Density:",
+            self.template.Perimeter.Loads.EquipmentPowerDensity,
+        )
+        print(
+            "Lighting Power Density:",
+            self.template.Perimeter.Loads.LightingPowerDensity,
+        )
+        print("People Density:", self.template.Core.Loads.PeopleDensity)
+        print("Infiltration", self.template.Core.Ventilation.Infiltration)
+        print(
+            "U Window:", self.template.Windows.Construction.u_value
+        )  # TODO: this is slightly different!
+        print(
+            "VLT",
+            self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
+        )
+        print(
+            "Facade HeatCap:",
+            self.template.Perimeter.Constructions.Facade.heat_capacity_per_unit_wall_area,
+        )
+        print(
+            "Roof HeatCap:",
+            self.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area,
+        )
+        print("Roof RSI:", self.template.Perimeter.Constructions.Roof.r_value)
+        print("Facade RSI:", self.template.Perimeter.Constructions.Facade.r_value)
+        print("Slab RSI:", self.template.Perimeter.Constructions.Slab.r_value)
+        print("Partition RSI:", self.template.Perimeter.Constructions.Partition.r_value)
+        print("Ground RSI:", self.template.Perimeter.Constructions.Ground.r_value)
+        print("Roof Assembly:", self.template.Perimeter.Constructions.Roof.Layers)
+        print("Facade Assembly:", self.template.Perimeter.Constructions.Facade.Layers)
+        print(
+            "Partition Assembly:",
+            self.template.Perimeter.Constructions.Partition.Layers,
+        )
+        print("Slab Assembly:", self.template.Perimeter.Constructions.Slab.Layers)
+        print("Window Assembly:", self.template.Windows.Construction.Layers)
 
 
 class SchemaParameter:

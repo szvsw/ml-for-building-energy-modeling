@@ -49,7 +49,9 @@ operations = [
     "sin_1_phase",
     "synthetic",
     "on/off",
-    "uniform_random_daily",
+    "uniform_random_mode",
+    "uniform_random_samples",
+    "uniform_random_dilation",
     "pulse_period",
     "pulse_width",
 ]
@@ -137,9 +139,13 @@ def mutate_timeseries(series, operations, seed):
         synthetic = operations[i, op_indices["synthetic"]]
 
         on_off = operations[i, op_indices["on/off"]]
-        uniform_random_daily = [i, op_indices["uniform_random_daily"]]
+
+        uniform_random_mode = operations[i, op_indices["uniform_random_mode"]]
+        uniform_random_samples = operations[i, op_indices["uniform_random_samples"]]
+        uniform_random_dilation = operations[i, op_indices["uniform_random_dilation"]]
+
         pulse_period = operations[i, op_indices["pulse_period"]]
-        pulse_width = [i, op_indices["pulse_width"]]
+        pulse_width = operations[i, op_indices["pulse_width"]]
 
         """Handle Reversing"""
         if rev == 1:
@@ -161,7 +167,7 @@ def mutate_timeseries(series, operations, seed):
         series[i] = np.clip(series[i], 0, 1)
 
         """Handle Noise"""
-        series[i] += np.random.rand(n) * noise
+        series[i] += (np.random.rand(n) * 2 - 1) * noise
         series[i] = np.clip(series[i], 0, 1)
 
         """Handle Sine"""
@@ -182,16 +188,23 @@ def mutate_timeseries(series, operations, seed):
             series[i] = np.zeros(n)
 
         """Handle Uniform Random Daily"""
-        if uniform_random_daily == 1:
-            week = np.rand(7 * 24)
-            year = np.tile(week, 55)
+        if uniform_random_samples > 0:
+            cycle = np.random.rand(int(uniform_random_samples))
+            if uniform_random_mode == 1:
+                # Bernoulli mode
+                cycle = np.where(cycle > 0.5, 0 * cycle + 1, 0 * cycle)
+            cycle = np.repeat(cycle, int(uniform_random_dilation))
+            year = np.tile(
+                cycle,
+                int(8760 / (uniform_random_dilation * uniform_random_samples)) + 2,
+            )
             year = year[:8760]
             series[i] = year
 
         """Handle Pulse"""
         if pulse_period > 0:
-            cycle = np.rand(pulse_period)
-            cycle = np.where(cycle > 0.5, 0 * cycle + 1, 0 * cycle)
+            cycle = np.zeros(int(pulse_period))
+            cycle[: int(pulse_width)] = 1
             year = np.tile(cycle, int(8760 / pulse_period) + 2)
             year = year[:8760]
             series[i] = year
