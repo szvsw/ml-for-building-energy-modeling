@@ -19,7 +19,7 @@ columns = [
     "LightingPowerDensity",  # W/m2 # TODO: REVIEW
     "EquipmentPowerDensity",  # W/m2
     "FacadeMass",  # J/(m2⋅K)
-    "RoofMass",
+    # "RoofMass",
     "SlabMass",
     "FacadeRValue",
     "RoofRValue",
@@ -55,7 +55,7 @@ BRICK_T = 0.3048  # always 3 wythe
 CONCRETE_T = 0.1143  # 4-5 inches
 TILE_T = 0.03
 
-WOOD_STUD_C = 1200.0  # J/kg.K
+WOOD_STUD_C = 1200.0 * 0.10  # J/kg.K 2x4 16 o/c
 CMU_C = 840.0
 BRICK_C = 920.0
 CONCRETE_C = 840.0
@@ -75,7 +75,7 @@ def thermal_capacitance_per_area(c, rho, t):
     Thermal capacitance for material with specific heat capacity, c (J/kg.K),
     density, rho (kg/m3), and thickness, t (m)
     """
-    return c * rho / t  # J/(m2⋅K)
+    return c * rho * t  # J/(m2⋅K)
 
 
 def F_TO_C(f):
@@ -175,6 +175,8 @@ class ResStockConfiguration:
         self.columns = columns
 
         self.samples = resstock_samples
+        # print("IMPORTED SAMPLES")
+        # print(self.samples.head())
         self.cities = cities
         self.clean()
         self.n = self.samples.shape[0]
@@ -193,7 +195,7 @@ class ResStockConfiguration:
 
     def get_template_df(self):
         arr = self.get_template_vector()
-        return pd.DataFrame(arr, columns=columns)
+        return pd.DataFrame(arr, columns=self.columns)
 
     def get_template_vector(self):
         self.apply_to_col(np.arange(self.n), "archetype")
@@ -268,9 +270,9 @@ class ResStockConfiguration:
         self.apply_to_col(self.calculate_ACH(), "Infiltration")
 
     def apply_to_col(self, data, name):
-        if name not in columns:
+        if name not in self.columns:
             raise ValueError(f"Error indexing {name}")
-        i = columns.index(name)
+        i = self.columns.index(name)
         self.out[:, i] = data
 
     def get_city_idx(self):  # TODO: citymap.json
@@ -359,23 +361,25 @@ class ResStockConfiguration:
 
         return self.samples["HVAC Heating Efficiency"].apply(get_cop)
 
-    def get_mass(self, a):
+    def get_mass(self, a):  # TODO fix the roof mass
         if "CMU" in a:
             c = thermal_capacitance_per_area(CMU_C, CMU_rho, CMU_T)
             r = CMU_T / CMU_K
-        if "Brick" in a:
+        elif "Brick" in a:
             c = thermal_capacitance_per_area(BRICK_C, BRICK_rho, BRICK_T)
             r = BRICK_T / BRICK_K
-        if "Concrete" in a:
+        elif "Concrete" in a:
             c = thermal_capacitance_per_area(CONCRETE_C, CONCRETE_rho, CONCRETE_T)
             r = CONCRETE_T / CONCRETE_K
-        if "Tile" in a or "Slate" in a:
+        elif "Tile" in a or "Slate" in a:
             c = thermal_capacitance_per_area(TILE_C, TILE_rho, TILE_T)
             r = TILE_T / TILE_K
         else:
-            # if "Wood" in a:  # 3x4 studs
+            # elif "Wood" in a:
             c = thermal_capacitance_per_area(WOOD_STUD_C, WOOD_STUD_rho, WOOD_STUD_T)
             r = WOOD_STUD_T / WOOD_STUD_K
+        # else:
+        # raise ValueError("Material not supported", a)
         return pd.Series([r, c])
 
     def get_insulation(self, a):
@@ -392,11 +396,14 @@ class ResStockConfiguration:
 
     def convert_wall_construction(self):
         ins_layer = self.samples["Insulation Wall"].apply(self.get_insulation)
+        # print(self.samples["Insulation Wall"].head())
+        # print("\nTHIS IS INSULATION LAYER\n", ins_layer)
         mass_layer = self.samples["Insulation Wall"].apply(self.get_mass)
+        # print("\nTHIS IS mass LAYER\n", mass_layer)
         ins = ins_layer[0] + mass_layer[0]
         mass = ins_layer[1] + mass_layer[1]
         self.apply_to_col(ins, "FacadeRValue")
-        self.apply_to_col(mass, "FacadeMass")
+        self.apply_to_col(mass_layer[1], "FacadeMass")
 
     def convert_roof_construction(self):
         # If no insulation in roof, use ceiling insulation
@@ -416,7 +423,7 @@ class ResStockConfiguration:
         ins = ins_layer[0] + mass_layer[0]
         mass = ins_layer[1] + mass_layer[1]
         self.apply_to_col(ins, "RoofRValue")
-        self.apply_to_col(mass, "RoofMass")
+        # self.apply_to_col(mass, "RoofMass") # TODO: take out
 
     def convert_floor_construction(self):
         # ins_t = []
@@ -446,5 +453,6 @@ if __name__ == "__main__":
     df = test.get_template_df()
     # print(test.out[0])
     print(df.head())
-    print(df.describe())
+    print(df.describe()["FacadeMass"])
+    print(resstock_filtered.describe())
     print(test.out.shape)

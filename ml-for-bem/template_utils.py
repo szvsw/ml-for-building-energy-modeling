@@ -53,6 +53,9 @@ with warnings.catch_warnings():
     from archetypal.template.zonedefinition import ZoneDefinition
     from archetypal.template.constructions.internal_mass import InternalMass
     from archetypal.utils import reduce
+    from pyumi.shoeboxer.shoebox import ShoeBox
+
+from nrel_uitls import RESTYPES
 
 
 class minimumTemplate(UmiTemplateLibrary):
@@ -107,11 +110,11 @@ class minimumTemplate(UmiTemplateLibrary):
     def setup_default_scheds(self):
         # Always on
         sch_d_on = DaySchedule.from_values(
-            Name="AlwaysOn", Values=[1] * 24, Type="Fraction", Category="Day"
+            Name="d_AlwaysOn", Values=[1] * 24, Type="Fraction", Category="Day"
         )
         # Always off
         sch_d_off = DaySchedule.from_values(
-            Name="AlwaysOff", Values=[0] * 24, Type="Fraction", Category="Day"
+            Name="d_AlwaysOff", Values=[0] * 24, Type="Fraction", Category="Day"
         )
         self.DaySchedules.extend([sch_d_on, sch_d_off])
 
@@ -121,7 +124,7 @@ class minimumTemplate(UmiTemplateLibrary):
             Days=[sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on],
             Category="Week",
             Type="Fraction",
-            Name="AlwaysOn",
+            Name="w_AlwaysOn",
         )
         # Always off
         sch_w_off = WeekSchedule(
@@ -136,7 +139,7 @@ class minimumTemplate(UmiTemplateLibrary):
             ],
             Category="Week",
             Type="Fraction",
-            Name="AlwaysOff",
+            Name="w_AlwaysOff",
         )
 
         self.WeekSchedules.extend([sch_w_on, sch_w_off])
@@ -156,7 +159,7 @@ class minimumTemplate(UmiTemplateLibrary):
                 }
             ],
             "Type": "Fraction",
-            "Name": "AlwaysOn",
+            "Name": "y_AlwaysOn",
         }
         self.always_on = YearSchedule.from_dict(
             dict_on, {a.id: a for a in self.WeekSchedules}
@@ -175,7 +178,7 @@ class minimumTemplate(UmiTemplateLibrary):
                 }
             ],
             "Type": "Fraction",
-            "Name": "AlwaysOff",
+            "Name": "y_AlwaysOff",
         }
         self.always_off = YearSchedule.from_dict(
             dict_off, {a.id: a for a in self.WeekSchedules}
@@ -462,7 +465,7 @@ class minimumTemplate(UmiTemplateLibrary):
             idx, self.hiMass_facade(r_wall), self.hiMass_roof(r_roof)
         )
         perimLo_cons, coreLo_cons = self.define_zone_constructions(
-            idx, self.loMass_facade(r_wall), self.loMass_roof(r_roof)
+            idx, self.loMass_facade(r_wall), self.hiMass_roof(r_roof)
         )
 
         print("RVALUE FACADE", perimLo_cons.Facade.r_value)
@@ -536,7 +539,7 @@ class minimumTemplate(UmiTemplateLibrary):
 
         # BuildingTemplate using Zone, StructureInformation and WindowSetting objects
         building_template_loMass = BuildingTemplate(
-            Name=f"{bld_template_name}_LoMass_{idx}",
+            Name=f"{bld_template_name}_MASS_lo",
             Core=coreLo,
             Perimeter=perimLo,
             Structure=self.StructureDefinitions[0],
@@ -545,7 +548,7 @@ class minimumTemplate(UmiTemplateLibrary):
         )
 
         building_template_hiMass = BuildingTemplate(
-            Name=f"{bld_template_name}_HiMass_{idx}",
+            Name=f"{bld_template_name}_MASS_hi",
             Core=coreHi,
             Perimeter=perimHi,
             Structure=self.StructureDefinitions[0],
@@ -561,12 +564,23 @@ class minimumTemplate(UmiTemplateLibrary):
         self.initialize(name)
 
         for idx, row in templates_df.iterrows():
-            template_name = self.clean_name(
-                row["Dependency=Geometry Building Type RECS"],
-                row["Dependency=Vintage UBEM"],
-            )
+            # template_name = self.clean_name(
+            #     row["Dependency=Geometry Building Type RECS"],
+            #     row["Dependency=Vintage UBEM"],
+            # )
             print("\n", "*" * 50, f"\n{idx} out of {templates_df.shape[0]}")
+            print(row["Dependency=Vintage UBEM"])
+            v_idx = 0
+            if row["Dependency=Vintage UBEM"] == "1946-1980":
+                v_idx = 1
+            elif row["Dependency=Vintage UBEM"] == "1981-2003":
+                v_idx = 2
+            elif row["Dependency=Vintage UBEM"] == "2004+":
+                v_idx = 3
+
+            template_name = f"PROG_{RESTYPES[row['Dependency=Geometry Building Type RECS']]:02d}_VINTAGE_{v_idx:02d}"
             print("Building building template for ", template_name)
+
             self.construct_building_template(
                 bld_template_name=template_name,
                 idx=idx,
@@ -580,6 +594,7 @@ class minimumTemplate(UmiTemplateLibrary):
                 window=row["Windows"],
                 wwr=row["WWR"] / 100,
             )
+        print(self.BuildingTemplates)
         self.save(
             path_or_buf=os.path.join(
                 os.getcwd(),
@@ -588,19 +603,85 @@ class minimumTemplate(UmiTemplateLibrary):
                 "template_libs",
                 "cz_libs",
                 "residential",
-                name.split("_")[1] + ".json",
+                name + ".json",
             )
         )
 
         return self
 
-    def test_idf(self):
-        """
-        Test new templates in EnergyPlus
-        """
+
+def test_template(lib, epw_path, outdir):
+    """
+    Test new templates in EnergyPlus
+    """
+    for template in lib.BuildingTemplates:
+        # TODO: implement orientation rotator
+        wwr_map = {0: 0, 90: 0, 180: 0.4, 270: 0}  # N is 0, E is 90
+        # Convert to coords
+        width = 3.0
+        depth = 10.0
+        perim_depth = 3.0
+        height = 3.0
+        zones_data = [
+            {
+                "name": "Perim",
+                "coordinates": [
+                    (width, 0),
+                    (width, perim_depth),
+                    (0, perim_depth),
+                    (0, 0),
+                ],
+                "height": height,
+                "num_stories": 1,
+                "zoning": "by_storey",
+            },
+            {
+                "name": "Core",
+                "coordinates": [
+                    (width, perim_depth),
+                    (width, depth),
+                    (0, depth),
+                    (0, perim_depth),
+                ],
+                "height": height,
+                "num_stories": 1,
+                "zoning": "by_storey",
+            },
+        ]
+
+        sb = ShoeBox.from_template(
+            building_template=template,
+            zones_data=zones_data,
+            wwr_map=wwr_map,
+        )
+
+        # Set floor and roof geometry for each zone
+        for surface in sb.getsurfaces(surface_type="roof"):
+            name = surface.Name
+            name = name.replace("Roof", "Ceiling")
+            sb.add_adiabatic_to_surface(surface, name, 0.4)
+        for surface in sb.getsurfaces(surface_type="floor"):
+            name = surface.Name
+            name = name.replace("Floor", "Int Floor")
+            sb.add_adiabatic_to_surface(surface, name, 0.4)
+        # Internal partition and glazing
+        # Orientation
+        sb.outputs.add_basics().apply()
+        out_df = sb.simulate(
+            epw=epw_path,
+            output_directory=outdir,
+            annual=True,
+            keep_data_err=True,
+            process_files=True,
+            verbose=False,
+        )
+        print(out_df)
 
 
 if __name__ == "__main__":
+    overwrite = True
+    sim = False
+
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
@@ -609,19 +690,52 @@ if __name__ == "__main__":
     cz_templatelist = [x for x in cz_templatelist if "residentialtemplates" in x]
     cz_templatelist = [x for x in cz_templatelist if ".csv" in x]
     for csv_name in cz_templatelist:
-        cz_df = pd.read_csv(os.path.join(buildings_df_path, csv_name), index_col=0)
-
-        print("\n", "*" * 50, "\nTEMPLATES FOR CZ ", csv_name)
-
-        seed_template = UmiTemplateLibrary.open(template_path)
-
-        template = minimumTemplate(
-            OpaqueMaterials=seed_template.OpaqueMaterials,
-            GasMaterials=seed_template.GasMaterials,
-            GlazingMaterials=seed_template.GlazingMaterials,
-            DaySchedules=seed_template.DaySchedules,
-            WeekSchedules=seed_template.WeekSchedules,
-            YearSchedules=seed_template.YearSchedules,
+        tpath = os.path.join(
+            os.getcwd(),
+            "ml-for-bem",
+            "data",
+            "template_libs",
+            "cz_libs",
+            "residential",
+        )
+        existing = os.listdir(tpath)
+        outdir = os.path.join(
+            os.getcwd(),
+            "ml-for-bem",
+            "data",
+            "template_libs",
+            "cz_libs",
+            "residential",
+            "epresults",
+        )
+        epw_path = os.path.join(
+            os.getcwd(),
+            "ml-for-bem",
+            "data",
+            "epws",
+            "CAN_PQ_Montreal.Intl.AP.716270_CWEC.epw",
         )
 
-        template.construct_cz_templates(cz_df, csv_name.split(".")[0])
+        name = csv_name.split(".")[0].split("_")[1]
+        print("#" * 20, "Running tests for ", name, "#" * 20)
+
+        if overwrite:
+            cz_df = pd.read_csv(os.path.join(buildings_df_path, csv_name), index_col=0)
+            print("\n", "*" * 50, "\nTEMPLATES FOR CZ ", csv_name)
+
+            seed_template = UmiTemplateLibrary.open(template_path)
+
+            template = minimumTemplate(
+                OpaqueMaterials=seed_template.OpaqueMaterials,
+                GasMaterials=seed_template.GasMaterials,
+                GlazingMaterials=seed_template.GlazingMaterials,
+                DaySchedules=seed_template.DaySchedules,
+                WeekSchedules=seed_template.WeekSchedules,
+                YearSchedules=seed_template.YearSchedules,
+            )
+            template.construct_cz_templates(cz_df, name)
+
+        elif name + ".json" in existing:
+            template = UmiTemplateLibrary.open(os.path.join(tpath, name + ".json"))
+        if sim:
+            test_template(template, epw_path, outdir)
