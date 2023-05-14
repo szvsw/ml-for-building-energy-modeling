@@ -358,6 +358,81 @@
       "Name": "Concrete_Dense"
     },
     {
+      "$id": "1881795939920",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 1.75,
+      "Cost": 0.0,
+      "Density": 2400.0,
+      "EmbodiedCarbon": 0.24,
+      "EmbodiedEnergy": 2.12,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Concrete_Dense_facade"
+    },
+    {
+      "$id": "1881797095728",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 1.75,
+      "Cost": 0.0,
+      "Density": 2400.0,
+      "EmbodiedCarbon": 0.24,
+      "EmbodiedEnergy": 2.12,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Concrete_Dense_ground"
+    },
+    {
+      "$id": "1881797095488",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.7,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.7,
+      "Conductivity": 1.75,
+      "Cost": 0.0,
+      "Density": 2400.0,
+      "EmbodiedCarbon": 0.24,
+      "EmbodiedEnergy": 2.12,
+      "SubstitutionRatePattern": [
+        1.0
+      ],
+      "SubstitutionTimestep": 100.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Concrete_Dense_roof"
+    },
+    {
       "$id": "13",
       "MoistureDiffusionResistance": 50.0,
       "Roughness": "Rough",
@@ -406,6 +481,81 @@
       "Comments": null,
       "DataSource": "default",
       "Name": "Fiberglass_Batts"
+    },
+    {
+      "$id": "1881797095968",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.043,
+      "Cost": 0.0,
+      "Density": 12.0,
+      "EmbodiedCarbon": 1.35,
+      "EmbodiedEnergy": 28.0,
+      "SubstitutionRatePattern": [
+        0.5
+      ],
+      "SubstitutionTimestep": 30.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 1000.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Fiberglass_Batts_facade"
+    },
+    {
+      "$id": "1881797096448",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.043,
+      "Cost": 0.0,
+      "Density": 12.0,
+      "EmbodiedCarbon": 1.35,
+      "EmbodiedEnergy": 28.0,
+      "SubstitutionRatePattern": [
+        0.5
+      ],
+      "SubstitutionTimestep": 30.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 1000.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Fiberglass_Batts_ground"
+    },
+    {
+      "$id": "1881797096208",
+      "MoistureDiffusionResistance": 50.0,
+      "Roughness": "Rough",
+      "SolarAbsorptance": 0.6,
+      "SpecificHeat": 840.0,
+      "ThermalEmittance": 0.9,
+      "VisibleAbsorptance": 0.6,
+      "Conductivity": 0.043,
+      "Cost": 0.0,
+      "Density": 12.0,
+      "EmbodiedCarbon": 1.35,
+      "EmbodiedEnergy": 28.0,
+      "SubstitutionRatePattern": [
+        0.5
+      ],
+      "SubstitutionTimestep": 30.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 1000.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Fiberglass_Batts_roof"
     },
     {
       "$id": "14",
@@ -618,17 +768,17 @@
   ],
   "OpaqueConstructions": [
     {
-      "$id": "1821183421952",
+      "$id": "1881797021024",
       "Layers": [
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096448"
           },
           "Thickness": 0.2
         },
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095728"
           },
           "Thickness": 0.2
         },
@@ -650,11 +800,11 @@
       "Name": "floor"
     },
     {
-      "$id": "1821183422272",
+      "$id": "1881797021344",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -666,7 +816,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -688,11 +838,11 @@
       "Name": "hiMass_facade"
     },
     {
-      "$id": "1821183349280",
+      "$id": "1881796026752",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -704,7 +854,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -726,11 +876,11 @@
       "Name": "hiMass_facade_1"
     },
     {
-      "$id": "1821184248064",
+      "$id": "1881798219872",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -742,7 +892,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.071
         },
@@ -764,11 +914,11 @@
       "Name": "hiMass_facade_10"
     },
     {
-      "$id": "1821184248704",
+      "$id": "1881798220512",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -780,7 +930,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.109
         },
@@ -802,11 +952,11 @@
       "Name": "hiMass_facade_11"
     },
     {
-      "$id": "1821184249344",
+      "$id": "1881798221152",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -818,7 +968,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -840,11 +990,11 @@
       "Name": "hiMass_facade_12"
     },
     {
-      "$id": "1821185233120",
+      "$id": "1881798250560",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -856,7 +1006,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -878,11 +1028,11 @@
       "Name": "hiMass_facade_13"
     },
     {
-      "$id": "1821185233760",
+      "$id": "1881798251200",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -894,7 +1044,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.085
         },
@@ -916,11 +1066,11 @@
       "Name": "hiMass_facade_14"
     },
     {
-      "$id": "1821185234400",
+      "$id": "1881798251840",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -932,7 +1082,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.13
         },
@@ -954,11 +1104,11 @@
       "Name": "hiMass_facade_15"
     },
     {
-      "$id": "1821183349920",
+      "$id": "1881796027392",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -970,7 +1120,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.071
         },
@@ -992,11 +1142,11 @@
       "Name": "hiMass_facade_2"
     },
     {
-      "$id": "1821183350560",
+      "$id": "1881796028032",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -1008,7 +1158,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.109
         },
@@ -1030,11 +1180,11 @@
       "Name": "hiMass_facade_3"
     },
     {
-      "$id": "1821183351200",
+      "$id": "1881796028672",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -1046,7 +1196,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.002
         },
@@ -1068,11 +1218,11 @@
       "Name": "hiMass_facade_4"
     },
     {
-      "$id": "1821183351840",
+      "$id": "1881796029312",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -1084,7 +1234,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -1106,11 +1256,11 @@
       "Name": "hiMass_facade_5"
     },
     {
-      "$id": "1821183352480",
+      "$id": "1881796029952",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -1122,7 +1272,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.071
         },
@@ -1144,11 +1294,11 @@
       "Name": "hiMass_facade_6"
     },
     {
-      "$id": "1821184246144",
+      "$id": "1881798217952",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -1160,7 +1310,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.108
         },
@@ -1182,11 +1332,11 @@
       "Name": "hiMass_facade_7"
     },
     {
-      "$id": "1821184246784",
+      "$id": "1881798218592",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -1198,7 +1348,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -1220,11 +1370,11 @@
       "Name": "hiMass_facade_8"
     },
     {
-      "$id": "1821184247424",
+      "$id": "1881798219232",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881795939920"
           },
           "Thickness": 0.1
         },
@@ -1236,7 +1386,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -1258,11 +1408,11 @@
       "Name": "hiMass_facade_9"
     },
     {
-      "$id": "1821183348800",
+      "$id": "1881797021504",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1274,7 +1424,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.163
         },
@@ -1296,11 +1446,11 @@
       "Name": "hiMass_roof"
     },
     {
-      "$id": "1821183349120",
+      "$id": "1881796026592",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1312,7 +1462,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.163
         },
@@ -1334,11 +1484,11 @@
       "Name": "hiMass_roof_1"
     },
     {
-      "$id": "1821183352000",
+      "$id": "1881796029472",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1350,7 +1500,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.185
         },
@@ -1372,11 +1522,11 @@
       "Name": "hiMass_roof_10"
     },
     {
-      "$id": "1821183352320",
+      "$id": "1881796029792",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1388,7 +1538,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.185
         },
@@ -1410,11 +1560,11 @@
       "Name": "hiMass_roof_11"
     },
     {
-      "$id": "1821183352640",
+      "$id": "1881796030112",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1426,7 +1576,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.197
         },
@@ -1448,11 +1598,11 @@
       "Name": "hiMass_roof_12"
     },
     {
-      "$id": "1821184245984",
+      "$id": "1881798217792",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1464,7 +1614,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.197
         },
@@ -1486,11 +1636,11 @@
       "Name": "hiMass_roof_13"
     },
     {
-      "$id": "1821184246304",
+      "$id": "1881798218112",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1502,7 +1652,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.273
         },
@@ -1524,11 +1674,11 @@
       "Name": "hiMass_roof_14"
     },
     {
-      "$id": "1821184246624",
+      "$id": "1881798218432",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1540,7 +1690,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.273
         },
@@ -1562,11 +1712,11 @@
       "Name": "hiMass_roof_15"
     },
     {
-      "$id": "1821184246944",
+      "$id": "1881798218752",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1578,7 +1728,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1600,11 +1750,11 @@
       "Name": "hiMass_roof_16"
     },
     {
-      "$id": "1821184247264",
+      "$id": "1881798219072",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1616,7 +1766,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1638,11 +1788,11 @@
       "Name": "hiMass_roof_17"
     },
     {
-      "$id": "1821184247584",
+      "$id": "1881798219392",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1654,7 +1804,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1676,11 +1826,11 @@
       "Name": "hiMass_roof_18"
     },
     {
-      "$id": "1821184247904",
+      "$id": "1881798219712",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1692,7 +1842,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1714,11 +1864,11 @@
       "Name": "hiMass_roof_19"
     },
     {
-      "$id": "1821183349440",
+      "$id": "1881796026912",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1730,7 +1880,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.186
         },
@@ -1752,11 +1902,11 @@
       "Name": "hiMass_roof_2"
     },
     {
-      "$id": "1821184248224",
+      "$id": "1881798220032",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1768,7 +1918,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1790,11 +1940,11 @@
       "Name": "hiMass_roof_20"
     },
     {
-      "$id": "1821184248544",
+      "$id": "1881798220352",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1806,7 +1956,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1828,11 +1978,11 @@
       "Name": "hiMass_roof_21"
     },
     {
-      "$id": "1821184248864",
+      "$id": "1881798220672",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1844,7 +1994,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1866,11 +2016,11 @@
       "Name": "hiMass_roof_22"
     },
     {
-      "$id": "1821184249184",
+      "$id": "1881798220992",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1882,7 +2032,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1904,11 +2054,11 @@
       "Name": "hiMass_roof_23"
     },
     {
-      "$id": "1821184249504",
+      "$id": "1881798221312",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1920,7 +2070,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1942,11 +2092,11 @@
       "Name": "hiMass_roof_24"
     },
     {
-      "$id": "1821185232960",
+      "$id": "1881798221632",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1958,7 +2108,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -1980,11 +2130,11 @@
       "Name": "hiMass_roof_25"
     },
     {
-      "$id": "1821185233280",
+      "$id": "1881798250720",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -1996,7 +2146,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -2018,11 +2168,11 @@
       "Name": "hiMass_roof_26"
     },
     {
-      "$id": "1821185233600",
+      "$id": "1881798251040",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2034,7 +2184,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -2056,11 +2206,11 @@
       "Name": "hiMass_roof_27"
     },
     {
-      "$id": "1821185233920",
+      "$id": "1881798251360",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2072,7 +2222,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -2094,11 +2244,11 @@
       "Name": "hiMass_roof_28"
     },
     {
-      "$id": "1821185234240",
+      "$id": "1881798251680",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2110,7 +2260,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -2132,11 +2282,11 @@
       "Name": "hiMass_roof_29"
     },
     {
-      "$id": "1821183349760",
+      "$id": "1881796027232",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2148,7 +2298,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.186
         },
@@ -2170,11 +2320,11 @@
       "Name": "hiMass_roof_3"
     },
     {
-      "$id": "1821185234560",
+      "$id": "1881798252000",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2186,7 +2336,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -2208,11 +2358,11 @@
       "Name": "hiMass_roof_30"
     },
     {
-      "$id": "1821185234880",
+      "$id": "1881798252320",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2224,7 +2374,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.198
         },
@@ -2246,11 +2396,11 @@
       "Name": "hiMass_roof_31"
     },
     {
-      "$id": "1821183350080",
+      "$id": "1881796027552",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2262,7 +2412,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.199
         },
@@ -2284,11 +2434,11 @@
       "Name": "hiMass_roof_4"
     },
     {
-      "$id": "1821183350400",
+      "$id": "1881796027872",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2300,7 +2450,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.199
         },
@@ -2322,11 +2472,11 @@
       "Name": "hiMass_roof_5"
     },
     {
-      "$id": "1821183350720",
+      "$id": "1881796028192",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2338,7 +2488,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.276
         },
@@ -2360,11 +2510,11 @@
       "Name": "hiMass_roof_6"
     },
     {
-      "$id": "1821183351040",
+      "$id": "1881796028512",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2376,7 +2526,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.276
         },
@@ -2398,11 +2548,11 @@
       "Name": "hiMass_roof_7"
     },
     {
-      "$id": "1821183351360",
+      "$id": "1881796028832",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2414,7 +2564,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.162
         },
@@ -2436,11 +2586,11 @@
       "Name": "hiMass_roof_8"
     },
     {
-      "$id": "1821183351680",
+      "$id": "1881796029152",
       "Layers": [
         {
           "Material": {
-            "$ref": "12"
+            "$ref": "1881797095488"
           },
           "Thickness": 0.1
         },
@@ -2452,7 +2602,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797096208"
           },
           "Thickness": 0.162
         },
@@ -2474,7 +2624,7 @@
       "Name": "hiMass_roof_9"
     },
     {
-      "$id": "1821183348960",
+      "$id": "1881796026432",
       "Layers": [
         {
           "Material": {
@@ -2490,7 +2640,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -2512,7 +2662,7 @@
       "Name": "loMass_facade"
     },
     {
-      "$id": "1821183349600",
+      "$id": "1881796027072",
       "Layers": [
         {
           "Material": {
@@ -2528,7 +2678,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -2550,7 +2700,7 @@
       "Name": "loMass_facade_1"
     },
     {
-      "$id": "1821184248384",
+      "$id": "1881798220192",
       "Layers": [
         {
           "Material": {
@@ -2566,7 +2716,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.071
         },
@@ -2588,7 +2738,7 @@
       "Name": "loMass_facade_10"
     },
     {
-      "$id": "1821184249024",
+      "$id": "1881798220832",
       "Layers": [
         {
           "Material": {
@@ -2604,7 +2754,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.109
         },
@@ -2626,7 +2776,7 @@
       "Name": "loMass_facade_11"
     },
     {
-      "$id": "1821184249664",
+      "$id": "1881798221472",
       "Layers": [
         {
           "Material": {
@@ -2642,7 +2792,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -2664,7 +2814,7 @@
       "Name": "loMass_facade_12"
     },
     {
-      "$id": "1821185233440",
+      "$id": "1881798250880",
       "Layers": [
         {
           "Material": {
@@ -2680,7 +2830,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -2702,7 +2852,7 @@
       "Name": "loMass_facade_13"
     },
     {
-      "$id": "1821185234080",
+      "$id": "1881798251520",
       "Layers": [
         {
           "Material": {
@@ -2718,7 +2868,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.085
         },
@@ -2740,7 +2890,7 @@
       "Name": "loMass_facade_14"
     },
     {
-      "$id": "1821185234720",
+      "$id": "1881798252160",
       "Layers": [
         {
           "Material": {
@@ -2756,7 +2906,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.13
         },
@@ -2778,7 +2928,7 @@
       "Name": "loMass_facade_15"
     },
     {
-      "$id": "1821183350240",
+      "$id": "1881796027712",
       "Layers": [
         {
           "Material": {
@@ -2794,7 +2944,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.071
         },
@@ -2816,7 +2966,7 @@
       "Name": "loMass_facade_2"
     },
     {
-      "$id": "1821183350880",
+      "$id": "1881796028352",
       "Layers": [
         {
           "Material": {
@@ -2832,7 +2982,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.109
         },
@@ -2854,7 +3004,7 @@
       "Name": "loMass_facade_3"
     },
     {
-      "$id": "1821183351520",
+      "$id": "1881796028992",
       "Layers": [
         {
           "Material": {
@@ -2870,7 +3020,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.002
         },
@@ -2892,7 +3042,7 @@
       "Name": "loMass_facade_4"
     },
     {
-      "$id": "1821183352160",
+      "$id": "1881796029632",
       "Layers": [
         {
           "Material": {
@@ -2908,7 +3058,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -2930,7 +3080,7 @@
       "Name": "loMass_facade_5"
     },
     {
-      "$id": "1821184245824",
+      "$id": "1881796030272",
       "Layers": [
         {
           "Material": {
@@ -2946,7 +3096,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.071
         },
@@ -2968,7 +3118,7 @@
       "Name": "loMass_facade_6"
     },
     {
-      "$id": "1821184246464",
+      "$id": "1881798218272",
       "Layers": [
         {
           "Material": {
@@ -2984,7 +3134,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.108
         },
@@ -3006,7 +3156,7 @@
       "Name": "loMass_facade_7"
     },
     {
-      "$id": "1821184247104",
+      "$id": "1881798218912",
       "Layers": [
         {
           "Material": {
@@ -3022,7 +3172,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -3044,7 +3194,7 @@
       "Name": "loMass_facade_8"
     },
     {
-      "$id": "1821184247744",
+      "$id": "1881798219552",
       "Layers": [
         {
           "Material": {
@@ -3060,7 +3210,7 @@
         },
         {
           "Material": {
-            "$ref": "20"
+            "$ref": "1881797095968"
           },
           "Thickness": 0.003
         },
@@ -3082,7 +3232,7 @@
       "Name": "loMass_facade_9"
     },
     {
-      "$id": "1821183422112",
+      "$id": "1881797021184",
       "Layers": [
         {
           "Material": {
@@ -3116,7 +3266,7 @@
   ],
   "WindowConstructions": [
     {
-      "$id": "1821183421472",
+      "$id": "1881797020544",
       "Layers": [
         {
           "Material": {
@@ -3148,7 +3298,7 @@
       "Name": "dbl_LoE"
     },
     {
-      "$id": "1821183421312",
+      "$id": "1881797020384",
       "Layers": [
         {
           "Material": {
@@ -3180,7 +3330,7 @@
       "Name": "dbl_clr"
     },
     {
-      "$id": "1821183421152",
+      "$id": "1881797020224",
       "Layers": [
         {
           "Material": {
@@ -3200,7 +3350,7 @@
       "Name": "single_clr"
     },
     {
-      "$id": "1821183421792",
+      "$id": "1881797020864",
       "Layers": [
         {
           "Material": {
@@ -3244,7 +3394,7 @@
       "Name": "triple_LoE"
     },
     {
-      "$id": "1821183421632",
+      "$id": "1881797020704",
       "Layers": [
         {
           "Material": {
@@ -3290,7 +3440,7 @@
   ],
   "StructureDefinitions": [
     {
-      "$id": "1821184903056",
+      "$id": "1881794017024",
       "MassRatios": [
         {
           "HighLoadRatio": 1.0,
@@ -3313,7 +3463,7 @@
   ],
   "DaySchedules": [
     {
-      "$id": "1821182529344",
+      "$id": "1881794035392",
       "Category": "Day",
       "Type": "Fraction",
       "Values": [
@@ -3347,7 +3497,7 @@
       "Name": "d_AlwaysOff"
     },
     {
-      "$id": "1821184517568",
+      "$id": "1881797141824",
       "Category": "Day",
       "Type": "Fraction",
       "Values": [
@@ -7191,29 +7341,29 @@
   ],
   "WeekSchedules": [
     {
-      "$id": "1821184904928",
+      "$id": "1881794015296",
       "Category": "Week",
       "Days": [
         {
-          "$ref": "1821182529344"
+          "$ref": "1881794035392"
         },
         {
-          "$ref": "1821182529344"
+          "$ref": "1881794035392"
         },
         {
-          "$ref": "1821182529344"
+          "$ref": "1881794035392"
         },
         {
-          "$ref": "1821182529344"
+          "$ref": "1881794035392"
         },
         {
-          "$ref": "1821182529344"
+          "$ref": "1881794035392"
         },
         {
-          "$ref": "1821182529344"
+          "$ref": "1881794035392"
         },
         {
-          "$ref": "1821182529344"
+          "$ref": "1881794035392"
         }
       ],
       "Type": "Fraction",
@@ -7222,29 +7372,29 @@
       "Name": "w_AlwaysOff"
     },
     {
-      "$id": "1821184905072",
+      "$id": "1881794018464",
       "Category": "Week",
       "Days": [
         {
-          "$ref": "1821184517568"
+          "$ref": "1881797141824"
         },
         {
-          "$ref": "1821184517568"
+          "$ref": "1881797141824"
         },
         {
-          "$ref": "1821184517568"
+          "$ref": "1881797141824"
         },
         {
-          "$ref": "1821184517568"
+          "$ref": "1881797141824"
         },
         {
-          "$ref": "1821184517568"
+          "$ref": "1881797141824"
         },
         {
-          "$ref": "1821184517568"
+          "$ref": "1881797141824"
         },
         {
-          "$ref": "1821184517568"
+          "$ref": "1881797141824"
         }
       ],
       "Type": "Fraction",
@@ -7909,7 +8059,7 @@
           "ToDay": 31,
           "ToMonth": 12,
           "Schedule": {
-            "$ref": "1821184904928"
+            "$ref": "1881794015296"
           }
         }
       ],
@@ -7928,7 +8078,7 @@
           "ToDay": 31,
           "ToMonth": 12,
           "Schedule": {
-            "$ref": "1821184905072"
+            "$ref": "1881794018464"
           }
         }
       ],
@@ -7940,7 +8090,7 @@
   ],
   "DomesticHotWaterSettings": [
     {
-      "$id": "1821184901760",
+      "$id": "1881794957664",
       "FlowRatePerFloorArea": 0.03,
       "IsOn": true,
       "WaterSchedule": {
@@ -7956,7 +8106,7 @@
   ],
   "VentilationSettings": [
     {
-      "$id": "1821183571184",
+      "$id": "1881795995344",
       "Afn": false,
       "IsBuoyancyOn": true,
       "Infiltration": 0.338,
@@ -7982,7 +8132,7 @@
       "Name": "vent_setting_0p34ach"
     },
     {
-      "$id": "1821184148960",
+      "$id": "1881798207424",
       "Afn": false,
       "IsBuoyancyOn": true,
       "Infiltration": 0.676,
@@ -8008,7 +8158,7 @@
       "Name": "vent_setting_0p68ach"
     },
     {
-      "$id": "1821184120768",
+      "$id": "1881797097888",
       "Afn": false,
       "IsBuoyancyOn": true,
       "Infiltration": 1.01,
@@ -8036,7 +8186,7 @@
   ],
   "ZoneConditionings": [
     {
-      "$id": "1821159887216",
+      "$id": "1881794126192",
       "CoolingSchedule": {
         "$ref": "1"
       },
@@ -8075,21 +8225,21 @@
   ],
   "ZoneConstructionSets": [
     {
-      "$id": "1821183312128",
+      "$id": "1881795969280",
       "Facade": {
-        "$ref": "1821183422272"
+        "$ref": "1881797021344"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183348800"
+        "$ref": "1881797021504"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8102,21 +8252,21 @@
       "Name": "constr_set_core_1"
     },
     {
-      "$id": "1821184146496",
+      "$id": "1881798249536",
       "Facade": {
-        "$ref": "1821184247424"
+        "$ref": "1881798219232"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184247584"
+        "$ref": "1881798219392"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8129,21 +8279,21 @@
       "Name": "constr_set_core_10"
     },
     {
-      "$id": "1821184146880",
+      "$id": "1881798249920",
       "Facade": {
-        "$ref": "1821184247744"
+        "$ref": "1881798219552"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184247904"
+        "$ref": "1881798219712"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8156,21 +8306,21 @@
       "Name": "constr_set_core_10_1"
     },
     {
-      "$id": "1821184147264",
+      "$id": "1881798250304",
       "Facade": {
-        "$ref": "1821184248064"
+        "$ref": "1881798219872"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184248224"
+        "$ref": "1881798220032"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8183,21 +8333,21 @@
       "Name": "constr_set_core_11"
     },
     {
-      "$id": "1821185343744",
+      "$id": "1881798058240",
       "Facade": {
-        "$ref": "1821184248384"
+        "$ref": "1881798220192"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184248544"
+        "$ref": "1881798220352"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8210,21 +8360,21 @@
       "Name": "constr_set_core_11_1"
     },
     {
-      "$id": "1821185344128",
+      "$id": "1881798058624",
       "Facade": {
-        "$ref": "1821184248704"
+        "$ref": "1881798220512"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184248864"
+        "$ref": "1881798220672"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8237,21 +8387,21 @@
       "Name": "constr_set_core_12"
     },
     {
-      "$id": "1821185344512",
+      "$id": "1881798059008",
       "Facade": {
-        "$ref": "1821184249024"
+        "$ref": "1881798220832"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184249184"
+        "$ref": "1881798220992"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8264,21 +8414,21 @@
       "Name": "constr_set_core_12_1"
     },
     {
-      "$id": "1821185344896",
+      "$id": "1881798059392",
       "Facade": {
-        "$ref": "1821184249344"
+        "$ref": "1881798221152"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184249504"
+        "$ref": "1881798221312"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8291,21 +8441,21 @@
       "Name": "constr_set_core_13"
     },
     {
-      "$id": "1821185345280",
+      "$id": "1881798059776",
       "Facade": {
-        "$ref": "1821184249664"
+        "$ref": "1881798221472"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185232960"
+        "$ref": "1881798221632"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8318,21 +8468,21 @@
       "Name": "constr_set_core_13_1"
     },
     {
-      "$id": "1821185345664",
+      "$id": "1881798060160",
       "Facade": {
-        "$ref": "1821185233120"
+        "$ref": "1881798250560"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185233280"
+        "$ref": "1881798250720"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8345,21 +8495,21 @@
       "Name": "constr_set_core_14"
     },
     {
-      "$id": "1821185346048",
+      "$id": "1881798060544",
       "Facade": {
-        "$ref": "1821185233440"
+        "$ref": "1881798250880"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185233600"
+        "$ref": "1881798251040"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8372,21 +8522,21 @@
       "Name": "constr_set_core_14_1"
     },
     {
-      "$id": "1821185346432",
+      "$id": "1881798060928",
       "Facade": {
-        "$ref": "1821185233760"
+        "$ref": "1881798251200"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185233920"
+        "$ref": "1881798251360"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8399,21 +8549,21 @@
       "Name": "constr_set_core_15"
     },
     {
-      "$id": "1821185346816",
+      "$id": "1881798061312",
       "Facade": {
-        "$ref": "1821185234080"
+        "$ref": "1881798251520"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185234240"
+        "$ref": "1881798251680"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8426,21 +8576,21 @@
       "Name": "constr_set_core_15_1"
     },
     {
-      "$id": "1821185347200",
+      "$id": "1881798061696",
       "Facade": {
-        "$ref": "1821185234400"
+        "$ref": "1881798251840"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185234560"
+        "$ref": "1881798252000"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8453,21 +8603,21 @@
       "Name": "constr_set_core_16"
     },
     {
-      "$id": "1821185306688",
+      "$id": "1881798029376",
       "Facade": {
-        "$ref": "1821185234720"
+        "$ref": "1881798252160"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185234880"
+        "$ref": "1881798252320"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8480,21 +8630,21 @@
       "Name": "constr_set_core_16_1"
     },
     {
-      "$id": "1821183312512",
+      "$id": "1881795969664",
       "Facade": {
-        "$ref": "1821183348960"
+        "$ref": "1881796026432"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183349120"
+        "$ref": "1881796026592"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8507,21 +8657,21 @@
       "Name": "constr_set_core_1_1"
     },
     {
-      "$id": "1821183312896",
+      "$id": "1881795970048",
       "Facade": {
-        "$ref": "1821183349280"
+        "$ref": "1881796026752"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183349440"
+        "$ref": "1881796026912"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8534,21 +8684,21 @@
       "Name": "constr_set_core_2"
     },
     {
-      "$id": "1821183313280",
+      "$id": "1881795970432",
       "Facade": {
-        "$ref": "1821183349600"
+        "$ref": "1881796027072"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183349760"
+        "$ref": "1881796027232"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8561,21 +8711,21 @@
       "Name": "constr_set_core_2_1"
     },
     {
-      "$id": "1821183313664",
+      "$id": "1881795970816",
       "Facade": {
-        "$ref": "1821183349920"
+        "$ref": "1881796027392"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183350080"
+        "$ref": "1881796027552"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8588,21 +8738,21 @@
       "Name": "constr_set_core_3"
     },
     {
-      "$id": "1821183314048",
+      "$id": "1881795971200",
       "Facade": {
-        "$ref": "1821183350240"
+        "$ref": "1881796027712"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183350400"
+        "$ref": "1881796027872"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8615,21 +8765,21 @@
       "Name": "constr_set_core_3_1"
     },
     {
-      "$id": "1821183314432",
+      "$id": "1881795971584",
       "Facade": {
-        "$ref": "1821183350560"
+        "$ref": "1881796028032"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183350720"
+        "$ref": "1881796028192"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8642,21 +8792,21 @@
       "Name": "constr_set_core_4"
     },
     {
-      "$id": "1821183314816",
+      "$id": "1881795971968",
       "Facade": {
-        "$ref": "1821183350880"
+        "$ref": "1881796028352"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183351040"
+        "$ref": "1881796028512"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8669,21 +8819,21 @@
       "Name": "constr_set_core_4_1"
     },
     {
-      "$id": "1821183315392",
+      "$id": "1881795972544",
       "Facade": {
-        "$ref": "1821183351200"
+        "$ref": "1881796028672"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183351360"
+        "$ref": "1881796028832"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8696,21 +8846,21 @@
       "Name": "constr_set_core_5"
     },
     {
-      "$id": "1821183315776",
+      "$id": "1881795972928",
       "Facade": {
-        "$ref": "1821183351520"
+        "$ref": "1881796028992"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183351680"
+        "$ref": "1881796029152"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8723,21 +8873,21 @@
       "Name": "constr_set_core_5_1"
     },
     {
-      "$id": "1821184143616",
+      "$id": "1881798246656",
       "Facade": {
-        "$ref": "1821183351840"
+        "$ref": "1881796029312"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183352000"
+        "$ref": "1881796029472"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8750,21 +8900,21 @@
       "Name": "constr_set_core_6"
     },
     {
-      "$id": "1821184144000",
+      "$id": "1881798247040",
       "Facade": {
-        "$ref": "1821183352160"
+        "$ref": "1881796029632"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183352320"
+        "$ref": "1881796029792"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8777,21 +8927,21 @@
       "Name": "constr_set_core_6_1"
     },
     {
-      "$id": "1821184144384",
+      "$id": "1881798247424",
       "Facade": {
-        "$ref": "1821183352480"
+        "$ref": "1881796029952"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183352640"
+        "$ref": "1881796030112"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8804,21 +8954,21 @@
       "Name": "constr_set_core_7"
     },
     {
-      "$id": "1821184144768",
+      "$id": "1881798247808",
       "Facade": {
-        "$ref": "1821184245824"
+        "$ref": "1881796030272"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184245984"
+        "$ref": "1881798217792"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8831,21 +8981,21 @@
       "Name": "constr_set_core_7_1"
     },
     {
-      "$id": "1821184144960",
+      "$id": "1881798248000",
       "Facade": {
-        "$ref": "1821184246144"
+        "$ref": "1881798217952"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184246304"
+        "$ref": "1881798218112"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8858,21 +9008,21 @@
       "Name": "constr_set_core_8"
     },
     {
-      "$id": "1821184145344",
+      "$id": "1881798248384",
       "Facade": {
-        "$ref": "1821184246464"
+        "$ref": "1881798218272"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184246624"
+        "$ref": "1881798218432"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8885,21 +9035,21 @@
       "Name": "constr_set_core_8_1"
     },
     {
-      "$id": "1821184145728",
+      "$id": "1881798248768",
       "Facade": {
-        "$ref": "1821184246784"
+        "$ref": "1881798218592"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184246944"
+        "$ref": "1881798218752"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8912,21 +9062,21 @@
       "Name": "constr_set_core_9"
     },
     {
-      "$id": "1821184146112",
+      "$id": "1881798249152",
       "Facade": {
-        "$ref": "1821184247104"
+        "$ref": "1881798218912"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184247264"
+        "$ref": "1881798219072"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8939,21 +9089,21 @@
       "Name": "constr_set_core_9_1"
     },
     {
-      "$id": "1821183311936",
+      "$id": "1881795969088",
       "Facade": {
-        "$ref": "1821183422272"
+        "$ref": "1881797021344"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183348800"
+        "$ref": "1881797021504"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8966,21 +9116,21 @@
       "Name": "constr_set_perim_1"
     },
     {
-      "$id": "1821184146304",
+      "$id": "1881798249344",
       "Facade": {
-        "$ref": "1821184247424"
+        "$ref": "1881798219232"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184247584"
+        "$ref": "1881798219392"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -8993,21 +9143,21 @@
       "Name": "constr_set_perim_10"
     },
     {
-      "$id": "1821184146688",
+      "$id": "1881798249728",
       "Facade": {
-        "$ref": "1821184247744"
+        "$ref": "1881798219552"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184247904"
+        "$ref": "1881798219712"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9020,21 +9170,21 @@
       "Name": "constr_set_perim_10_1"
     },
     {
-      "$id": "1821184147072",
+      "$id": "1881798250112",
       "Facade": {
-        "$ref": "1821184248064"
+        "$ref": "1881798219872"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184248224"
+        "$ref": "1881798220032"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9047,21 +9197,21 @@
       "Name": "constr_set_perim_11"
     },
     {
-      "$id": "1821185343552",
+      "$id": "1881798058048",
       "Facade": {
-        "$ref": "1821184248384"
+        "$ref": "1881798220192"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184248544"
+        "$ref": "1881798220352"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9074,21 +9224,21 @@
       "Name": "constr_set_perim_11_1"
     },
     {
-      "$id": "1821185343936",
+      "$id": "1881798058432",
       "Facade": {
-        "$ref": "1821184248704"
+        "$ref": "1881798220512"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184248864"
+        "$ref": "1881798220672"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9101,21 +9251,21 @@
       "Name": "constr_set_perim_12"
     },
     {
-      "$id": "1821185344320",
+      "$id": "1881798058816",
       "Facade": {
-        "$ref": "1821184249024"
+        "$ref": "1881798220832"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184249184"
+        "$ref": "1881798220992"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9128,21 +9278,21 @@
       "Name": "constr_set_perim_12_1"
     },
     {
-      "$id": "1821185344704",
+      "$id": "1881798059200",
       "Facade": {
-        "$ref": "1821184249344"
+        "$ref": "1881798221152"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184249504"
+        "$ref": "1881798221312"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9155,21 +9305,21 @@
       "Name": "constr_set_perim_13"
     },
     {
-      "$id": "1821185345088",
+      "$id": "1881798059584",
       "Facade": {
-        "$ref": "1821184249664"
+        "$ref": "1881798221472"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185232960"
+        "$ref": "1881798221632"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9182,21 +9332,21 @@
       "Name": "constr_set_perim_13_1"
     },
     {
-      "$id": "1821185345472",
+      "$id": "1881798059968",
       "Facade": {
-        "$ref": "1821185233120"
+        "$ref": "1881798250560"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185233280"
+        "$ref": "1881798250720"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9209,21 +9359,21 @@
       "Name": "constr_set_perim_14"
     },
     {
-      "$id": "1821185345856",
+      "$id": "1881798060352",
       "Facade": {
-        "$ref": "1821185233440"
+        "$ref": "1881798250880"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185233600"
+        "$ref": "1881798251040"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9236,21 +9386,21 @@
       "Name": "constr_set_perim_14_1"
     },
     {
-      "$id": "1821185346240",
+      "$id": "1881798060736",
       "Facade": {
-        "$ref": "1821185233760"
+        "$ref": "1881798251200"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185233920"
+        "$ref": "1881798251360"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9263,21 +9413,21 @@
       "Name": "constr_set_perim_15"
     },
     {
-      "$id": "1821185346624",
+      "$id": "1881798061120",
       "Facade": {
-        "$ref": "1821185234080"
+        "$ref": "1881798251520"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185234240"
+        "$ref": "1881798251680"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9290,21 +9440,21 @@
       "Name": "constr_set_perim_15_1"
     },
     {
-      "$id": "1821185347008",
+      "$id": "1881798061504",
       "Facade": {
-        "$ref": "1821185234400"
+        "$ref": "1881798251840"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185234560"
+        "$ref": "1881798252000"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9317,21 +9467,21 @@
       "Name": "constr_set_perim_16"
     },
     {
-      "$id": "1821185347392",
+      "$id": "1881798061888",
       "Facade": {
-        "$ref": "1821185234720"
+        "$ref": "1881798252160"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821185234880"
+        "$ref": "1881798252320"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9344,21 +9494,21 @@
       "Name": "constr_set_perim_16_1"
     },
     {
-      "$id": "1821183312320",
+      "$id": "1881795969472",
       "Facade": {
-        "$ref": "1821183348960"
+        "$ref": "1881796026432"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183349120"
+        "$ref": "1881796026592"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9371,21 +9521,21 @@
       "Name": "constr_set_perim_1_1"
     },
     {
-      "$id": "1821183312704",
+      "$id": "1881795969856",
       "Facade": {
-        "$ref": "1821183349280"
+        "$ref": "1881796026752"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183349440"
+        "$ref": "1881796026912"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9398,21 +9548,21 @@
       "Name": "constr_set_perim_2"
     },
     {
-      "$id": "1821183313088",
+      "$id": "1881795970240",
       "Facade": {
-        "$ref": "1821183349600"
+        "$ref": "1881796027072"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183349760"
+        "$ref": "1881796027232"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9425,21 +9575,21 @@
       "Name": "constr_set_perim_2_1"
     },
     {
-      "$id": "1821183313472",
+      "$id": "1881795970624",
       "Facade": {
-        "$ref": "1821183349920"
+        "$ref": "1881796027392"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183350080"
+        "$ref": "1881796027552"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9452,21 +9602,21 @@
       "Name": "constr_set_perim_3"
     },
     {
-      "$id": "1821183313856",
+      "$id": "1881795971008",
       "Facade": {
-        "$ref": "1821183350240"
+        "$ref": "1881796027712"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183350400"
+        "$ref": "1881796027872"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9479,21 +9629,21 @@
       "Name": "constr_set_perim_3_1"
     },
     {
-      "$id": "1821183314240",
+      "$id": "1881795971392",
       "Facade": {
-        "$ref": "1821183350560"
+        "$ref": "1881796028032"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183350720"
+        "$ref": "1881796028192"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9506,21 +9656,21 @@
       "Name": "constr_set_perim_4"
     },
     {
-      "$id": "1821183314624",
+      "$id": "1881795971776",
       "Facade": {
-        "$ref": "1821183350880"
+        "$ref": "1881796028352"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183351040"
+        "$ref": "1881796028512"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9533,21 +9683,21 @@
       "Name": "constr_set_perim_4_1"
     },
     {
-      "$id": "1821183315200",
+      "$id": "1881795972352",
       "Facade": {
-        "$ref": "1821183351200"
+        "$ref": "1881796028672"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183351360"
+        "$ref": "1881796028832"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9560,21 +9710,21 @@
       "Name": "constr_set_perim_5"
     },
     {
-      "$id": "1821183315584",
+      "$id": "1881795972736",
       "Facade": {
-        "$ref": "1821183351520"
+        "$ref": "1881796028992"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183351680"
+        "$ref": "1881796029152"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9587,21 +9737,21 @@
       "Name": "constr_set_perim_5_1"
     },
     {
-      "$id": "1821184143424",
+      "$id": "1881798246464",
       "Facade": {
-        "$ref": "1821183351840"
+        "$ref": "1881796029312"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183352000"
+        "$ref": "1881796029472"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9614,21 +9764,21 @@
       "Name": "constr_set_perim_6"
     },
     {
-      "$id": "1821184143808",
+      "$id": "1881798246848",
       "Facade": {
-        "$ref": "1821183352160"
+        "$ref": "1881796029632"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183352320"
+        "$ref": "1881796029792"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9641,21 +9791,21 @@
       "Name": "constr_set_perim_6_1"
     },
     {
-      "$id": "1821184144192",
+      "$id": "1881798247232",
       "Facade": {
-        "$ref": "1821183352480"
+        "$ref": "1881796029952"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821183352640"
+        "$ref": "1881796030112"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9668,21 +9818,21 @@
       "Name": "constr_set_perim_7"
     },
     {
-      "$id": "1821184144576",
+      "$id": "1881798247616",
       "Facade": {
-        "$ref": "1821184245824"
+        "$ref": "1881796030272"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184245984"
+        "$ref": "1881798217792"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9695,21 +9845,21 @@
       "Name": "constr_set_perim_7_1"
     },
     {
-      "$id": "1821183315008",
+      "$id": "1881795972160",
       "Facade": {
-        "$ref": "1821184246144"
+        "$ref": "1881798217952"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184246304"
+        "$ref": "1881798218112"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9722,21 +9872,21 @@
       "Name": "constr_set_perim_8"
     },
     {
-      "$id": "1821184145152",
+      "$id": "1881798248192",
       "Facade": {
-        "$ref": "1821184246464"
+        "$ref": "1881798218272"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184246624"
+        "$ref": "1881798218432"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9749,21 +9899,21 @@
       "Name": "constr_set_perim_8_1"
     },
     {
-      "$id": "1821184145536",
+      "$id": "1881798248576",
       "Facade": {
-        "$ref": "1821184246784"
+        "$ref": "1881798218592"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184246944"
+        "$ref": "1881798218752"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9776,21 +9926,21 @@
       "Name": "constr_set_perim_9"
     },
     {
-      "$id": "1821184145920",
+      "$id": "1881798248960",
       "Facade": {
-        "$ref": "1821184247104"
+        "$ref": "1881798218912"
       },
       "Ground": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "Partition": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "Roof": {
-        "$ref": "1821184247264"
+        "$ref": "1881798219072"
       },
       "Slab": {
-        "$ref": "1821183421952"
+        "$ref": "1881797021024"
       },
       "IsFacadeAdiabatic": false,
       "IsGroundAdiabatic": false,
@@ -9805,7 +9955,7 @@
   ],
   "ZoneLoads": [
     {
-      "$id": "1821184244640",
+      "$id": "1881795947424",
       "DimmingType": 0,
       "EquipmentAvailabilitySchedule": {
         "$ref": "140272711954880"
@@ -9829,7 +9979,7 @@
       "Name": "zone_load_4p25epd_3p34lpd"
     },
     {
-      "$id": "1821184465616",
+      "$id": "1881797327568",
       "DimmingType": 0,
       "EquipmentAvailabilitySchedule": {
         "$ref": "140272711954880"
@@ -9853,7 +10003,7 @@
       "Name": "zone_load_4p9epd_3p14lpd"
     },
     {
-      "$id": "1821184164736",
+      "$id": "1881798091648",
       "DimmingType": 0,
       "EquipmentAvailabilitySchedule": {
         "$ref": "140272711954880"
@@ -9877,7 +10027,7 @@
       "Name": "zone_load_5p16epd_3p19lpd"
     },
     {
-      "$id": "1821184166816",
+      "$id": "1881798093728",
       "DimmingType": 0,
       "EquipmentAvailabilitySchedule": {
         "$ref": "140272711954880"
@@ -9903,27 +10053,27 @@
   ],
   "Zones": [
     {
-      "$id": "1821184121728",
+      "$id": "1881797098848",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183312128"
+        "$ref": "1881795969280"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -9931,27 +10081,27 @@
       "Name": "Core_zone_HiMass_1"
     },
     {
-      "$id": "1821184147760",
+      "$id": "1881798206224",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184146496"
+        "$ref": "1881798249536"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -9959,27 +10109,27 @@
       "Name": "Core_zone_HiMass_10"
     },
     {
-      "$id": "1821184148720",
+      "$id": "1881798207184",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184147264"
+        "$ref": "1881798250304"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -9987,27 +10137,27 @@
       "Name": "Core_zone_HiMass_11"
     },
     {
-      "$id": "1821184149920",
+      "$id": "1881798208384",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185344128"
+        "$ref": "1881798058624"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184148960"
+        "$ref": "1881798207424"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10015,27 +10165,27 @@
       "Name": "Core_zone_HiMass_12"
     },
     {
-      "$id": "1821184150880",
+      "$id": "1881798164544",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185344896"
+        "$ref": "1881798059392"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10043,27 +10193,27 @@
       "Name": "Core_zone_HiMass_13"
     },
     {
-      "$id": "1821185323552",
+      "$id": "1881798165504",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185345664"
+        "$ref": "1881798060160"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10071,27 +10221,27 @@
       "Name": "Core_zone_HiMass_14"
     },
     {
-      "$id": "1821185324512",
+      "$id": "1881798166464",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185346432"
+        "$ref": "1881798060928"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10099,27 +10249,27 @@
       "Name": "Core_zone_HiMass_15"
     },
     {
-      "$id": "1821185325472",
+      "$id": "1881798167424",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185347200"
+        "$ref": "1881798061696"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10127,27 +10277,27 @@
       "Name": "Core_zone_HiMass_16"
     },
     {
-      "$id": "1821183569984",
+      "$id": "1881795994144",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183312896"
+        "$ref": "1881795970048"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10155,27 +10305,27 @@
       "Name": "Core_zone_HiMass_2"
     },
     {
-      "$id": "1821183570944",
+      "$id": "1881795995104",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183313664"
+        "$ref": "1881795970816"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10183,27 +10333,27 @@
       "Name": "Core_zone_HiMass_3"
     },
     {
-      "$id": "1821183572144",
+      "$id": "1881795996304",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183314432"
+        "$ref": "1881795971584"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821183571184"
+        "$ref": "1881795995344"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10211,27 +10361,27 @@
       "Name": "Core_zone_HiMass_4"
     },
     {
-      "$id": "1821183573104",
+      "$id": "1881795997264",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183315392"
+        "$ref": "1881795972544"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10239,27 +10389,27 @@
       "Name": "Core_zone_HiMass_5"
     },
     {
-      "$id": "1821184307504",
+      "$id": "1881798230800",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184143616"
+        "$ref": "1881798246656"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10267,27 +10417,27 @@
       "Name": "Core_zone_HiMass_6"
     },
     {
-      "$id": "1821184308464",
+      "$id": "1881798231760",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184144384"
+        "$ref": "1881798247424"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10295,27 +10445,27 @@
       "Name": "Core_zone_HiMass_7"
     },
     {
-      "$id": "1821184309424",
+      "$id": "1881798232720",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184144960"
+        "$ref": "1881798248000"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10323,27 +10473,27 @@
       "Name": "Core_zone_HiMass_8"
     },
     {
-      "$id": "1821184310384",
+      "$id": "1881798233680",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184145728"
+        "$ref": "1881798248768"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10351,27 +10501,27 @@
       "Name": "Core_zone_HiMass_9"
     },
     {
-      "$id": "1821184121488",
+      "$id": "1881797098608",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183312512"
+        "$ref": "1881795969664"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10379,27 +10529,27 @@
       "Name": "Core_zone_LoMass_1"
     },
     {
-      "$id": "1821184147520",
+      "$id": "1881798205984",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184146880"
+        "$ref": "1881798249920"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10407,27 +10557,27 @@
       "Name": "Core_zone_LoMass_10"
     },
     {
-      "$id": "1821184148480",
+      "$id": "1881798206944",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185343744"
+        "$ref": "1881798058240"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10435,27 +10585,27 @@
       "Name": "Core_zone_LoMass_11"
     },
     {
-      "$id": "1821184149680",
+      "$id": "1881798208144",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185344512"
+        "$ref": "1881798059008"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184148960"
+        "$ref": "1881798207424"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10463,27 +10613,27 @@
       "Name": "Core_zone_LoMass_12"
     },
     {
-      "$id": "1821184150640",
+      "$id": "1881798209104",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185345280"
+        "$ref": "1881798059776"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10491,27 +10641,27 @@
       "Name": "Core_zone_LoMass_13"
     },
     {
-      "$id": "1821185323312",
+      "$id": "1881798165264",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185346048"
+        "$ref": "1881798060544"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10519,27 +10669,27 @@
       "Name": "Core_zone_LoMass_14"
     },
     {
-      "$id": "1821185324272",
+      "$id": "1881798166224",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185346816"
+        "$ref": "1881798061312"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10547,27 +10697,27 @@
       "Name": "Core_zone_LoMass_15"
     },
     {
-      "$id": "1821185325232",
+      "$id": "1881798167184",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185306688"
+        "$ref": "1881798029376"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10575,27 +10725,27 @@
       "Name": "Core_zone_LoMass_16"
     },
     {
-      "$id": "1821184122448",
+      "$id": "1881795993904",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183313280"
+        "$ref": "1881795970432"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10603,27 +10753,27 @@
       "Name": "Core_zone_LoMass_2"
     },
     {
-      "$id": "1821183570704",
+      "$id": "1881795994864",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183314048"
+        "$ref": "1881795971200"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10631,27 +10781,27 @@
       "Name": "Core_zone_LoMass_3"
     },
     {
-      "$id": "1821183571904",
+      "$id": "1881795996064",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183314816"
+        "$ref": "1881795971968"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821183571184"
+        "$ref": "1881795995344"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10659,27 +10809,27 @@
       "Name": "Core_zone_LoMass_4"
     },
     {
-      "$id": "1821183572864",
+      "$id": "1881795997024",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183315776"
+        "$ref": "1881795972928"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10687,27 +10837,27 @@
       "Name": "Core_zone_LoMass_5"
     },
     {
-      "$id": "1821184307264",
+      "$id": "1881798230560",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184144000"
+        "$ref": "1881798247040"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10715,27 +10865,27 @@
       "Name": "Core_zone_LoMass_6"
     },
     {
-      "$id": "1821184308224",
+      "$id": "1881798231520",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184144768"
+        "$ref": "1881798247808"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10743,27 +10893,27 @@
       "Name": "Core_zone_LoMass_7"
     },
     {
-      "$id": "1821184309184",
+      "$id": "1881798232480",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184145344"
+        "$ref": "1881798248384"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10771,27 +10921,27 @@
       "Name": "Core_zone_LoMass_8"
     },
     {
-      "$id": "1821184310144",
+      "$id": "1881798233440",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184146112"
+        "$ref": "1881798249152"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10799,27 +10949,27 @@
       "Name": "Core_zone_LoMass_9"
     },
     {
-      "$id": "1821184121248",
+      "$id": "1881797098368",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183311936"
+        "$ref": "1881795969088"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10827,27 +10977,27 @@
       "Name": "Perim_zone_HiMass_1"
     },
     {
-      "$id": "1821184310864",
+      "$id": "1881798205744",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184146304"
+        "$ref": "1881798249344"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10855,27 +11005,27 @@
       "Name": "Perim_zone_HiMass_10"
     },
     {
-      "$id": "1821184148240",
+      "$id": "1881798206704",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184147072"
+        "$ref": "1881798250112"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10883,27 +11033,27 @@
       "Name": "Perim_zone_HiMass_11"
     },
     {
-      "$id": "1821184149440",
+      "$id": "1881798207904",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185343936"
+        "$ref": "1881798058432"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184148960"
+        "$ref": "1881798207424"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10911,27 +11061,27 @@
       "Name": "Perim_zone_HiMass_12"
     },
     {
-      "$id": "1821184150400",
+      "$id": "1881798208864",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185344704"
+        "$ref": "1881798059200"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10939,27 +11089,27 @@
       "Name": "Perim_zone_HiMass_13"
     },
     {
-      "$id": "1821185323072",
+      "$id": "1881798165024",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185345472"
+        "$ref": "1881798059968"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10967,27 +11117,27 @@
       "Name": "Perim_zone_HiMass_14"
     },
     {
-      "$id": "1821185324032",
+      "$id": "1881798165984",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185346240"
+        "$ref": "1881798060736"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -10995,27 +11145,27 @@
       "Name": "Perim_zone_HiMass_15"
     },
     {
-      "$id": "1821185324992",
+      "$id": "1881798166944",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185347008"
+        "$ref": "1881798061504"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11023,27 +11173,27 @@
       "Name": "Perim_zone_HiMass_16"
     },
     {
-      "$id": "1821184122208",
+      "$id": "1881795993664",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183312704"
+        "$ref": "1881795969856"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11051,27 +11201,27 @@
       "Name": "Perim_zone_HiMass_2"
     },
     {
-      "$id": "1821183570464",
+      "$id": "1881795994624",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183313472"
+        "$ref": "1881795970624"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11079,27 +11229,27 @@
       "Name": "Perim_zone_HiMass_3"
     },
     {
-      "$id": "1821183571664",
+      "$id": "1881795995824",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183314240"
+        "$ref": "1881795971392"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821183571184"
+        "$ref": "1881795995344"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11107,27 +11257,27 @@
       "Name": "Perim_zone_HiMass_4"
     },
     {
-      "$id": "1821183572624",
+      "$id": "1881795996784",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183315200"
+        "$ref": "1881795972352"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11135,27 +11285,27 @@
       "Name": "Perim_zone_HiMass_5"
     },
     {
-      "$id": "1821183573584",
+      "$id": "1881798230320",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184143424"
+        "$ref": "1881798246464"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11163,27 +11313,27 @@
       "Name": "Perim_zone_HiMass_6"
     },
     {
-      "$id": "1821184307984",
+      "$id": "1881798231280",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184144192"
+        "$ref": "1881798247232"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11191,27 +11341,27 @@
       "Name": "Perim_zone_HiMass_7"
     },
     {
-      "$id": "1821184308944",
+      "$id": "1881798232240",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183315008"
+        "$ref": "1881795972160"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11219,27 +11369,27 @@
       "Name": "Perim_zone_HiMass_8"
     },
     {
-      "$id": "1821184309904",
+      "$id": "1881798233200",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184145536"
+        "$ref": "1881798248576"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11247,27 +11397,27 @@
       "Name": "Perim_zone_HiMass_9"
     },
     {
-      "$id": "1821184121008",
+      "$id": "1881797098128",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183312320"
+        "$ref": "1881795969472"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11275,27 +11425,27 @@
       "Name": "Perim_zone_LoMass_1"
     },
     {
-      "$id": "1821184310624",
+      "$id": "1881798205504",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184146688"
+        "$ref": "1881798249728"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11303,27 +11453,27 @@
       "Name": "Perim_zone_LoMass_10"
     },
     {
-      "$id": "1821184148000",
+      "$id": "1881798206464",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185343552"
+        "$ref": "1881798058048"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11331,27 +11481,27 @@
       "Name": "Perim_zone_LoMass_11"
     },
     {
-      "$id": "1821184149200",
+      "$id": "1881798207664",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185344320"
+        "$ref": "1881798058816"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184148960"
+        "$ref": "1881798207424"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11359,27 +11509,27 @@
       "Name": "Perim_zone_LoMass_12"
     },
     {
-      "$id": "1821184150160",
+      "$id": "1881798208624",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185345088"
+        "$ref": "1881798059584"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11387,27 +11537,27 @@
       "Name": "Perim_zone_LoMass_13"
     },
     {
-      "$id": "1821184151120",
+      "$id": "1881798164784",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185345856"
+        "$ref": "1881798060352"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11415,27 +11565,27 @@
       "Name": "Perim_zone_LoMass_14"
     },
     {
-      "$id": "1821185323792",
+      "$id": "1881798165744",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185346624"
+        "$ref": "1881798061120"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11443,27 +11593,27 @@
       "Name": "Perim_zone_LoMass_15"
     },
     {
-      "$id": "1821185324752",
+      "$id": "1881798166704",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821185347392"
+        "$ref": "1881798061888"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184166816"
+        "$ref": "1881798093728"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11471,27 +11621,27 @@
       "Name": "Perim_zone_LoMass_16"
     },
     {
-      "$id": "1821184121968",
+      "$id": "1881797099088",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183313088"
+        "$ref": "1881795970240"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11499,27 +11649,27 @@
       "Name": "Perim_zone_LoMass_2"
     },
     {
-      "$id": "1821183570224",
+      "$id": "1881795994384",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183313856"
+        "$ref": "1881795971008"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11527,27 +11677,27 @@
       "Name": "Perim_zone_LoMass_3"
     },
     {
-      "$id": "1821183571424",
+      "$id": "1881795995584",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183314624"
+        "$ref": "1881795971776"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184465616"
+        "$ref": "1881797327568"
       },
       "Ventilation": {
-        "$ref": "1821183571184"
+        "$ref": "1881795995344"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11555,27 +11705,27 @@
       "Name": "Perim_zone_LoMass_4"
     },
     {
-      "$id": "1821183572384",
+      "$id": "1881795996544",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821183315584"
+        "$ref": "1881795972736"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11583,27 +11733,27 @@
       "Name": "Perim_zone_LoMass_5"
     },
     {
-      "$id": "1821183573344",
+      "$id": "1881798230080",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184143808"
+        "$ref": "1881798246848"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11611,27 +11761,27 @@
       "Name": "Perim_zone_LoMass_6"
     },
     {
-      "$id": "1821184307744",
+      "$id": "1881798231040",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184144576"
+        "$ref": "1881798247616"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11639,27 +11789,27 @@
       "Name": "Perim_zone_LoMass_7"
     },
     {
-      "$id": "1821184308704",
+      "$id": "1881798232000",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184145152"
+        "$ref": "1881798248192"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184244640"
+        "$ref": "1881795947424"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11667,27 +11817,27 @@
       "Name": "Perim_zone_LoMass_8"
     },
     {
-      "$id": "1821184309664",
+      "$id": "1881798232960",
       "Conditioning": {
-        "$ref": "1821159887216"
+        "$ref": "1881794126192"
       },
       "Constructions": {
-        "$ref": "1821184145920"
+        "$ref": "1881798248960"
       },
       "DaylightMeshResolution": 1.0,
       "DaylightWorkplaneHeight": 0.8,
       "DomesticHotWater": {
-        "$ref": "1821184901760"
+        "$ref": "1881794957664"
       },
       "InternalMassConstruction": {
-        "$ref": "1821183422112"
+        "$ref": "1881797021184"
       },
       "InternalMassExposedPerFloorArea": 1.05,
       "Loads": {
-        "$ref": "1821184164736"
+        "$ref": "1881798091648"
       },
       "Ventilation": {
-        "$ref": "1821184120768"
+        "$ref": "1881797097888"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11697,14 +11847,14 @@
   ],
   "WindowSettings": [
     {
-      "$id": "1821184119568",
+      "$id": "1881797096688",
       "AfnDischargeC": 0.65,
       "AfnTempSetpoint": 20.0,
       "AfnWindowAvailability": {
         "$ref": "2"
       },
       "Construction": {
-        "$ref": "1821183421152"
+        "$ref": "1881797020224"
       },
       "IsShadingSystemOn": false,
       "IsVirtualPartition": false,
@@ -11728,14 +11878,14 @@
       "Name": "window_setting_0"
     },
     {
-      "$id": "1821184119808",
+      "$id": "1881797096928",
       "AfnDischargeC": 0.65,
       "AfnTempSetpoint": 20.0,
       "AfnWindowAvailability": {
         "$ref": "2"
       },
       "Construction": {
-        "$ref": "1821183421312"
+        "$ref": "1881797020384"
       },
       "IsShadingSystemOn": false,
       "IsVirtualPartition": false,
@@ -11759,14 +11909,14 @@
       "Name": "window_setting_1"
     },
     {
-      "$id": "1821184120048",
+      "$id": "1881797097168",
       "AfnDischargeC": 0.65,
       "AfnTempSetpoint": 20.0,
       "AfnWindowAvailability": {
         "$ref": "2"
       },
       "Construction": {
-        "$ref": "1821183421472"
+        "$ref": "1881797020544"
       },
       "IsShadingSystemOn": false,
       "IsVirtualPartition": false,
@@ -11790,14 +11940,14 @@
       "Name": "window_setting_2"
     },
     {
-      "$id": "1821184120288",
+      "$id": "1881797097408",
       "AfnDischargeC": 0.65,
       "AfnTempSetpoint": 20.0,
       "AfnWindowAvailability": {
         "$ref": "2"
       },
       "Construction": {
-        "$ref": "1821183421632"
+        "$ref": "1881797020704"
       },
       "IsShadingSystemOn": false,
       "IsVirtualPartition": false,
@@ -11821,14 +11971,14 @@
       "Name": "window_setting_3"
     },
     {
-      "$id": "1821184120528",
+      "$id": "1881797097648",
       "AfnDischargeC": 0.65,
       "AfnTempSetpoint": 20.0,
       "AfnWindowAvailability": {
         "$ref": "2"
       },
       "Construction": {
-        "$ref": "1821183421792"
+        "$ref": "1881797020864"
       },
       "IsShadingSystemOn": false,
       "IsVirtualPartition": false,
@@ -11855,18 +12005,18 @@
   "BuildingTemplates": [
     {
       "Core": {
-        "$ref": "1821184121488"
+        "$ref": "1881797098608"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184121008"
+        "$ref": "1881797098128"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11882,18 +12032,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184121728"
+        "$ref": "1881797098848"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184121248"
+        "$ref": "1881797098368"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11909,18 +12059,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184122448"
+        "$ref": "1881795993904"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184121968"
+        "$ref": "1881797099088"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11936,18 +12086,18 @@
     },
     {
       "Core": {
-        "$ref": "1821183569984"
+        "$ref": "1881795994144"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184122208"
+        "$ref": "1881795993664"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11963,18 +12113,18 @@
     },
     {
       "Core": {
-        "$ref": "1821183570704"
+        "$ref": "1881795994864"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183570224"
+        "$ref": "1881795994384"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -11990,18 +12140,18 @@
     },
     {
       "Core": {
-        "$ref": "1821183570944"
+        "$ref": "1881795995104"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183570464"
+        "$ref": "1881795994624"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12017,18 +12167,18 @@
     },
     {
       "Core": {
-        "$ref": "1821183571904"
+        "$ref": "1881795996064"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183571424"
+        "$ref": "1881795995584"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184120048"
+        "$ref": "1881797097168"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12044,18 +12194,18 @@
     },
     {
       "Core": {
-        "$ref": "1821183572144"
+        "$ref": "1881795996304"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183571664"
+        "$ref": "1881795995824"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184120048"
+        "$ref": "1881797097168"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12071,18 +12221,18 @@
     },
     {
       "Core": {
-        "$ref": "1821183572864"
+        "$ref": "1881795997024"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183572384"
+        "$ref": "1881795996544"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12098,18 +12248,18 @@
     },
     {
       "Core": {
-        "$ref": "1821183573104"
+        "$ref": "1881795997264"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183572624"
+        "$ref": "1881795996784"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12125,18 +12275,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184307264"
+        "$ref": "1881798230560"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183573344"
+        "$ref": "1881798230080"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12152,18 +12302,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184307504"
+        "$ref": "1881798230800"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821183573584"
+        "$ref": "1881798230320"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12179,18 +12329,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184308224"
+        "$ref": "1881798231520"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184307744"
+        "$ref": "1881798231040"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12206,18 +12356,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184308464"
+        "$ref": "1881798231760"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184307984"
+        "$ref": "1881798231280"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12233,18 +12383,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184309184"
+        "$ref": "1881798232480"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184308704"
+        "$ref": "1881798232000"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184120048"
+        "$ref": "1881797097168"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12260,18 +12410,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184309424"
+        "$ref": "1881798232720"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184308944"
+        "$ref": "1881798232240"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184120048"
+        "$ref": "1881797097168"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12287,18 +12437,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184310144"
+        "$ref": "1881798233440"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184309664"
+        "$ref": "1881798232960"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12314,18 +12464,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184310384"
+        "$ref": "1881798233680"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184309904"
+        "$ref": "1881798233200"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12341,18 +12491,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184147520"
+        "$ref": "1881798205984"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184310624"
+        "$ref": "1881798205504"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12368,18 +12518,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184147760"
+        "$ref": "1881798206224"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184310864"
+        "$ref": "1881798205744"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12395,18 +12545,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184148480"
+        "$ref": "1881798206944"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184148000"
+        "$ref": "1881798206464"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12422,18 +12572,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184148720"
+        "$ref": "1881798207184"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184148240"
+        "$ref": "1881798206704"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12449,18 +12599,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184149680"
+        "$ref": "1881798208144"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184149200"
+        "$ref": "1881798207664"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12476,18 +12626,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184149920"
+        "$ref": "1881798208384"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184149440"
+        "$ref": "1881798207904"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12503,18 +12653,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184150640"
+        "$ref": "1881798209104"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184150160"
+        "$ref": "1881798208624"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12530,18 +12680,18 @@
     },
     {
       "Core": {
-        "$ref": "1821184150880"
+        "$ref": "1881798164544"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184150400"
+        "$ref": "1881798208864"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12557,18 +12707,18 @@
     },
     {
       "Core": {
-        "$ref": "1821185323312"
+        "$ref": "1881798165264"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821184151120"
+        "$ref": "1881798164784"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12584,18 +12734,18 @@
     },
     {
       "Core": {
-        "$ref": "1821185323552"
+        "$ref": "1881798165504"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821185323072"
+        "$ref": "1881798165024"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12611,18 +12761,18 @@
     },
     {
       "Core": {
-        "$ref": "1821185324272"
+        "$ref": "1881798166224"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821185323792"
+        "$ref": "1881798165744"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12638,18 +12788,18 @@
     },
     {
       "Core": {
-        "$ref": "1821185324512"
+        "$ref": "1881798166464"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821185324032"
+        "$ref": "1881798165984"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119568"
+        "$ref": "1881797096688"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12665,18 +12815,18 @@
     },
     {
       "Core": {
-        "$ref": "1821185325232"
+        "$ref": "1881798167184"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821185324752"
+        "$ref": "1881798166704"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,
@@ -12692,18 +12842,18 @@
     },
     {
       "Core": {
-        "$ref": "1821185325472"
+        "$ref": "1881798167424"
       },
       "Lifespan": 60,
       "PartitionRatio": 0.35,
       "Perimeter": {
-        "$ref": "1821185324992"
+        "$ref": "1881798166944"
       },
       "Structure": {
-        "$ref": "1821184903056"
+        "$ref": "1881794017024"
       },
       "Windows": {
-        "$ref": "1821184119808"
+        "$ref": "1881797096928"
       },
       "Category": "Uncategorized",
       "Comments": null,

@@ -18,11 +18,11 @@ columns = [
     "Infiltration",  # ACH, converted from ACH50
     "dhw_flow",  # Flow rate per floor area
     "PeopleDensity",  # people/m2
-    "LightingPowerDensity",  # W/m2 # TODO: REVIEW
+    "LightingPowerDensity",  # W/m2
     "EquipmentPowerDensity",  # W/m2
     "FacadeMass",  # J/(m2⋅K)
     # "RoofMass",
-    "SlabMass",
+    # "SlabMass",
     "FacadeRValue",
     "RoofRValue",
     "PartitionRValue",
@@ -37,8 +37,6 @@ columns = [
     # "has_economizer",
 ]
 
-# TODO: make it two mass scenarios, change to C and R-val, add high mass flag
-# TODO: add value for construction types from base template
 
 SQFT_TO_SQM = 0.092903
 RVAL_TO_RSI = 1 / 5.678
@@ -116,7 +114,6 @@ RESTYPES = {
     "Multi-Family with 5+ Units": 3,
 }
 
-# TODO: replace numbers with archetypal template id
 WINDTYPES = {
     "Single, Clear, Metal": 0,
     "Single, Clear, Non-metal": 0,
@@ -185,7 +182,6 @@ class ResStockConfiguration:
         self.clean()
         self.n = self.samples.shape[0]
         self.out = np.zeros(shape=(self.n, len(columns)))
-        # TODO: return a pandas dataframe
 
     def clean(self):
         shp = self.samples.shape[0]
@@ -205,7 +201,6 @@ class ResStockConfiguration:
         self.apply_to_col(np.arange(self.n), "archetype")
         self.apply_to_col(self.get_type_idx(), "archetype")
         self.apply_to_col(self.get_age(), "vintage")
-        # TODO: confirm format of city info
         self.apply_to_col(self.get_city_idx(), "base_epw")
         self.apply_to_col(self.get_climatezone(), "climate_zone")
 
@@ -279,7 +274,7 @@ class ResStockConfiguration:
         i = self.columns.index(name)
         self.out[:, i] = data
 
-    def get_city_idx(self):  # TODO: citymap.json
+    def get_city_idx(self):
         def lookup_city(city_str):
             return self.cities[city_str]["idx"]
 
@@ -348,7 +343,7 @@ class ResStockConfiguration:
                 eer = float(re.findall(r"\d+\.\d*", a)[0])
                 return eer / 3.41214
             if a == "Shared Cooling":
-                return 3  # TODO
+                return 3
             else:
                 return 0
 
@@ -363,13 +358,13 @@ class ResStockConfiguration:
                 seer = int(re.findall(r"\d+", a)[0])
                 return seer * 1055 / 3600
             if a == "Shared Heating":
-                return 0.9  # TODO
+                return 0.9
             else:
                 return 0
 
         return self.samples["HVAC Heating Efficiency"].apply(get_cop)
 
-    def get_mass(self, a):  # TODO fix the roof mass
+    def get_mass(self, a):
         if "CMU" in a:
             c = thermal_capacitance_per_area(CMU_C, CMU_rho, CMU_T)
             r = CMU_T / CMU_K
@@ -380,7 +375,9 @@ class ResStockConfiguration:
             c = thermal_capacitance_per_area(CONCRETE_C, CONCRETE_rho, CONCRETE_T)
             r = CONCRETE_T / CONCRETE_K
         elif "Tile" in a or "Slate" in a:
-            c = thermal_capacitance_per_area(TILE_C, TILE_rho, TILE_T)
+            c = thermal_capacitance_per_area(
+                TILE_C, TILE_rho, TILE_T
+            ) + thermal_capacitance_per_area(WOOD_STUD_C, WOOD_STUD_rho, WOOD_STUD_T)
             r = TILE_T / TILE_K
         else:
             # elif "Wood" in a:
@@ -431,7 +428,7 @@ class ResStockConfiguration:
         ins = ins_layer[0] + mass_layer[0]
         mass = ins_layer[1] + mass_layer[1]
         self.apply_to_col(ins, "RoofRValue")
-        # self.apply_to_col(mass, "RoofMass") # TODO: take out
+        # self.apply_to_col(mass, "RoofMass")
 
     def convert_floor_construction(self):
         # ins_t = []
@@ -448,7 +445,7 @@ class ResStockConfiguration:
         ins = ins_layer[0] + mass_layer[0]
         mass = ins_layer[1] + mass_layer[1]
         self.apply_to_col(ins, "SlabRValue")
-        self.apply_to_col(mass, "SlabMass")
+        # self.apply_to_col(mass, "SlabMass")
 
 
 if __name__ == "__main__":

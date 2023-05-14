@@ -1,6 +1,5 @@
 # Create a minimum building template generated from
 # base Boston building template library
-# TODO: Cladding?
 
 import os
 from pathlib import Path
@@ -214,9 +213,33 @@ class minimumTemplate(UmiTemplateLibrary):
         return [singleClear, dblClear, dblLowE, tripleClear, tripleLowE]
 
     def make_opaque_constructions(self):
-        self.concrete = self.OpaqueMaterials[3]  # Concrete dense
-        # woodstud = template.OpaqueMaterials[12] # Wood stud
+        self.concrete_facade = self.OpaqueMaterials[3].duplicate()  # Concrete dense
+        self.concrete_facade.Name = self.concrete_facade.Name + "_facade"
+        self.concrete_roof = self.OpaqueMaterials[3].duplicate()  # Concrete dense
+        self.concrete_roof.Name = self.concrete_roof.Name + "_roof"
+        self.concrete_ground = self.OpaqueMaterials[3].duplicate()  # Concrete dense
+        self.concrete_ground.Name = self.concrete_ground.Name + "_ground"
         self.insulation = self.OpaqueMaterials[11]  # Fiberglass batt
+        self.insulation_facade = self.OpaqueMaterials[11].duplicate()  # Fiberglass batt
+        self.insulation_facade.Name = self.insulation_facade.Name + "_facade"
+        self.insulation_roof = self.OpaqueMaterials[11].duplicate()  # insulation dense
+        self.insulation_roof.Name = self.insulation_roof.Name + "_roof"
+        self.insulation_ground = self.OpaqueMaterials[
+            11
+        ].duplicate()  # insulation dense
+        self.insulation_ground.Name = self.insulation_ground.Name + "_ground"
+
+        self.OpaqueMaterials.extend(
+            [
+                self.concrete_facade,
+                self.concrete_roof,
+                self.concrete_ground,
+                self.insulation_facade,
+                self.insulation_roof,
+                self.insulation_ground,
+            ]
+        )
+
         plywood = self.OpaqueMaterials[10]  # Fiberglass batt
         gypsum = self.OpaqueMaterials[5]  # 14:Gypsum_Board
         cladding = self.OpaqueMaterials[16]  # Vinyl_cladding
@@ -247,8 +270,8 @@ class minimumTemplate(UmiTemplateLibrary):
         self.default_floor = OpaqueConstruction(
             Name="floor",
             Layers=[
-                MaterialLayer(self.insulation, Thickness=0.2),
-                MaterialLayer(self.concrete, Thickness=0.2),
+                MaterialLayer(self.insulation_ground, Thickness=0.2),
+                MaterialLayer(self.concrete_ground, Thickness=0.2),
                 MaterialLayer(ceramicTile, Thickness=0.02),
             ],
             Surface_Type="Ground",
@@ -271,13 +294,13 @@ class minimumTemplate(UmiTemplateLibrary):
         ]
 
     def loMass_facade(self, r_val):
-        t = self.insulation.Conductivity * r_val
+        t = self.insulation_facade.Conductivity * r_val
         loMass_facade = OpaqueConstruction(
             Name="loMass_facade",
             Layers=[
                 self.claddingLayer,
                 self.plywoodLayer,
-                MaterialLayer(self.insulation, Thickness=t),
+                MaterialLayer(self.insulation_facade, Thickness=t),
                 self.gypsumLayer,
             ],
             Surface_Type="Facade",
@@ -287,13 +310,13 @@ class minimumTemplate(UmiTemplateLibrary):
         return loMass_facade
 
     def hiMass_facade(self, r_val):
-        t = self.insulation.Conductivity * r_val
+        t = self.insulation_facade.Conductivity * r_val
         hiMass_facade = OpaqueConstruction(
             Name="hiMass_facade",
             Layers=[
-                MaterialLayer(self.concrete, Thickness=0.1),
+                MaterialLayer(self.concrete_facade, Thickness=0.1),
                 self.plywoodLayer,
-                MaterialLayer(self.insulation, Thickness=t),
+                MaterialLayer(self.insulation_facade, Thickness=t),
                 self.gypsumLayer,
             ],
             Surface_Type="Facade",
@@ -320,15 +343,15 @@ class minimumTemplate(UmiTemplateLibrary):
     #     return loMass_roof
 
     def hiMass_roof(self, r_val):
-        t = self.insulation.Conductivity * r_val
+        t = self.insulation_roof.Conductivity * r_val
         # slateTile = self.OpaqueMaterials[14]  # 23:Slate_Tile
         hiMass_roof = OpaqueConstruction(
             Name="hiMass_roof",
             Layers=[
                 # MaterialLayer(slateTile, Thickness=0.02),
-                MaterialLayer(self.concrete, Thickness=0.1),
+                MaterialLayer(self.concrete_roof, Thickness=0.1),
                 self.plywoodLayer,
-                MaterialLayer(self.insulation, Thickness=t),
+                MaterialLayer(self.insulation_roof, Thickness=t),
                 self.gypsumLayer,
             ],
             Surface_Type="Roof",
@@ -461,7 +484,6 @@ class minimumTemplate(UmiTemplateLibrary):
 
         # make high mass and low mass version
 
-        # TODO change r values
         perimHi_cons, coreHi_cons = self.define_zone_constructions(
             idx, self.hiMass_facade(r_wall), self.hiMass_roof(r_roof)
         )
@@ -616,7 +638,6 @@ def test_template(lib, epw_path, outdir):
     Test new templates in EnergyPlus
     """
     for template in lib.BuildingTemplates:
-        # TODO: implement orientation rotator
         wwr_map = {0: 0, 90: 0, 180: 0.4, 270: 0}  # N is 0, E is 90
         # Convert to coords
         width = 3.0

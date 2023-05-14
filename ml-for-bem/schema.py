@@ -146,7 +146,6 @@ class WhiteboxSimulation:
             single family pre 1980
 
         """
-
         self.lib = UmiTemplateLibrary.open(template_lib_path)
         self.template = self.lib.BuildingTemplates[template_idx]
         # print("Vintage", vintage, vintage_idx)
@@ -233,6 +232,20 @@ class WhiteboxSimulation:
             sb.add_adiabatic_to_surface(
                 surface, name, self.shoebox_config.footprint_2_ground
             )
+        # Make core walls adiabatic
+        exterior_facade = sb.getsubsurfaces()[0].Building_Surface_Name
+        for surface in sb.getsurfaces(surface_type="wall"):
+            if ("Core").lower() in surface.Zone_Name.lower():
+                surface.Outside_Boundary_Condition = "Adiabatic"
+                surface.Sun_Exposure = "NoSun"
+                surface.Wind_Exposure = "NoWind"
+            if (
+                "Perim"
+            ).lower() in surface.Zone_Name.lower() and surface.Name is not exterior_facade:
+                surface.Outside_Boundary_Condition = "Adiabatic"
+                surface.Sun_Exposure = "NoSun"
+                surface.Wind_Exposure = "NoWind"
+
         # Internal partition and glazing
         # Orientation
 
@@ -277,7 +290,11 @@ class WhiteboxSimulation:
             self.template.Perimeter.Loads.LightingPowerDensity,
         )
         print("People Density:", self.template.Core.Loads.PeopleDensity)
-        print("Infiltration", self.template.Core.Ventilation.Infiltration)
+        print(
+            "Core/Perim Infiltration",
+            self.template.Core.Ventilation.Infiltration,
+            self.template.Perimeter.Ventilation.Infiltration,
+        )
         print(
             "U Window:", self.template.Windows.Construction.u_value
         )  # TODO: this is slightly different!
