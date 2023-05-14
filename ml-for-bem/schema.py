@@ -123,17 +123,17 @@ class WhiteboxSimulation:
         )
         tmass = self.schema["FacadeMass"].extract_storage_values(self.storage_vector)
 
-        high_mass = 0
+        mass_flag = 0
         if tmass > HIGH_LOW_MASS_THESH:
-            high_mass = 1
+            mass_flag = 1
 
         n_programs = len(RESTYPES)
         n_masses = 2
         n_vintages = 4
         template_idx = (
-            n_programs * n_masses * n_vintages * int(program_type)
+            n_masses * n_vintages * int(program_type) 
             + n_masses * vintage_idx
-            + high_mass
+            + mass_flag
         )
 
         """
