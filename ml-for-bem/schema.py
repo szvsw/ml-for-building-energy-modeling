@@ -104,7 +104,6 @@ class WhiteboxSimulation:
         )
 
         vintage = self.schema["vintage"].extract_storage_values(self.storage_vector)
-        mass = self.schema["FacadeTMass"].extract_storage_values(self.storage_vector)
 
         vintage_idx = 0
         if vintage < 1940:
@@ -119,7 +118,7 @@ class WhiteboxSimulation:
         program_type = self.schema["program_type"].extract_storage_values(
             self.storage_vector
         )
-        tmass = self.schema["FacadeTMass"].extract_storage_values(self.storage_vector)
+        tmass = self.schema["FacadeMass"].extract_storage_values(self.storage_vector)
 
         high_mass = 0
         if tmass > HIGH_LOW_MASS_THESH:
@@ -400,6 +399,7 @@ class NumericParameter(SchemaParameter):
         return (value - self.min) / self.range
 
     def unnormalize(self, value):
+        # TODO: test that norm works for windows which are a vector
         return value * self.range + self.min
 
     def clip(self, val):
@@ -411,6 +411,7 @@ class NumericParameter(SchemaParameter):
         Returns:
             val: np.ndarray, clipped data
         """
+        # TODO: test that clip works for windows which are a vector
         return np.clip(val, self.min, self.max)
 
 
@@ -520,7 +521,7 @@ class RValueParameter(BuildingTemplateParameter):
                     f"layers instead."
                 )
 
-            alpha = float(desired_r_value) / layers.r_value
+            alpha = float(desired_r_value) / construction.r_value
             new_r_value = (
                 (
                     (alpha - 1)
@@ -560,7 +561,7 @@ class WindowParameter(NumericParameter):
     def __init__(self, min, max, **kwargs):
         super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
         self.min = np.array(min)
-        self.max = np.array(min)
+        self.max = np.array(max)
         self.range = self.max - self.min
 
     def normalize(self, values):
@@ -570,6 +571,14 @@ class WindowParameter(NumericParameter):
     def unnormalize(self, value):
         # TODO:
         pass
+
+    # def clip(self, value):
+    #     shape_original = value.shape
+    #     value = value.reshape(-1,3)
+    #     for i in range(3):
+    #         value[:,i] = np.clip(value[:,i], self.min[i], self.max[i])
+
+    #     return value.reshape(*shape_original)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
@@ -738,7 +747,7 @@ class Schema:
                 NumericParameter(
                     name="vintage",
                     info="The year of construction",
-                    min=1940,
+                    min=1920,
                     max=2020,
                     mean=1980,
                     std=20,
@@ -921,20 +930,20 @@ class Schema:
                 TMassParameter(
                     name="FacadeMass",
                     path="Facade",
-                    min=5,
-                    max=200,
-                    mean=30,
-                    std=30,
+                    min=1000,
+                    max=300000,
+                    mean=50000,
+                    std=20000,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior wall thermal mass (J/Km2)",
                 ),
                 TMassParameter(
                     name="RoofMass",
                     path="Roof",
-                    min=5,
-                    max=200,
-                    mean=30,
-                    std=30,
+                    min=1000,
+                    max=300000,
+                    mean=50000,
+                    std=20000,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior roof thermal mass (J/Km2)",
                 ),
@@ -942,9 +951,9 @@ class Schema:
                     name="FacadeRValue",
                     path="Facade",
                     min=0.1,
-                    max=15,
-                    mean=8,
-                    std=5,
+                    max=5,
+                    mean=2,
+                    std=1,
                     source="ComStock, tacit knowledge",
                     info="Facade R-value",
                 ),
@@ -952,9 +961,9 @@ class Schema:
                     name="RoofRValue",
                     path="Roof",
                     min=0.1,
-                    max=15,
-                    mean=8,
-                    std=5,
+                    max=5,
+                    mean=2,
+                    std=1,
                     source="ComStock, tacit knowledge",
                     info="Roof R-value",
                 ),
@@ -962,9 +971,9 @@ class Schema:
                     name="SlabRValue",
                     path="Slab",
                     min=0.1,
-                    max=15,
-                    mean=8,
-                    std=3,
+                    max=5,
+                    mean=2,
+                    std=1,
                     source="ComStock, tacit knowledge",
                     info="Slab R-value",
                 ),
@@ -972,6 +981,8 @@ class Schema:
                     name="WindowSettings",
                     min=(0.3, 0.05, 0.05),
                     max=(7.0, 0.99, 0.99),
+                    mean=np.array([5, 0.5, 0.5]),
+                    std=np.array([2, 0.1, 0.1]),
                     source="climate studio",
                     info="U-value (m2K/W), shgc, vlt",
                 ),
