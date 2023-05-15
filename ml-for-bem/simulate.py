@@ -17,6 +17,7 @@ logging.basicConfig()
 logger = logging.getLogger("Batch Simulator")
 logger.setLevel(logging.INFO)
 
+
 # TODO: add area and any other desired caching to outputs, e.g. daily usage
 class BatchSimulator:
     __slots__ = (
@@ -72,7 +73,28 @@ class BatchSimulator:
     def simulate(self, idx, storage_vector):
         whitebox = WhiteboxSimulation(Schema(), storage_vector)
         res_hourly, res_monthly = whitebox.simulate()
-        return {"hourly": res_hourly, "monthly": res_monthly}
+        (total_heating, total_cooling), (
+            total_heating_normalized,
+            total_cooling_normalized,
+        ) = whitebox.totals
+        area = whitebox.shoebox.total_building_area
+        true_u = whitebox.template.Windows.Construction.u_value
+        true_facade_hcp = (
+            whitebox.template.Perimeter.Constructions.Facade.heat_capacity_per_unit_wall_area
+        )
+        true_roof_hcp = (
+            whitebox.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area
+        )
+        return {
+            "hourly": res_hourly,
+            "monthly": res_monthly,
+            "total_heating": total_heating,
+            "total_cooling": total_cooling,
+            "area": area,
+            "true_u": true_u,
+            "true_facade_hcp": true_facade_hcp,
+            "true_roof_hcp": true_roof_hcp,
+        }
 
     def run(self):
         logger.info(
@@ -95,6 +117,13 @@ class BatchSimulator:
         results_monthly_tensor = np.zeros(
             shape=(self.batch_size, self.schema.sim_output_shape[0], 12)
         )
+        area = np.zeros(shape=(self.batch_size,), dtype=np.float32)
+        true_u = np.zeros(shape=(self.batch_size,), dtype=np.float32)
+        true_facade_hcp = np.zeros(shape=(self.batch_size,), dtype=np.float32)
+        true_roof_hcp = np.zeros(shape=(self.batch_size,), dtype=np.float32)
+        total_heating = np.zeros(shape=(self.batch_size,), dtype=np.float32)
+        total_cooling = np.zeros(shape=(self.batch_size,), dtype=np.float32)
+        errors = np.zeros(shape=(self.batch_size,), dtype=np.float32)
         for ix, result in results.items():
             try:
                 results_hourly_tensor[ix] = (
@@ -103,6 +132,12 @@ class BatchSimulator:
                 results_monthly_tensor[ix] = (
                     result["monthly"].to_numpy(dtype=np.float32).T
                 )
+                total_heating[ix] = result["total_heating"]
+                total_cooling[ix] = result["total_cooling"]
+                true_facade_hcp[ix] = result["true_facade_hcp"]
+                true_roof_hcp[ix] = result["true_roof_hcp"]
+                true_u[ix] = result["true_u"]
+                area[ix] = result["area"]
             except TypeError:
                 logger.error(
                     f"No simulation data found for BATCH:{self.batch_id}, INDEX:{ix}"
@@ -110,7 +145,15 @@ class BatchSimulator:
                 # TODO: Better error handling
                 results_hourly_tensor[ix, :, :] = -1
                 results_monthly_tensor[ix, :, :] = -1
+                total_heating[ix] = -1
+                total_cooling[ix] = -1
+                true_facade_hcp[ix] = -1
+                true_roof_hcp[ix] = -1
+                true_u[ix] = -1
+                area[ix] = -1
+                errors[ix] = 1
 
+        logger.info(f"{int(np.sum(errors))} errors for BATCH:{self.batch_id}...")
         logger.info(f"Writing results to HDF5 for BATCH:{self.batch_id}...")
         with h5py.File(self.results_batch_filepath, "w") as f:
             # TODO: consider adding metadata labels to files which explain tensor shape
@@ -123,8 +166,57 @@ class BatchSimulator:
             )
             f.create_dataset(
                 "monthly",
-                shape=results_hourly_tensor.shape,
-                data=results_hourly_tensor,
+                shape=results_monthly_tensor.shape,
+                data=results_monthly_tensor,
+                compression="gzip",
+                compression_opts=6,
+            )
+            f.create_dataset(
+                "area",
+                shape=area.shape,
+                data=area,
+                compression="gzip",
+                compression_opts=6,
+            )
+            f.create_dataset(
+                "total_heating",
+                shape=total_heating.shape,
+                data=total_heating,
+                compression="gzip",
+                compression_opts=6,
+            )
+            f.create_dataset(
+                "total_cooling",
+                shape=total_cooling.shape,
+                data=total_cooling,
+                compression="gzip",
+                compression_opts=6,
+            )
+            f.create_dataset(
+                "true_u",
+                shape=true_u.shape,
+                data=true_u,
+                compression="gzip",
+                compression_opts=6,
+            )
+            f.create_dataset(
+                "true_facade_hcp",
+                shape=true_facade_hcp.shape,
+                data=true_facade_hcp,
+                compression="gzip",
+                compression_opts=6,
+            )
+            f.create_dataset(
+                "true_roof_hcp",
+                shape=true_roof_hcp.shape,
+                data=true_roof_hcp,
+                compression="gzip",
+                compression_opts=6,
+            )
+            f.create_dataset(
+                "errors",
+                shape=errors.shape,
+                data=errors,
                 compression="gzip",
                 compression_opts=6,
             )

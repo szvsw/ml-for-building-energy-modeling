@@ -433,38 +433,65 @@ class WhiteboxSimulation:
         plt.tight_layout(pad=1)
 
     def summarize(self):
+        print("\n\n" + "-" * 30)
         print("EPW:", self.epw_path)
         print("Selected Template:", self.template.Name)
-        print("Heating Setpoint:", self.template.Perimeter.Conditioning.HeatingSetpoint)
-        print("Cooling Setpoint:", self.template.Perimeter.Conditioning.CoolingSetpoint)
+        print("---ShoeboxConfig---")
+        print("Height", self.shoebox_config.height)
+        print("Width", self.shoebox_config.width)
+        print("WWR", self.shoebox_config.wwr)
+        print("Facade2Foot", self.shoebox_config.facade_2_footprint)
+        print("Perim2Foot", self.shoebox_config.perim_2_footprint)
+        print("Foot2Gnd [adia %]", self.shoebox_config.footprint_2_ground)
+        print("Roof2Gnd [adia %]", self.shoebox_config.roof_2_footprint)
+        print("Orientation", self.shoebox_config.orientation)
+        print("---PERIM/CORE Values---")
+        print(
+            "Heating Setpoint:",
+            self.template.Perimeter.Conditioning.HeatingSetpoint,
+            self.template.Core.Conditioning.HeatingSetpoint,
+        )
+        print(
+            "Cooling Setpoint:",
+            self.template.Perimeter.Conditioning.CoolingSetpoint,
+            self.template.Core.Conditioning.CoolingSetpoint,
+        )
         print(
             "Equipment Power Density:",
             self.template.Perimeter.Loads.EquipmentPowerDensity,
+            self.template.Core.Loads.EquipmentPowerDensity,
         )
         print(
             "Lighting Power Density:",
             self.template.Perimeter.Loads.LightingPowerDensity,
+            self.template.Core.Loads.LightingPowerDensity,
         )
-        print("People Density:", self.template.Core.Loads.PeopleDensity)
         print(
-            "Core/Perim Infiltration",
-            self.template.Core.Ventilation.Infiltration,
+            "People Density:",
+            self.template.Perimeter.Loads.PeopleDensity,
+            self.template.Core.Loads.PeopleDensity,
+        )
+        print(
+            "Infiltration:",
             self.template.Perimeter.Ventilation.Infiltration,
-        )
-        print(
-            "U Window:", self.template.Windows.Construction.u_value
-        )  # TODO: this is slightly different!
-        print(
-            "VLT",
-            self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
-        )
-        print(
-            "Facade HeatCap:",
-            self.template.Perimeter.Constructions.Facade.heat_capacity_per_unit_wall_area,
+            self.template.Core.Ventilation.Infiltration,
         )
         print(
             "Roof HeatCap:",
             self.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area,
+            self.template.Core.Constructions.Roof.heat_capacity_per_unit_wall_area,
+        )
+        print(
+            "Facade HeatCap:",
+            self.template.Perimeter.Constructions.Facade.heat_capacity_per_unit_wall_area,
+            self.template.Core.Constructions.Facade.heat_capacity_per_unit_wall_area,
+        )
+        print(
+            "U Window:", self.template.Windows.Construction.u_value
+        )  # TODO: this is slightly different!)
+        print(
+            "VLT",
+            self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
         )
         print("Roof RSI:", self.template.Perimeter.Constructions.Roof.r_value)
         print("Facade RSI:", self.template.Perimeter.Constructions.Facade.r_value)
@@ -674,7 +701,7 @@ class ShoeboxOrientationParameter(OneHotParameter):
 
     def __init__(self, **kwargs):
         super().__init__(count=4, **kwargs)
-    
+
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         value = self.extract_storage_values(whitebox_sim.storage_vector)
         setattr(whitebox_sim.shoebox_config, self.name, value)
