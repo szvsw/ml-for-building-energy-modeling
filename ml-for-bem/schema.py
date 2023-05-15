@@ -13,9 +13,11 @@ from archetypal import UmiTemplateLibrary
 from archetypal.idfclass.sql import Sql
 from archetypal.template.schedule import UmiSchedule
 from archetypal.template.materials.material_layer import MaterialLayer
-from pyumi.shoeboxer.shoebox import ShoeBox
-
 from archetypal.template.constructions.window_construction import WindowConstruction
+from pyumi.shoeboxer.shoebox import ShoeBox
+from pyumi.epw import EPW
+import matplotlib.pyplot as plt
+
 
 from schedules import (
     schedule_paths,
@@ -66,7 +68,11 @@ class WhiteboxSimulation:
         "epw_path",
         "shoebox_config",
         "shoebox",
+        "hourly",
+        "monthly",
+        "epw",
     )
+    JOULES_TO_KWH = 2.777e-7
 
     def __init__(self, schema, storage_vector):
         """
@@ -174,6 +180,9 @@ class WhiteboxSimulation:
         files = glob(str(globber))
         self.epw_path = data_path / files[0]
 
+    def load_epw(self):
+        self.epw = EPW(self.epw_path)
+
     def build_shoebox(self):
         """
         Method for constructing the actual shoebox simulation object
@@ -270,11 +279,149 @@ class WhiteboxSimulation:
         ep_df_monthly = pd.DataFrame(
             sql.timeseries_by_name(series_to_retrieve, reporting_frequency="Monthly")
         )
+        self.hourly = ep_df_hourly
+        self.monthly = ep_df_monthly
         return ep_df_hourly, ep_df_monthly
         # ep_df_hourly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Hourly"))
         # ep_df_hourly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Hourly"))
         # ep_df_monthly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Monthly"))
         # ep_df_monthly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Monthly"))
+
+    @property
+    def eui(self):
+        return (
+            self.hourly.values.sum()
+            * self.JOULES_TO_KWH
+            / self.shoebox.total_building_area
+        )
+
+    def plot_results(self, start=0, length=8760, normalize=True, figsize=(10, 10)):
+        if not hasattr(self, "epw"):
+            self.load_epw()
+        dbt = np.array(self.epw.dry_bulb_temperature.values)
+        dbt_trimmed = dbt[start : start + length]
+        dbt_trimmed_daily = np.mean(dbt_trimmed.reshape(-1, 24), axis=1).flatten()
+        dbt_daily = self.epw.dry_bulb_temperature.average_daily()
+        dbt_monthly = self.epw.dry_bulb_temperature.average_monthly()
+        hourly = (
+            self.hourly
+            * self.JOULES_TO_KWH
+            / (self.shoebox.total_building_area if normalize else 1)
+        )
+        hourly_trimmed = hourly[start : start + length]
+        monthly = (
+            self.monthly
+            * self.JOULES_TO_KWH
+            / (self.shoebox.total_building_area if normalize else 1)
+        )
+        lw = 2
+
+        fig, axs = plt.subplots(5, 1, figsize=figsize)
+        axs[0].plot(
+            hourly["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"]
+            .resample("1D")
+            .sum(),
+            linewidth=lw,
+            label=["Perim-Heating", "Perim-Cooling"],
+        )
+        axs[0].plot(
+            hourly["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"]
+            .resample("1D")
+            .sum(),
+            linewidth=lw,
+            label=["Core-Heating", "Core-Cooling"],
+        )
+        axs[0].set_title("Daily")
+        axs[0].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
+        axs[0].legend()
+        axs_0b = axs[0].twinx()
+        axs_0b.plot(
+            hourly.resample("1D").mean().index,
+            dbt_daily,
+            linewidth=lw / 2,
+            label="Temp",
+        )
+        axs_0b.legend()
+        axs_0b.set_ylabel("deg. C")
+
+        axs[1].plot(
+            hourly_trimmed["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"],
+            linewidth=lw,
+            label=["Perim-Heating", "Perim-Cooling"],
+        )
+        axs[1].plot(
+            hourly_trimmed["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"],
+            linewidth=lw,
+            label=["Core-Heating", "Core-Cooling"],
+        )
+        axs[1].set_title("Hourly")
+        axs[1].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
+        axs[1].legend()
+        axs_1b = axs[1].twinx()
+        axs_1b.plot(
+            hourly_trimmed.index,
+            dbt[start : start + length],
+            linewidth=lw / 2,
+            label="Temp",
+        )
+        axs_1b.legend()
+        axs_1b.set_ylabel("deg. C")
+
+        axs[2].plot(
+            hourly_trimmed["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"]
+            .resample("1D")
+            .sum(),
+            linewidth=lw,
+            label=["Perim-Heating", "Perim-Cooling"],
+        )
+        axs[2].plot(
+            hourly_trimmed["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"]
+            .resample("1D")
+            .sum(),
+            linewidth=lw,
+            label=["Core-Heating", "Core-Cooling"],
+        )
+        axs[2].set_title("Daily")
+        axs[2].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
+        axs[2].legend()
+        axs_2b = axs[2].twinx()
+        axs_2b.plot(
+            hourly_trimmed.resample("1D").mean().index,
+            dbt_trimmed_daily,
+            linewidth=lw / 2,
+            label="Temp",
+        )
+        axs_2b.legend()
+        axs_2b.set_ylabel("deg. C")
+
+        axs[3].plot(
+            monthly["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"],
+            linewidth=lw,
+            label=["Perim-Heating", "Perim-Cooling"],
+        )
+        axs[3].plot(
+            monthly["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"],
+            linewidth=lw,
+            label=["Core-Heating", "Core-Cooling"],
+        )
+        axs[3].set_title("Monthly")
+        axs[3].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
+        axs[3].legend()
+        axs_3b = axs[3].twinx()
+        axs_3b.plot(monthly.index, dbt_monthly, linewidth=lw / 2, label="Temp")
+        axs_3b.legend()
+        axs_3b.set_ylabel("deg. C")
+
+        daily = hourly["System"].resample("1D").sum().values
+        axs[4].scatter(dbt_daily, daily[:, 0], s=lw, label="Perim Heating")
+        axs[4].scatter(dbt_daily, daily[:, 1], s=lw, label="Perim Cooling")
+        axs[4].scatter(dbt_daily, daily[:, 2], s=lw, label="Core Heating")
+        axs[4].scatter(dbt_daily, daily[:, 3], s=lw, label="Core Cooling")
+        axs[4].set_title("Load vs Daily Temp")
+        axs[4].legend()
+        axs[4].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
+        axs[4].set_xlabel("deg. C")
+        plt.tight_layout(pad=1)
 
     def summarize(self):
         print("EPW:", self.epw_path)
