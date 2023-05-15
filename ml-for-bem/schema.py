@@ -264,6 +264,9 @@ class WhiteboxSimulation:
         sb.rotate(
             self.shoebox_config.orientation * 90
         )  # 0 is S facing windows, 90 is E facing windows
+        for surface in sb.getsubsurfaces():
+            if ("Core").lower() in surface.Zone_Name.lower():
+                sb.removeidfobject(surface)
         sb.outputs.add_custom(outputs)
         sb.outputs.apply()
         self.shoebox = sb
@@ -1194,8 +1197,8 @@ class Schema:
                     path="Roof",
                     min=13000,
                     max=1500000,
-                    mean=300000,
-                    std=100000,
+                    mean=200000,
+                    std=200000,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior roof thermal mass (J/Km2)",
                 ),
