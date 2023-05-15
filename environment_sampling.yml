@@ -5,6 +5,8 @@ channels:
   - conda-forge
 dependencies:
   - seaborn
+  - ipywidgets
+  - nbformat
   - plotly
   - fiona
   - numpy
