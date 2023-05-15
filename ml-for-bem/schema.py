@@ -1057,8 +1057,8 @@ class Schema:
                 ),
                 ShoeboxGeometryParameter(
                     name="perim_2_footprint",
-                    min=0.1,
-                    max=1,
+                    min=0.05,
+                    max=0.95,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
@@ -1067,7 +1067,7 @@ class Schema:
                 ShoeboxGeometryParameter(
                     name="roof_2_footprint",
                     min=0.05,
-                    max=1,
+                    max=0.95,
                     mean=0.95,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
