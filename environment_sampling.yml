@@ -1,8 +1,11 @@
-name: ml-for-bem-training
+name: ml-for-bem-sampling
 
 channels:
+  - plotly
   - conda-forge
 dependencies:
+  - seaborn
+  - plotly
   - fiona
   - numpy
   - python=3.8
