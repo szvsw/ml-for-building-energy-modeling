@@ -10,7 +10,7 @@ from pathlib import Path
 
 from archetypal import parallel_process
 
-from storage import upload_to_bucket
+from storage import upload_to_bucket, download_from_bucket
 from schema import Schema, WhiteboxSimulation
 
 logging.basicConfig()
@@ -29,15 +29,18 @@ class BatchSimulator:
         "schema",
     )
 
-    def __init__(self, schema, batch_id, processes):
+    def __init__(self, schema, batch_id, processes, input_bucket_slug="test_batches"):
         self.batch_id = batch_id
         self.processes = processes
         self.schema = schema
         logger.info("--------- Batch Simulation ---------")
         logger.info(f"Batch ID: {self.batch_id}")
         logger.info(f"Opening HDF5 storage batch file for batch {self.batch_id}...")
-        with h5py.File(self.storage_batch_filepath, "r") as f:
-            self.storage_batch = f["storage_vectors"][...]
+        try:
+            with h5py.File(self.storage_batch_filepath, "r") as f:
+                self.storage_batch = f["storage_vectors"][...]
+        except:
+            download_from_bucket(f'{input_bucket_slug}/batch_{self.batch_id:05d}.hdf5',self.storage_batch_filepath)
 
         self.batch_size = self.storage_batch.shape[0]
         logger.info(
@@ -232,7 +235,8 @@ class BatchSimulator:
 if __name__ == "__main__":
     batch_id = int(sys.argv[1])
     processes = int(sys.argv[2])
+    in_slug = sys.argv[3]
     schema = Schema()
-    batch = BatchSimulator(schema=schema, batch_id=batch_id, processes=processes)
+    batch = BatchSimulator(schema=schema, batch_id=batch_id, processes=processes, input_bucket_slug=in_slug)
     batch.run()
     batch.upload()
