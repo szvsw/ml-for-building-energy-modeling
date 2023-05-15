@@ -1068,7 +1068,7 @@ class Schema:
                     name="roof_2_footprint",
                     min=0.05,
                     max=0.95,
-                    mean=0.95,
+                    mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Roof to footprint ratio (unitless)",
