@@ -1045,9 +1045,9 @@ class Schema:
                 ),
                 ShoeboxGeometryParameter(
                     name="facade_2_footprint",
-                    min=0.1,
+                    min=0.25,
                     max=1.5,
-                    mean=0.5,
+                    mean=0.75,
                     std=0.15,
                     source="dogan_shoeboxer_2017",
                     info="Facade to footprint ratio (unitless)",
