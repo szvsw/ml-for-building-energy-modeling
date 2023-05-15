@@ -187,7 +187,6 @@ class WhiteboxSimulation:
         """
         Method for constructing the actual shoebox simulation object
         """
-        # TODO: implement orientation rotator
         wwr_map = {0: 0, 90: 0, 180: self.shoebox_config.wwr, 270: 0}  # N is 0, E is 90
         # Convert to coords
         width = self.shoebox_config.width
@@ -262,6 +261,9 @@ class WhiteboxSimulation:
         outputs = [
             timeseries.to_output_dict() for timeseries in self.schema.timeseries_outputs
         ]
+        sb.rotate(
+            self.shoebox_config.orientation * 90
+        )  # 0 is S facing windows, 90 is E facing windows
         sb.outputs.add_custom(outputs)
         sb.outputs.apply()
         self.shoebox = sb
@@ -290,14 +292,17 @@ class WhiteboxSimulation:
     @property
     def totals(self):
         values = self.hourly.values
-        aggregate = values.sum(axis=0)*self.JOULES_TO_KWH
-        perim_heating = aggregate[0] 
-        perim_cooling = aggregate[1] 
-        core_heating = aggregate[2] 
-        core_cooling = aggregate[3] 
+        aggregate = values.sum(axis=0) * self.JOULES_TO_KWH
+        perim_heating = aggregate[0]
+        perim_cooling = aggregate[1]
+        core_heating = aggregate[2]
+        core_cooling = aggregate[3]
         cooling = perim_cooling + core_cooling
         heating = perim_heating + core_heating
-        return (heating, cooling), (heating / self.shoebox.total_building_area, cooling / self.shoebox.total_building_area)
+        return (heating, cooling), (
+            heating / self.shoebox.total_building_area,
+            cooling / self.shoebox.total_building_area,
+        )
 
     def plot_results(self, start=0, length=8760, normalize=True, figsize=(10, 10)):
         if not hasattr(self, "epw"):
@@ -669,6 +674,10 @@ class ShoeboxOrientationParameter(OneHotParameter):
 
     def __init__(self, **kwargs):
         super().__init__(count=4, **kwargs)
+    
+    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        setattr(whitebox_sim.shoebox_config, self.name, value)
 
 
 class BuildingTemplateParameter(NumericParameter):

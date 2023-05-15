@@ -4,7 +4,6 @@ channels:
   - plotly
   - conda-forge
 dependencies:
-  - seaborn
   - ipywidgets
   - nbformat
   - plotly

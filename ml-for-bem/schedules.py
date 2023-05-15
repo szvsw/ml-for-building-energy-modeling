@@ -266,7 +266,6 @@ def extract_schedules_from_flattened_vectors(vecs, start, n_schedules):
 
 
 if __name__ == "__main__":
-
     # Open a template lib
     template_path = os.path.join("benchmark/data", "BostonTemplateLibrary.json")
     templates = UmiTemplateLibrary.open(template_path)
