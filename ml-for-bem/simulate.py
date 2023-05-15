@@ -17,7 +17,7 @@ logging.basicConfig()
 logger = logging.getLogger("Batch Simulator")
 logger.setLevel(logging.INFO)
 
-
+# TODO: add area and any other desired caching to outputs, e.g. daily usage
 class BatchSimulator:
     __slots__ = (
         "batch_id",

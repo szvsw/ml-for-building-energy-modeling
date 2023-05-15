@@ -46,7 +46,7 @@ class ShoeboxConfiguration:
         "perim_2_footprint",
         "roof_2_footprint",
         "footprint_2_ground",
-        "shading_fact",
+        # "shading_fact",
         "wwr",
         "orientation",
     )
@@ -870,7 +870,7 @@ class SchedulesParameters(SchemaParameter):
         Args:
             whitebox_sim (WhiteboxSimulation): the simulation object with template to configure.
         """
-        # TODO: avoid double mutation of recycled schedule
+        # TODO: avoid double mutation of recycled schedule - i think this is fixed, should confirm.
         seed = int(
             whitebox_sim.schema["schedules_seed"].extract_storage_values(
                 whitebox_sim.storage_vector
@@ -945,11 +945,6 @@ class Schema:
         parameters: List[SchemaParameter] = None,
         timeseries_outputs: List[TimeSeriesOutput] = None,
     ):
-        # TODO:
-        # interior thermal mass,
-        # windows - shgc, low-e, u-values,
-        # schedules
-        #
         if parameters != None:
             self.parameters = parameters
         else:
@@ -1044,14 +1039,14 @@ class Schema:
                     source="dogan_shoeboxer_2017",
                     info="Footprint to ground ratio (unitless)",
                 ),
-                ShoeboxGeometryParameter(
-                    name="shading_fact",
-                    min=0,
-                    max=1,
-                    mean=0.1,
-                    std=0.33,
-                    info="Shading fact (unitless)",
-                ),
+                # ShoeboxGeometryParameter(
+                #     name="shading_fact",
+                #     min=0,
+                #     max=1,
+                #     mean=0.1,
+                #     std=0.33,
+                #     info="Shading fact (unitless)",
+                # ),
                 ShoeboxGeometryParameter(
                     name="wwr",
                     min=0.05,
@@ -1312,7 +1307,7 @@ class Schema:
         Returns:
             storage_batch: np.ndarray, 2-dim, shape=(n_vectors_in_batch, len(storage_vector))
         """
-        # TODO: implement schedule ops initializer
+        # TODO: implement schedule ops initializer as fn in schedule.py instead of doing it here
         empty_tensor = np.zeros(shape=(n, self.storage_vec_len))
         schedules = self["schedules"].extract_storage_values_batch(empty_tensor)
         schedules[:, :, SchedulesParameters.op_indices["scale"]] = 1
