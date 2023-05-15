@@ -265,7 +265,7 @@ class WhiteboxSimulation:
             self.shoebox_config.orientation * 90
         )  # 0 is S facing windows, 90 is E facing windows
         for surface in sb.getsubsurfaces():
-            if ("Core").lower() in surface.Zone_Name.lower():
+            if ("Core").lower() in surface.Building_Surface_Name.lower():
                 sb.removeidfobject(surface)
         sb.outputs.add_custom(outputs)
         sb.outputs.apply()
