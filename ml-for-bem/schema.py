@@ -288,12 +288,16 @@ class WhiteboxSimulation:
         # ep_df_monthly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Monthly"))
 
     @property
-    def eui(self):
-        return (
-            self.hourly.values.sum()
-            * self.JOULES_TO_KWH
-            / self.shoebox.total_building_area
-        )
+    def totals(self):
+        values = self.hourly.values
+        aggregate = values.sum(axis=0)*self.JOULES_TO_KWH
+        perim_heating = aggregate[0] 
+        perim_cooling = aggregate[1] 
+        core_heating = aggregate[2] 
+        core_cooling = aggregate[3] 
+        cooling = perim_cooling + core_cooling
+        heating = perim_heating + core_heating
+        return (heating, cooling), (heating / self.shoebox.total_building_area, cooling / self.shoebox.total_building_area)
 
     def plot_results(self, start=0, length=8760, normalize=True, figsize=(10, 10)):
         if not hasattr(self, "epw"):
