@@ -199,7 +199,10 @@ def mutate_timeseries(series, operations, seed):
                 int(8760 / (uniform_random_dilation * uniform_random_samples)) + 2,
             )
             year = year[:8760]
-            series[i] = year
+            if uniform_random_mode == 0:
+                series[i] = year
+            elif uniform_random_mode == 2:
+                series[i] = series[i] + 0.3*(2*year-1)
 
         """Handle Pulse"""
         if pulse_period > 0:
