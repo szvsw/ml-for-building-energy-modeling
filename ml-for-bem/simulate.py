@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import sys
 import time
 
@@ -27,12 +28,16 @@ class BatchSimulator:
         "processes",
         "parallel_config",
         "schema",
+        "input_bucket_slug",
+        "output_bucket_slug"
     )
 
-    def __init__(self, schema, batch_id, processes, input_bucket_slug="test_batches"):
+    def __init__(self, schema, batch_id, processes, input_bucket_slug="test_batches", output_bucket_slug="results/test"):
         self.batch_id = batch_id
         self.processes = processes
         self.schema = schema
+        self.input_bucket_slug = input_bucket_slug
+        self.output_bucket_slug = output_bucket_slug
         logger.info("--------- Batch Simulation ---------")
         logger.info(f"Batch ID: {self.batch_id}")
         logger.info(f"Opening HDF5 storage batch file for batch {self.batch_id}...")
@@ -40,13 +45,23 @@ class BatchSimulator:
             with h5py.File(self.storage_batch_filepath, "r") as f:
                 self.storage_batch = f["storage_vectors"][...]
         except:
-            download_from_bucket(f'{input_bucket_slug}/batch_{self.batch_id:05d}.hdf5',self.storage_batch_filepath)
+            download_from_bucket(self.storage_batch_bucket_path,self.storage_batch_filepath)
+            with h5py.File(self.storage_batch_filepath, "r") as f:
+                self.storage_batch = f["storage_vectors"][...]
 
         self.batch_size = self.storage_batch.shape[0]
         logger.info(
             f"Loaded BATCH:{self.batch_id}, which has {self.batch_size} design vectors"
         )
         self.construct_parallel_process_dict()
+
+    @property
+    def storage_batch_bucket_path(self):
+        return f'{self.input_bucket_slug}/batch_{self.batch_id:05d}.hdf5'
+
+    @property
+    def results_batch_bucket_path(self):
+        return f'{self.output_bucket_slug}/batch_{self.batch_id:05d}_results.hdf5'
 
     @property
     def storage_batch_filepath(self):
@@ -74,6 +89,7 @@ class BatchSimulator:
         }
 
     def simulate(self, idx, storage_vector):
+        logger.info(f"--------- BATCH:{self.batch_id} SIM:{idx} ---------")
         whitebox = WhiteboxSimulation(Schema(), storage_vector)
         res_hourly, res_monthly = whitebox.simulate()
         (total_heating, total_cooling), (
@@ -88,6 +104,8 @@ class BatchSimulator:
         true_roof_hcp = (
             whitebox.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area
         )
+        shutil.rmtree(whitebox.shoebox.output_directory)
+        logger.info(f"--------- BATCH:{self.batch_id} SIM:{idx} {total_heating},{total_cooling} ---------")
         return {
             "hourly": res_hourly,
             "monthly": res_monthly,
@@ -141,7 +159,7 @@ class BatchSimulator:
                 true_roof_hcp[ix] = result["true_roof_hcp"]
                 true_u[ix] = result["true_u"]
                 area[ix] = result["area"]
-            except TypeError:
+            except:
                 logger.error(
                     f"No simulation data found for BATCH:{self.batch_id}, INDEX:{ix}"
                 )
@@ -227,16 +245,21 @@ class BatchSimulator:
 
     def upload(self):
         logger.info(f"Upload results to GCP bucket for BATCH:{self.batch_id}...")
-        slug = os.path.split(self.results_batch_filepath)[-1]
-        upload_to_bucket(f"results/{slug}", self.results_batch_filepath)
+        upload_to_bucket(self.results_batch_bucket_path, self.results_batch_filepath)
         logger.info(f"Done uploading results to GCP bucket for BATCH:{self.batch_id}.")
 
 
 if __name__ == "__main__":
-    batch_id = int(sys.argv[1])
+    start_batch_id = int(sys.argv[1])
     processes = int(sys.argv[2])
-    in_slug = sys.argv[3]
-    schema = Schema()
-    batch = BatchSimulator(schema=schema, batch_id=batch_id, processes=processes, input_bucket_slug=in_slug)
-    batch.run()
-    batch.upload()
+    stride = int(sys.argv[3])
+    in_slug = sys.argv[4]
+    out_slug = sys.argv[5]
+    for batch_id in range(start_batch_id,591,stride):
+        schema = Schema()
+        batch = BatchSimulator(schema=schema, batch_id=batch_id, processes=processes, input_bucket_slug=in_slug, output_bucket_slug=out_slug)
+        batch.run()
+        batch.upload()
+        os.remove(batch.results_batch_filepath)
+        del batch
+        del schema

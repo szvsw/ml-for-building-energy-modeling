@@ -212,6 +212,8 @@ def mutate_timeseries(series, operations, seed):
             year = year[:8760]
             series[i] = year
 
+        series[i] = np.clip(series[i],0,1)
+
     return series
 
 
