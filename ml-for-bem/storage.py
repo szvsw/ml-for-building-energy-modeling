@@ -46,6 +46,11 @@ def download_from_bucket(blob_name, file_name):
     blob.download_to_filename(file_name)
     logger.info(f"Done downloading.")
 
+def download_batches(prefix="final_results"):
+  for blob in storage_client.list_blobs("ml-for-bem-data", prefix=prefix):
+    logger.info(f"Downloading {blob.name}")
+    blob.download_to_filename(blob.name)
+    logger.info(f"Finshed downloading {blob.name}")
 
 def download_epws():
     zip_path = (
