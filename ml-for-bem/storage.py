@@ -47,9 +47,10 @@ def download_from_bucket(blob_name, file_name):
     logger.info(f"Done downloading.")
 
 def download_batches(prefix="final_results"):
+  os.makedirs("./data/hdf5/"+prefix,exist_ok=True)
   for blob in storage_client.list_blobs("ml-for-bem-data", prefix=prefix):
     logger.info(f"Downloading {blob.name}")
-    blob.download_to_filename("data/"+blob.name)
+    blob.download_to_filename("data/hdf5/"+blob.name)
     logger.info(f"Finshed downloading {blob.name}")
 
 def download_epws():
