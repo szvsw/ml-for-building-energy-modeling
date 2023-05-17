@@ -22,13 +22,16 @@ bucket = storage_client.get_bucket("ml-for-bem-data")
 def check_bucket_completeness():
     found = []
     for blob in storage_client.list_blobs("ml-for-bem-data", prefix='final_results'):
-        for i in range(590):
+        for i in range(591):
             if f"{i:05d}" in str(blob):
                 found.append(i)
                 break
-    for i in range(590):
+    missing = []
+    for i in range(591):
         if i not in found:
             print(f"Batch {i:05d} is missing.")
+            missing.append(i)
+    return missing
 
 def upload_to_bucket(blob_name, file_name):
     logger.info(f"Uploading {file_name} to bucket:{blob_name}...")

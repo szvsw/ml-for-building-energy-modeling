@@ -11,7 +11,7 @@ from pathlib import Path
 
 from archetypal import parallel_process
 
-from storage import upload_to_bucket, download_from_bucket
+from storage import upload_to_bucket, download_from_bucket, check_bucket_completeness
 from schema import Schema, WhiteboxSimulation
 
 logging.basicConfig()
@@ -255,7 +255,10 @@ if __name__ == "__main__":
     stride = int(sys.argv[3])
     in_slug = sys.argv[4]
     out_slug = sys.argv[5]
-    for batch_id in range(start_batch_id,591,stride):
+    missing = check_bucket_completeness()
+    # for batch_id in range(start_batch_id,591,stride):
+    for ix in range(0,len(missing),stride):
+        batch_id = missing[ix]
         schema = Schema()
         batch = BatchSimulator(schema=schema, batch_id=batch_id, processes=processes, input_bucket_slug=in_slug, output_bucket_slug=out_slug)
         batch.run()
