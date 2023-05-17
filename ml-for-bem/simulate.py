@@ -256,10 +256,10 @@ if __name__ == "__main__":
     in_slug = sys.argv[4]
     out_slug = sys.argv[5]
     missing = check_bucket_completeness()
-    print("Batches left: ")
-    print(missing)
+    for ix in range(start_batch_id,len(missing),stride):
+        print(f"Will handle BATCH:{missing[ix]}")
     # for batch_id in range(start_batch_id,591,stride):
-    for ix in range(0,len(missing),stride):
+    for ix in range(start_batch_id,len(missing),stride):
         batch_id = missing[ix]
         schema = Schema()
         batch = BatchSimulator(schema=schema, batch_id=batch_id, processes=processes, input_bucket_slug=in_slug, output_bucket_slug=out_slug)
