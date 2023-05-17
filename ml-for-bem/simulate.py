@@ -256,6 +256,8 @@ if __name__ == "__main__":
     in_slug = sys.argv[4]
     out_slug = sys.argv[5]
     missing = check_bucket_completeness()
+    print("Batches left: ")
+    print(missing)
     # for batch_id in range(start_batch_id,591,stride):
     for ix in range(0,len(missing),stride):
         batch_id = missing[ix]
