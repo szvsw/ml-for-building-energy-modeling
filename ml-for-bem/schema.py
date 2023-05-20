@@ -7,16 +7,25 @@ from pathlib import Path
 from typing import List
 
 import numpy as np
-import pandas as pd
 
-from archetypal import UmiTemplateLibrary
-from archetypal.idfclass.sql import Sql
-from archetypal.template.schedule import UmiSchedule
-from archetypal.template.materials.material_layer import MaterialLayer
-from archetypal.template.constructions.window_construction import WindowConstruction
-from pyumi.shoeboxer.shoebox import ShoeBox
-from pyumi.epw import EPW
 import matplotlib.pyplot as plt
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger("Schema")
+logger.setLevel(logging.INFO)
+
+try:
+    from archetypal import UmiTemplateLibrary
+    from archetypal.idfclass.sql import Sql
+    from archetypal.template.schedule import UmiSchedule
+    from archetypal.template.materials.material_layer import MaterialLayer
+    from archetypal.template.constructions.window_construction import WindowConstruction
+    import pandas as pd
+    from pyumi.shoeboxer.shoebox import ShoeBox
+    from pyumi.epw import EPW
+except (ImportError, ModuleNotFoundError) as e:
+    logger.error("Failed to import a package! Be wary about continuing...", exc_info=e)
 
 
 from schedules import (
@@ -550,6 +559,8 @@ class SchemaParameter:
         self.shape_ml = shape_ml
         if shape_ml == (0,):
             self.in_ml = False
+        else:
+            self.in_ml = True
 
         self.len_storage = reduce(lambda a, b: a * b, shape_storage)
         self.len_ml = reduce(lambda a, b: a * b, shape_ml)
@@ -587,6 +598,27 @@ class SchemaParameter:
             :, self.start_storage : self.start_storage + self.len_storage
         ]
         return data.reshape(-1, *self.shape_storage)
+
+    def to_ml(self, storage_batch):
+        if not self.in_ml:
+            logger.warning(
+                f"Attempted to call 'SchemaParameter.to_ml(storage_batch)' on PARAMETER:{self.name} but that parameter is not included in the ML vector.  You can ignore this message."
+            )
+        else:
+            if isinstance(self, OneHotParameter):
+                counts = self.extract_storage_values_batch(storage_batch)
+                onehots = np.zeros((counts.shape[0], self.count))
+                onehots[np.arange(counts.shape[0]),counts[:,0].astype(int) ] = 1
+                return onehots
+            elif isinstance(self, SchedulesParameters):
+                return self.extract_storage_values_batch(storage_batch)
+            else:
+                vals = self.normalize(
+                    self.extract_storage_values_batch(storage_batch).reshape(
+                        -1, *self.shape_ml
+                    )
+                )
+                return vals
 
     def normalize(self, val):
         """
@@ -835,22 +867,6 @@ class WindowParameter(NumericParameter):
         self.max = np.array(max)
         self.range = self.max - self.min
 
-    def normalize(self, values):
-        # TODO:
-        pass
-
-    def unnormalize(self, value):
-        # TODO:
-        pass
-
-    # def clip(self, value):
-    #     shape_original = value.shape
-    #     value = value.reshape(-1,3)
-    #     for i in range(3):
-    #         value[:,i] = np.clip(value[:,i], self.min[i], self.max[i])
-
-    #     return value.reshape(*shape_original)
-
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
         This method updates the simulation objects (archetypal template, shoebox config)
@@ -1019,7 +1035,7 @@ class Schema:
                 ),
                 OneHotParameter(
                     name="climate_zone",
-                    count=15,
+                    count=17,
                     info="Lookup index of template library to use.",
                 ),
                 SchemaParameter(
@@ -1110,7 +1126,6 @@ class Schema:
                     mean=21,
                     std=4,
                     info="Heating setpoint",
-                    shape_ml=(0,),
                 ),
                 BuildingTemplateParameter(
                     name="CoolingSetpoint",
@@ -1120,7 +1135,6 @@ class Schema:
                     mean=22,
                     std=4,
                     info="Cooling setpoint",
-                    shape_ml=(0,),
                 ),
                 # BuildingTemplateParameter(
                 #     name="HeatingCoeffOfPerf",
@@ -1403,6 +1417,19 @@ class Schema:
                 storage_batch[:, start:end] = value
             else:
                 storage_batch[index, start:end] = value
+
+    def to_ml(self, storage_batch):
+        ml_vector_components = []
+        timeseries_ops = None
+        for parameter in self.parameters:
+            if parameter.in_ml:
+                vector_components = parameter.to_ml(storage_batch)
+                if isinstance(parameter, SchedulesParameters):
+                    timeseries_ops = vector_components
+                else:
+                    ml_vector_components.append(vector_components)
+        ml_vectors = np.hstack(ml_vector_components)
+        return ml_vectors, timeseries_ops
 
 
 if __name__ == "__main__":

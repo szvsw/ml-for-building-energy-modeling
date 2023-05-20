@@ -202,7 +202,7 @@ def mutate_timeseries(series, operations, seed):
             if uniform_random_mode == 0:
                 series[i] = year
             elif uniform_random_mode == 2:
-                series[i] = series[i] + 0.3*(2*year-1)
+                series[i] = series[i] + 0.3 * (2 * year - 1)
 
         """Handle Pulse"""
         if pulse_period > 0:
@@ -212,7 +212,7 @@ def mutate_timeseries(series, operations, seed):
             year = year[:8760]
             series[i] = year
 
-        series[i] = np.clip(series[i],0,1)
+        series[i] = np.clip(series[i], 0, 1)
 
     return series
 

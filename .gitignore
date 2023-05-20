@@ -139,4 +139,5 @@ ml-for-bem/data/epws/city_epws_indexed/**.epw
 ml-for-bem/data/epws/city_epws_indexed.zip
 NREL/data/ComStock/
 ml-for-bem/data/template_libs/cz_libs/residential/epresults
+ml-for-bem/data/**/*.npy
 ml-for-bem/checkpoints/
