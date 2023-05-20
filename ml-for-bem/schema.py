@@ -608,16 +608,17 @@ class SchemaParameter:
             if isinstance(self, OneHotParameter):
                 counts = self.extract_storage_values_batch(storage_batch)
                 onehots = np.zeros((counts.shape[0], self.count))
-                onehots[:, counts[:, 0].astype(int)] = 1
+                onehots[np.arange(counts.shape[0]),counts[:,0].astype(int) ] = 1
                 return onehots
             elif isinstance(self, SchedulesParameters):
                 return self.extract_storage_values_batch(storage_batch)
             else:
-                return self.normalize(
+                vals = self.normalize(
                     self.extract_storage_values_batch(storage_batch).reshape(
                         -1, *self.shape_ml
                     )
                 )
+                return vals
 
     def normalize(self, val):
         """
