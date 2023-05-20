@@ -10,6 +10,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import logging
+
 logging.basicConfig()
 logger = logging.getLogger("Schema")
 logger.setLevel(logging.INFO)
@@ -24,8 +25,7 @@ try:
     from pyumi.shoeboxer.shoebox import ShoeBox
     from pyumi.epw import EPW
 except (ImportError, ModuleNotFoundError) as e:
-    logger.error("Failed to import a package! Be wary about continuing...",exc_info=e)
-
+    logger.error("Failed to import a package! Be wary about continuing...", exc_info=e)
 
 
 from schedules import (
@@ -598,20 +598,26 @@ class SchemaParameter:
             :, self.start_storage : self.start_storage + self.len_storage
         ]
         return data.reshape(-1, *self.shape_storage)
-    
+
     def to_ml(self, storage_batch):
         if not self.in_ml:
-            logger.warning(f"Attempted to call 'SchemaParameter.to_ml(storage_batch)' on PARAMETER:{self.name} but that parameter is not included in the ML vector.  You can ignore this message.")
+            logger.warning(
+                f"Attempted to call 'SchemaParameter.to_ml(storage_batch)' on PARAMETER:{self.name} but that parameter is not included in the ML vector.  You can ignore this message."
+            )
         else:
             if isinstance(self, OneHotParameter):
                 counts = self.extract_storage_values_batch(storage_batch)
                 onehots = np.zeros((counts.shape[0], self.count))
-                onehots[:, counts[:,0].astype(int)] = 1
+                onehots[:, counts[:, 0].astype(int)] = 1
                 return onehots
             elif isinstance(self, SchedulesParameters):
                 return self.extract_storage_values_batch(storage_batch)
             else:
-                return self.extract_storage_values_batch(storage_batch).reshape(-1,*self.shape_ml)
+                return self.normalize(
+                    self.extract_storage_values_batch(storage_batch).reshape(
+                        -1, *self.shape_ml
+                    )
+                )
 
     def normalize(self, val):
         """
@@ -860,22 +866,6 @@ class WindowParameter(NumericParameter):
         self.max = np.array(max)
         self.range = self.max - self.min
 
-    def normalize(self, values):
-        # TODO:
-        pass
-
-    def unnormalize(self, value):
-        # TODO:
-        pass
-
-    # def clip(self, value):
-    #     shape_original = value.shape
-    #     value = value.reshape(-1,3)
-    #     for i in range(3):
-    #         value[:,i] = np.clip(value[:,i], self.min[i], self.max[i])
-
-    #     return value.reshape(*shape_original)
-
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
         This method updates the simulation objects (archetypal template, shoebox config)
@@ -1044,7 +1034,7 @@ class Schema:
                 ),
                 OneHotParameter(
                     name="climate_zone",
-                    count=15,
+                    count=17,
                     info="Lookup index of template library to use.",
                 ),
                 SchemaParameter(
@@ -1426,7 +1416,7 @@ class Schema:
                 storage_batch[:, start:end] = value
             else:
                 storage_batch[index, start:end] = value
-    
+
     def to_ml(self, storage_batch):
         ml_vector_components = []
         timeseries_ops = None

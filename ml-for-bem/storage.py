@@ -19,9 +19,10 @@ storage_client = storage.Client.from_service_account_json(
 
 bucket = storage_client.get_bucket("ml-for-bem-data")
 
+
 def check_bucket_completeness():
     found = []
-    for blob in storage_client.list_blobs("ml-for-bem-data", prefix='final_results'):
+    for blob in storage_client.list_blobs("ml-for-bem-data", prefix="final_results"):
         for i in range(591):
             if f"{i:05d}" in str(blob):
                 found.append(i)
@@ -32,6 +33,7 @@ def check_bucket_completeness():
             print(f"Batch {i:05d} is missing.")
             missing.append(i)
     return missing
+
 
 def upload_to_bucket(blob_name, file_name):
     logger.info(f"Uploading {file_name} to bucket:{blob_name}...")
@@ -46,12 +48,14 @@ def download_from_bucket(blob_name, file_name):
     blob.download_to_filename(file_name)
     logger.info(f"Done downloading.")
 
+
 def download_batches(prefix="final_results"):
-  os.makedirs("./data/hdf5/"+prefix,exist_ok=True)
-  for blob in storage_client.list_blobs("ml-for-bem-data", prefix=prefix):
-    logger.info(f"Downloading {blob.name}")
-    blob.download_to_filename("data/hdf5/"+blob.name)
-    logger.info(f"Finshed downloading {blob.name}")
+    os.makedirs("./data/hdf5/" + prefix, exist_ok=True)
+    for blob in storage_client.list_blobs("ml-for-bem-data", prefix=prefix):
+        logger.info(f"Downloading {blob.name}")
+        blob.download_to_filename("data/hdf5/" + blob.name)
+        logger.info(f"Finshed downloading {blob.name}")
+
 
 def download_epws():
     zip_path = (

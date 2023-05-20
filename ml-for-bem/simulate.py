@@ -29,10 +29,17 @@ class BatchSimulator:
         "parallel_config",
         "schema",
         "input_bucket_slug",
-        "output_bucket_slug"
+        "output_bucket_slug",
     )
 
-    def __init__(self, schema, batch_id, processes, input_bucket_slug="test_batches", output_bucket_slug="results/test"):
+    def __init__(
+        self,
+        schema,
+        batch_id,
+        processes,
+        input_bucket_slug="test_batches",
+        output_bucket_slug="results/test",
+    ):
         self.batch_id = batch_id
         self.processes = processes
         self.schema = schema
@@ -45,7 +52,9 @@ class BatchSimulator:
             with h5py.File(self.storage_batch_filepath, "r") as f:
                 self.storage_batch = f["storage_vectors"][...]
         except:
-            download_from_bucket(self.storage_batch_bucket_path,self.storage_batch_filepath)
+            download_from_bucket(
+                self.storage_batch_bucket_path, self.storage_batch_filepath
+            )
             with h5py.File(self.storage_batch_filepath, "r") as f:
                 self.storage_batch = f["storage_vectors"][...]
 
@@ -57,11 +66,11 @@ class BatchSimulator:
 
     @property
     def storage_batch_bucket_path(self):
-        return f'{self.input_bucket_slug}/batch_{self.batch_id:05d}.hdf5'
+        return f"{self.input_bucket_slug}/batch_{self.batch_id:05d}.hdf5"
 
     @property
     def results_batch_bucket_path(self):
-        return f'{self.output_bucket_slug}/batch_{self.batch_id:05d}_results.hdf5'
+        return f"{self.output_bucket_slug}/batch_{self.batch_id:05d}_results.hdf5"
 
     @property
     def storage_batch_filepath(self):
@@ -105,7 +114,9 @@ class BatchSimulator:
             whitebox.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area
         )
         shutil.rmtree(whitebox.shoebox.output_directory)
-        logger.info(f"--------- BATCH:{self.batch_id} SIM:{idx} {total_heating},{total_cooling} ---------")
+        logger.info(
+            f"--------- BATCH:{self.batch_id} SIM:{idx} {total_heating},{total_cooling} ---------"
+        )
         return {
             "hourly": res_hourly,
             "monthly": res_monthly,
@@ -256,13 +267,19 @@ if __name__ == "__main__":
     in_slug = sys.argv[4]
     out_slug = sys.argv[5]
     missing = check_bucket_completeness()
-    for ix in range(start_batch_id,len(missing),stride):
+    for ix in range(start_batch_id, len(missing), stride):
         print(f"Will handle BATCH:{missing[ix]}")
     # for batch_id in range(start_batch_id,591,stride):
-    for ix in range(start_batch_id,len(missing),stride):
+    for ix in range(start_batch_id, len(missing), stride):
         batch_id = missing[ix]
         schema = Schema()
-        batch = BatchSimulator(schema=schema, batch_id=batch_id, processes=processes, input_bucket_slug=in_slug, output_bucket_slug=out_slug)
+        batch = BatchSimulator(
+            schema=schema,
+            batch_id=batch_id,
+            processes=processes,
+            input_bucket_slug=in_slug,
+            output_bucket_slug=out_slug,
+        )
         batch.run()
         batch.upload()
         os.remove(batch.results_batch_filepath)
