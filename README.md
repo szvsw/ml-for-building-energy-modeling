@@ -8,7 +8,7 @@ First you will need to clone and checkout the desired branches of [Archetypal](h
 
 Then, create a new Conda env using the provided yml file.
 
-- ```
+```
 conda env create -n ml-for-bem-sampling -f environment_sampling.yml
 conda activate ml-for-bem-sampling
 cd /path/to/pyumi
@@ -17,6 +17,7 @@ pip install ladybug-core
 pip install -e . --no-deps
 cd /path/to/archetypal
 pip install -e .
+pip install geomeppy==0.11.8
 ```
 
 
