@@ -16,12 +16,15 @@ from schedules import mutate_timeseries
 from storage import download_from_bucket, upload_to_bucket
 from schema import Schema, OneHotParameter, WindowParameter
 
+from tqdm.autonotebook import tqdm
+
 
 logging.basicConfig()
 logger = logging.getLogger("Surrogate")
 logger.setLevel(logging.INFO)
 
 root_dir = Path(os.path.abspath(os.path.dirname(__file__)))
+checkpoints_dir = root_dir / "checkpoints"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 logger.info(f"Using {device} for surrogate model.")
@@ -133,6 +136,8 @@ class ClimateData:
 
 # TODO: consider updating roof/facade hcp values with true/adjusted values
 # TODO: deal with windows (currently using sample values rather than archetypal vals)
+# TODO: use true zone area for normalization?
+# TODO: check perim/core orders
 class Surrogate:
     __slots__ = (
         "schema",
@@ -263,7 +268,25 @@ class Surrogate:
         self.withheld_loss_history = []
         self.latentvect_history = []
         logger.info("ML objects initialized.")
-        # TODO: load from state dict.
+
+        if checkpoint is not None:
+            self.load_checkpoint(checkpoint)
+        
+    def load_checkpoint(self, checkpoint):
+        # TODO: implement full surrogate config from checkpoint
+        # TODO: implement detection of latest checkpoint available
+        checkpoint_path = checkpoints_dir / checkpoint
+        if not os.path.exists(checkpoint_path):
+            os.makedirs(checkpoints_dir / checkpoint.split("/")[0], exist_ok=True)
+            download_from_bucket("models/"+checkpoint, checkpoint_path)
+        data = torch.load(checkpoint_path)
+        timeseries_net_dict = data["timeseries_net_state_dict"]
+        energy_net_dict = data["energy_net_state_dict"]
+        self.energy_net.load_state_dict(energy_net_dict)
+        self.timeseries_net.load_state_dict(timeseries_net_dict)
+        self.training_loss_history = data["training_loss_history"]
+        self.withheld_loss_history = data["withheld_loss_history"]
+        self.validation_loss_history = data["validation_loss_history"]
     
     def get_batch_climate_timeseries(self, batch):
         # TODO: figure out why this takes so long
@@ -418,18 +441,7 @@ class Surrogate:
                     logger.info(f"Mean validation loss for withheld climate zone data: {mean_validation_loss}")
                     self.withheld_loss_history.append([len(self.training_loss_history), mean_validation_loss])
             
-                training_loss_history_array = np.array(self.training_loss_history)
-                validation_loss_history_array = np.array(self.validation_loss_history)
-                withheld_loss_history_array = np.array(self.withheld_loss_history)
-
-                plt.figure(figsize=(6,3))
-                plt.plot(training_loss_history_array[:,0],training_loss_history_array[:,1], label="Training loss")
-                plt.plot(validation_loss_history_array[:,0],validation_loss_history_array[:,1], label="In-Sample Validation loss")
-                plt.plot(withheld_loss_history_array[:,0],withheld_loss_history_array[:,1], lw=2, label="Out of Sample Validation loss")
-                # TODO: figure out better scaling for these plots
-                # plt.ylim([0,0.001])
-                plt.legend()
-                plt.show()
+                self.plot_loss_histories()
 
                 del training_dataloader
                 del validation_dataloader
@@ -502,13 +514,86 @@ class Surrogate:
             "epoch": epoch_num
         }
         filename = f"{run_name}_{timestamp}_{epoch_num:03d}_{batch_start:05d}.pt"
-        path = root_dir / "checkpoints" / filename
+        path = checkpoints_dir / filename
         torch.save(checkpoint, path)
         upload_to_bucket(f"models/{run_name}/{filename}", path)
+    
+    def evaluate_over_range(self, start_ix, count, segment="test"):
+        true_loads = []
+        pred_loads = []
+        all_losses = []
+        batch_size = 1000
+        start_idxs = list(range(start_ix, start_ix+count, batch_size))
+        for it in tqdm(range(len(start_idxs))):
+            idx = start_idxs[it]
+            losses = []
+            epws = []
+            czs = []
+            temps = []
+            data_to_plot = self.make_dataloader(start_ix=idx, count=1000, dataloader_batch_size=100)
+            test_dataloader = data_to_plot["dataloaders"][segment] 
+            with torch.no_grad():
+                for test_samples in test_dataloader:
+                    loads, predicted_loads, loss, _ = self.project_dataloader_sample(test_samples)
+                    true_loads.append(loads)
+                    pred_loads.append(predicted_loads)
+                    all_losses.append(loss)
+
+
+        true_loads = torch.vstack(true_loads)
+        pred_loads = torch.vstack(pred_loads)
+        return true_loads, pred_loads
+    
+    def plot_model_fits(self, start_ix, count, segment="test"):
+        self.energy_net.eval()
+        self.timeseries_net.eval()
+        level = logger.level
+        logger.setLevel(logging.ERROR)
+        true_loads, pred_loads = self.evaluate_over_range(start_ix=start_ix, count=count, segment=segment)
+        true_loads = torch.sum(true_loads, axis=2) 
+        pred_loads = torch.sum(pred_loads, axis=2) 
+        maxes = torch.max(pred_loads,dim=0)[0].reshape(1,4)
+        true_loads = true_loads / maxes
+        pred_loads = pred_loads / maxes
+        true_loads = true_loads.cpu()
+        pred_loads = pred_loads.cpu()
+        fig, axs = plt.subplots(2,2, figsize=(6,6))
+        identity = np.linspace(0,1,10)
+        plt.suptitle("Annual Model Fits")
+        axs[0,0].scatter(true_loads[:,0], pred_loads[:,0], s=1, alpha=0.3)
+        axs[0,1].scatter(true_loads[:,1], pred_loads[:,1], s=1, alpha=0.3)
+        axs[1,0].scatter(true_loads[:,2], pred_loads[:,2], s=1, alpha=0.3)
+        axs[1,1].scatter(true_loads[:,3], pred_loads[:,3], s=1, alpha=0.3)
+        axs[0,0].plot(identity, identity, color="dodgerblue", label="Perfect Model")
+        axs[0,1].plot(identity, identity, color="dodgerblue")
+        axs[1,0].plot(identity, identity, color="dodgerblue")
+        axs[1,1].plot(identity, identity, color="dodgerblue")
+        axs[0,0].set_ylabel("Perimeter")
+        axs[1,0].set_ylabel("Core")
+        axs[1,0].set_xlabel("Heating")
+        axs[1,1].set_xlabel("Cooling")
+        axs[0,0].legend()
+        fig.tight_layout()
+        logger.setLevel(level)
+    
+    def plot_loss_histories(self):
+        training_loss_history_array = np.array(self.training_loss_history)
+        validation_loss_history_array = np.array(self.validation_loss_history)
+        withheld_loss_history_array = np.array(self.withheld_loss_history)
+
+        plt.figure(figsize=(6,3))
+        plt.plot(training_loss_history_array[:,0],training_loss_history_array[:,1], lw=0.75, label="Training Data Loss")
+        plt.plot(validation_loss_history_array[:,0],validation_loss_history_array[:,1], label="Validation Loss (in-sample EPWs)")
+        plt.plot(withheld_loss_history_array[:,0],withheld_loss_history_array[:,1], lw=2, label="Validation Loss (out-of-sample EPWs)")
+        # TODO: figure out better scaling for these plots
+        plt.ylim([0,0.001])
+        plt.legend()
+        plt.show()
     
     def plot_true_results(self, start_ix, count, ylim):
         results = normalize(self.results["eui"][start_ix:start_ix+count], self.eui_max, self.eui_min)
         fig, axs = plt.subplots(2,2,figsize=(10,10))
+        plt.suptitle("Simulation Results (shoebox area normalized)")
         for i in range(count):
             axs[0,0].plot(results[i,0], "orange",alpha=0.3)
             axs[0,1].plot(results[i,1], "lightblue",alpha=0.3)
@@ -521,7 +606,7 @@ class Surrogate:
         axs[0,0].set_ylabel("Perimeter")
         axs[1,0].set_ylabel("Core")
         axs[1,0].set_xlabel("Heating")
-        axs[1,1].set_xlabel("Heating")
+        axs[1,1].set_xlabel("Cooling")
         for i in range(2):
             for j in range(2):
                 axs[i,j].set_ylim([ 0,ylim ])
