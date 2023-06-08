@@ -544,6 +544,32 @@ class Surrogate:
         pred_loads = torch.vstack(pred_loads)
         return true_loads, pred_loads
     
+    def plot_model_comparisons(self, start_ix, count, segment="test", plot_count=3, ylim=[-0.01, 0.5]):
+        self.energy_net.eval()
+        self.timeseries_net.eval()
+        level = logger.level
+        logger.setLevel(logging.ERROR)
+        true_loads, pred_loads = self.evaluate_over_range(start_ix=start_ix, count=count, segment=segment)
+        ix = np.random.choice(np.arange(true_loads.shape[0]), plot_count, replace=False)
+        for i in ix:
+            fig, axs = plt.subplots(1,2,figsize=(10,4))
+            plt.suptitle("Model Comparison")
+            axs[0].plot(true_loads[i,0].cpu(), label="Heating (true)")
+            axs[0].plot(true_loads[i,1].cpu(), label="Cooling (true)")
+            axs[1].plot(true_loads[i,2].cpu(), label="Heating (true)")
+            axs[1].plot(true_loads[i,3].cpu(), label="Cooling (true)")
+            axs[0].plot(pred_loads[i,0].cpu(), "-o", label="Heating (predicted)")
+            axs[0].plot(pred_loads[i,1].cpu(), "-o", label="Cooling (predicted)")
+            axs[1].plot(pred_loads[i,2].cpu(), "-o", label="Heating (predicted)")
+            axs[1].plot(pred_loads[i,3].cpu(), "-o", label="Cooling (predicted)")
+            axs[0].set_ylim(ylim)
+            axs[1].set_ylim(ylim)
+            axs[0].set_title("Perimeter")
+            axs[1].set_title("Core")
+            axs[0].legend()
+            axs[1].legend()
+        logger.setLevel(level)
+
     def plot_model_fits(self, start_ix, count, segment="test"):
         self.energy_net.eval()
         self.timeseries_net.eval()
@@ -557,7 +583,7 @@ class Surrogate:
         pred_loads = pred_loads / maxes
         true_loads = true_loads.cpu()
         pred_loads = pred_loads.cpu()
-        fig, axs = plt.subplots(2,2, figsize=(6,6))
+        fig, axs = plt.subplots(2,2, figsize=(12,12))
         identity = np.linspace(0,1,10)
         plt.suptitle("Annual Model Fits")
         axs[0,0].scatter(true_loads[:,0], pred_loads[:,0], s=1, alpha=0.3)
