@@ -1311,9 +1311,12 @@ class Schema:
         for i, parameter in enumerate(self.parameters):
             self._key_ix_lookup[parameter.name] = i
             parameter.start_storage = self.storage_vec_len
-            parameter.start_ml = self.ml_vec_len
             self.storage_vec_len += parameter.len_storage
-            self.ml_vec_len += parameter.len_ml
+            if isinstance(parameter, SchedulesParameters) or not parameter.in_ml:
+                parameter.start_ml = None
+            else:
+                parameter.start_ml = self.ml_vec_len
+                self.ml_vec_len += parameter.len_ml
 
     @property
     def parameter_names(self):
@@ -1336,7 +1339,7 @@ class Schema:
         for parameter in self.parameters:
             desc += f"\n---- {parameter.name} ----"
             desc += f"\nshape storage: {parameter.shape_storage} / shape ml: {parameter.shape_ml}"
-            desc += f"\nlocation storage: {parameter.start_storage}->{parameter.start_storage+parameter.len_storage} / location ml: {parameter.start_ml}->{parameter.start_ml+parameter.len_ml}"
+            desc += f"\nlocation storage: {parameter.start_storage}->{parameter.start_storage+parameter.len_storage} / location ml: {parameter.start_ml if parameter.in_ml and not isinstance(parameter, SchedulesParameters) else None}->{parameter.start_ml+parameter.len_ml if parameter.in_ml and not isinstance(parameter, SchedulesParameters) else None}"
             desc += f"\n"
 
         desc += f"\nTotal length of storage vectors: {self.storage_vec_len} / Total length of ml vectors: {self.ml_vec_len}"

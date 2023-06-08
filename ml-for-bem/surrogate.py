@@ -1,0 +1,582 @@
+import logging
+import os
+from typing import List
+from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+import h5py
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
+
+from networks import EnergyCNN, MonthlyEnergyCNN
+from schedules import mutate_timeseries
+from storage import download_from_bucket, upload_to_bucket
+from schema import Schema, OneHotParameter, WindowParameter
+
+
+logging.basicConfig()
+logger = logging.getLogger("Surrogate")
+logger.setLevel(logging.INFO)
+
+root_dir = Path(os.path.abspath(os.path.dirname(__file__)))
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+logger.info(f"Using {device} for surrogate model.")
+DATA_PATH = root_dir / "data"
+
+HOURS_IN_YEAR = 8760
+
+def normalize(data, maxv, minv):
+    return (data - minv) / (maxv - minv)
+
+
+class ClimateData:
+    # Weather data
+    config = {
+        "dbt": {
+            "max": 50,  # 50.5
+            "min": -35,
+            "description": "Dry Bulb Temperature"
+        },
+        "rh": {
+            "max": 100,
+            "min": 0.0,  # 2.0
+            "description": "Relative Humidity"
+        },
+        "atm": {
+            "max": 105800.0,
+            "min": 75600.0,
+            "description": "Atmospheric Pressure"
+        },
+        "ghrad": {
+            "max": 1200,  # 1154
+            "min": 0.0,
+            "description": "Global Horizontal Radiation"
+        },
+        "dnrad": {
+            "max": 1097,
+            "min": 0.0,
+            "description": "Direct Normal Radiation"
+        },
+        "dhrad": {
+            "max": 689,
+            "min": 0,
+            "description": "Direct Horizontal Radiation"
+        },
+        "skyt": {
+            "max": 32.3,
+            "min": -58.3,
+            "description": "Sky Temperature"
+        },
+        "tsol": {
+            "max": 60,
+            "min": -40,
+            "description": "T-SolAir"
+        },
+    }
+
+    series_ix = {key: ix for ix, key in enumerate(config.keys())}
+    series_maxes = [bounds["max"] for bounds in config.values()]
+    series_mins = [bounds["min"] for bounds in config.values()]
+
+    tsol_path = DATA_PATH / "epws" / "tsol.npy"
+    climate_arr_path = DATA_PATH / "epws" / "climate_array.npy"
+
+    __slots__ = ("tsol_arr", "climate_arr", "tsol_arr_norm", "climate_arr_norm")
+
+    def __init__(self) -> None:
+        try:
+            logging.info("Loading TSol Array file...")
+            self.tsol_arr = np.load(ClimateData.tsol_path)
+        except FileNotFoundError:
+            logging.info("Could not find TSol Array file.  Will attempt to download...")
+            download_from_bucket("tsol.npy", ClimateData.tsol_path)
+            self.tsol_arr = np.load(ClimateData.tsol_path)
+        logging.info(f"Loaded TSol Array. Shape={self.tsol_arr.shape}")
+
+        """AXES: 0 - city, 1 - channel, 2 - time"""
+        try:
+            logging.info("Loading Climate Array file...")
+            self.climate_arr = np.load(ClimateData.climate_arr_path)
+        except FileNotFoundError:
+            logging.info(
+                "Could not find Climate Array file. Will attempt to download..."
+            )
+            download_from_bucket("climate_array.npy", ClimateData.climate_arr_path)
+            self.climate_arr = np.load(ClimateData.climate_arr_path)
+        logging.info(f"Loaded EPW Climate Array.  Shape={self.climate_arr.shape}")
+
+        logging.info("Normalizing climate data...")
+        # TODO: Vectorize this normalization
+        self.climate_arr_norm = np.zeros(self.climate_arr.shape)
+        self.tsol_arr_norm = np.zeros(self.tsol_arr.shape)
+        for j in range(self.climate_arr.shape[0]):
+            for i in range(7):
+                # Handle normal time series
+                self.climate_arr_norm[j, i, :] = normalize(
+                    self.climate_arr[j, i, :],
+                    ClimateData.series_maxes[i],
+                    ClimateData.series_mins[i],
+                )
+            for i in range(4):
+                # Handle stacked orientation time series
+                self.tsol_arr_norm[j, i, :] = normalize(
+                    self.tsol_arr[j, i, :],
+                    ClimateData.config["tsol"]["max"],
+                    ClimateData.config["tsol"]["min"],
+                )
+        logging.info("All climate data successfully loaded!")
+
+
+# TODO: consider updating roof/facade hcp values with true/adjusted values
+# TODO: deal with windows (currently using sample values rather than archetypal vals)
+class Surrogate:
+    __slots__ = (
+        "schema",
+        "climate_data",
+        "results",
+        "full_storage_batch",
+        "default_schedules",
+        "eui_max",
+        "eui_min",
+        "area_max",
+        "area_min",
+        "building_params_per_vector",
+        "timeseries_per_vector",
+        "timeseries_per_output",
+        "output_resolution",
+        "latent_size",
+        "energy_cnn_in_size",
+        "timeseries_net",
+        "energy_net",
+        "loss_fn",
+        "optimizer",
+        "learning_rate",
+        "training_loss_history",
+        "validation_loss_history",
+        "withheld_loss_history",
+        "latentvect_history",
+    )
+
+    folder = DATA_PATH / "model_data_manager"
+    os.makedirs(folder, exist_ok=True)
+    default_schedules_path = folder / "default_schedules.npy"
+    full_storage_batch_path = folder / "all_input_batches.hdf5"
+    full_results_path = folder / "all_data_monthly.hdf5"
+
+    def __init__(
+        self, 
+        schema: Schema,
+        learning_rate=1e-3,
+        checkpoint=None,
+    ) -> None:
+        self.schema = schema
+        if not os.path.exists(Surrogate.full_results_path):
+            os.makedirs(DATA_PATH, exist_ok=True)
+            logger.info(
+                "Full monthly data set not found.  Downloading from GCloud Bucket..."
+            )
+            download_from_bucket("all_data_monthly.hdf5", Surrogate.full_results_path)
+            logger.info("Done downloading dataset!")
+
+        try:
+            logging.info("Loading Default Schedules file...")
+            self.default_schedules = np.load(Surrogate.default_schedules_path)
+        except FileNotFoundError:
+            logging.info(
+                "Could not find Default Schedules file. Will attempt to download..."
+            )
+            download_from_bucket(
+                "default_schedules.npy", Surrogate.default_schedules_path
+            )
+            self.default_schedules = np.load(Surrogate.default_schedules_path)
+        # Schedules were stored as Res_Occ, Res_Light Res_Equip, but schema expects order to be Equip, Lights, Occ
+        self.default_schedules = np.flip(self.default_schedules, axis=0)
+        logging.info(
+            f"Loaded Default Schedules Array.  Shape={self.default_schedules.shape}"
+        )
+
+        logger.info("Loading the full dataset into main RAM...")
+        self.results = {}
+        with h5py.File(Surrogate.full_results_path, "r") as f:
+            self.results["area"] = f["area"][...].reshape(-1, 1)
+            self.results["total_heating"] = f["total_heating"][...].reshape(
+                -1, 1
+            )  # this loads the whole batch into memory!
+            self.results["total_cooling"] = f["total_cooling"][...].reshape(
+                -1, 1
+            )  # this loads the whole batch into memory!
+            self.results["window_u"] = f["window_u"][...].reshape(-1, 1)
+            self.results["facade_hcp"] = f["facade_hcp"][...].reshape(-1, 1)
+            self.results["roof_hcp"] = f["roof_hcp"][...].reshape(-1, 1)
+            self.results["monthly"] = f["monthly"][
+                ...
+            ]  # this loads the whole batch into memory!
+            self.results["eui"] = 2.7777e-7 * self.results["monthly"] / self.results["area"].reshape(-1,1,1) # kwh/m2
+            self.full_storage_batch = f["storage_batch"][...]
+        self.eui_max = np.max(self.results["eui"])
+        self.eui_min = np.min(self.results["eui"])
+        self.area_max = np.max(self.results["area"])
+        self.area_min = np.min(self.results["area"])
+
+        logger.info("Finished loading the full dataset.")
+        logger.info(
+            f"Full Input Batch Size (in storage form, not MLVec Form): {self.full_storage_batch.nbytes / 1000000}MB"
+        )
+        logger.info("Loading climate data...")
+        self.climate_data = ClimateData()
+        logger.info("Finished loading climate data.")
+
+        logger.info("Checking model dimensions...")
+        level = logger.level
+        logger.setLevel(logging.ERROR)
+        bv, tv, results = self.make_dataset(start_ix=0,count=10)
+        self.building_params_per_vector = bv.shape[1]
+        self.timeseries_per_vector = tv.shape[1]
+        self.timeseries_per_output = results.shape[1]
+        self.output_resolution = results.shape[-1]
+        self.latent_size = self.building_params_per_vector
+        self.energy_cnn_in_size  = self.latent_size + self.building_params_per_vector
+        logger.setLevel(level)
+        logger.info(f"{self.building_params_per_vector} building parameters per input vector")
+        logger.info(f"{self.timeseries_per_vector} timeseries per input vector")
+        logger.info(f"{self.timeseries_per_output} timeseries per output vector")
+        logger.info(f"{self.output_resolution} timesteps in output.")
+
+        logger.info("Initializing machine learning objects...")
+        self.timeseries_net = MonthlyEnergyCNN(
+            in_channels=self.timeseries_per_vector,
+            out_channels=self.latent_size
+        ).to(device)
+        self.energy_net = EnergyCNN(
+            in_channels=self.energy_cnn_in_size,
+            out_channels=self.timeseries_per_output
+        ).to(device)
+        self.loss_fn = nn.MSELoss()
+        self.learning_rate = learning_rate
+        self.optimizer = torch.optim.Adam(list(self.timeseries_net.parameters()) + list(self.energy_net.parameters()), lr=self.learning_rate)
+        self.training_loss_history = []
+        self.validation_loss_history = []
+        self.withheld_loss_history = []
+        self.latentvect_history = []
+        logger.info("ML objects initialized.")
+        # TODO: load from state dict.
+    
+    def get_batch_climate_timeseries(self, batch):
+        # TODO: figure out why this takes so long
+        logger.info("Constructing climate timeseries for batch...")
+        orientations = (
+            self.schema["orientation"].extract_storage_values_batch(batch).astype(int)
+        )
+        epw_idxs = (
+            self.schema["base_epw"].extract_storage_values_batch(batch).astype(int)
+        )
+        epw_data = self.climate_data.climate_arr_norm[epw_idxs].squeeze()
+        tsol_data = self.climate_data.tsol_arr_norm[
+            epw_idxs.flatten(), orientations.flatten()
+        ].reshape(-1, 1, HOURS_IN_YEAR)
+        climate_timeseries_vector = np.concatenate((epw_data, tsol_data), axis=1)
+        logger.info("Climate timeseries for batch constructed.")
+        return climate_timeseries_vector
+
+    # TODO: use new uvalue/facade etc
+    def get_batch_building_vector(self, batch):
+        logger.info("Constructing building vector for batch...")
+        bldg_params, timeseries_ops = self.schema.to_ml(batch)
+        logger.info("Building vector for batch constructed.")
+        return bldg_params
+
+    def get_batch_schedules(self, batch):
+        logger.info('Constructing schedules for batch...')
+        timeseries_ops = self.schema["schedules"].extract_storage_values_batch(batch)
+        seeds = self.schema["schedules_seed"].extract_storage_values_batch(batch)
+        schedules = []
+        # Sad for loop
+        for i, seed in enumerate(seeds):
+            seed = int(seed)
+            ops = timeseries_ops[i]
+            scheds = mutate_timeseries(self.default_schedules, ops, seed)
+            schedules.append(scheds)
+        schedules = np.stack(schedules)
+        logger.info('Schedules for batch constructed.')
+        return schedules
+    
+    def make_dataset(self, start_ix, count):
+        logger.info("Constructing dataset...")
+        areas = self.results["area"][start_ix:start_ix+count]
+        areas_normalized = normalize(areas, self.area_max, self.area_min)
+
+        batch = self.full_storage_batch[start_ix:start_ix+count] 
+        bldg_params = self.get_batch_building_vector(batch)
+        building_vector = np.concatenate([ bldg_params,areas_normalized ], axis=1)
+
+        climate_timeseries = self.get_batch_climate_timeseries(batch)
+        schedules = self.get_batch_schedules(batch)
+        timeseries_vector = np.concatenate([climate_timeseries, schedules], axis=1)
+
+        loads = self.results["eui"][start_ix:start_ix+count]
+        loads_normalized = normalize(loads, self.eui_max, self.eui_min)
+
+        logger.info("Dataset constructed.")
+        return building_vector, timeseries_vector, loads_normalized
+
+    def make_dataloader(self, start_ix, count, dataloader_batch_size):
+        building_vector, timeseries_vector, loads_normalized = self.make_dataset(start_ix, count)
+        torch.cuda.empty_cache()
+
+        logger.info("Building dataloaders...")
+        dataset  = {}
+        for i in range(building_vector.shape[0]):
+            # DICT ENTRIES MUST BE IN ORDER
+            dataset[i] = dict({
+                "building_vector": np.array([building_vector[i]]*self.output_resolution).T,
+                "timeseries_vector": timeseries_vector[i],
+                "results_vector": loads_normalized[i],
+            })
+        generator = torch.Generator()
+        generator.manual_seed(0) 
+
+        train, val, test = torch.utils.data.random_split(dataset, lengths=[0.8, 0.1, 0.1], generator=generator)
+        training_dataloader = torch.utils.data.DataLoader(train, batch_size=dataloader_batch_size, shuffle=False)
+        validation_dataloader = torch.utils.data.DataLoader(val, batch_size=dataloader_batch_size, shuffle=False)
+        test_dataloader = torch.utils.data.DataLoader(test, batch_size=dataloader_batch_size, shuffle=False)
+        logger.info("Dataloaders built.")
+        return { 
+            "datasets": {
+                "train": train, 
+                "test": test, 
+                "validate": val
+            }, 
+            "dataloaders": {
+                "train": training_dataloader, 
+                "test": test_dataloader, 
+                "validate": validation_dataloader
+            }
+        }
+
+    def train(
+        self, 
+        run_name,
+        train_test_split_ix=400000,
+        n_full_epochs=3, 
+        n_mini_epochs=3,
+        mini_epoch_batch_size=50000,
+        dataloader_batch_size=200,
+        step_loss_frequency=50,
+    ):
+        # TODO: implement annual regularizer / possibly adaptive loss fns
+        assert train_test_split_ix % mini_epoch_batch_size == 0, "The train/test split ix must be divisible by the mini epoch batch size."
+        assert mini_epoch_batch_size % dataloader_batch_size == 0, "The dataloader batch size must be a factor of the minibatch size"
+        self.energy_net.train()
+        self.timeseries_net.train()
+        final_start_ix = train_test_split_ix - mini_epoch_batch_size
+        unseen_testing_cities = self.make_dataloader(train_test_split_ix+50000, count=20000, dataloader_batch_size=dataloader_batch_size)
+
+        for full_epoch_num in range(n_full_epochs):
+            logger.info(f"\n\n\n {'-'*20} MAJOR Epoch {full_epoch_num} {'-'*20}")
+            for start_idx in range(0, final_start_ix+1, mini_epoch_batch_size):
+                logger.info(f"{'-'*15} BATCH {start_idx:05d}:{(start_idx+mini_epoch_batch_size):05d}{'-'*15}")
+                data = self.make_dataloader(start_ix=start_idx, count=mini_epoch_batch_size, dataloader_batch_size=dataloader_batch_size)
+                training_dataloader = data["dataloaders"]["train"]
+                validation_dataloader = data["dataloaders"]["validate"]
+
+                logger.info("Starting batch training...")
+
+                for epoch_num in range(n_mini_epochs):
+                    logger.info(f"{'-'*20} MiniBatch Epoch number {epoch_num} {'-'*20}")
+                    for j, sample in enumerate(training_dataloader):
+                        self.optimizer.zero_grad()
+                        _, _, loss, timeseries_latvect = self.project_dataloader_sample(sample)
+                        if j%step_loss_frequency == 0:
+                            logger.info(f"Step {j} loss: {loss.item()}")
+                            self.latentvect_history.append(timeseries_latvect.detach())
+                        self.training_loss_history.append([len(self.training_loss_history),loss.item()])
+                        loss.backward()
+                        self.optimizer.step()
+
+                    with torch.no_grad():
+                        epoch_validation_loss = []
+                        for sample in validation_dataloader:
+                            _, _, loss, _ = self.project_dataloader_sample(sample)
+                            epoch_validation_loss.append(loss.item())
+                        mean_validation_loss = np.mean(epoch_validation_loss)
+                        logger.info(f"Mean validation loss for batch: {mean_validation_loss}")
+
+                        self.validation_loss_history.append([len(self.training_loss_history), mean_validation_loss])
+        
+                # Finished repeating training on MiniBatch, check loss on fully unseen cities
+                logger.info("Computing loss on withheld climate zone data...")
+                epoch_validation_loss = []
+                with torch.no_grad():
+                    for sample in unseen_testing_cities["dataloaders"]["train"]: # using train is fine since this data is never seen
+                        _, _, loss, _ = self.project_dataloader_sample(sample)
+                        epoch_validation_loss.append(loss.item())
+                    mean_validation_loss = np.mean(epoch_validation_loss)
+                    logger.info(f"Mean validation loss for withheld climate zone data: {mean_validation_loss}")
+                    self.withheld_loss_history.append([len(self.training_loss_history), mean_validation_loss])
+            
+                training_loss_history_array = np.array(self.training_loss_history)
+                validation_loss_history_array = np.array(self.validation_loss_history)
+                withheld_loss_history_array = np.array(self.withheld_loss_history)
+
+                plt.figure(figsize=(6,3))
+                plt.plot(training_loss_history_array[:,0],training_loss_history_array[:,1], label="Training loss")
+                plt.plot(validation_loss_history_array[:,0],validation_loss_history_array[:,1], label="In-Sample Validation loss")
+                plt.plot(withheld_loss_history_array[:,0],withheld_loss_history_array[:,1], lw=2, label="Out of Sample Validation loss")
+                # TODO: figure out better scaling for these plots
+                # plt.ylim([0,0.001])
+                plt.legend()
+                plt.show()
+
+                del training_dataloader
+                del validation_dataloader
+                del data
+
+                self.save_checkpoint(
+                    run_name,
+                    epoch_num=full_epoch_num,
+                    batch_start=start_idx,
+                    train_test_split_idx=400000,
+                    n_full_epochs=n_full_epochs,
+                    n_mini_epochs=n_mini_epochs,
+                    mini_epoch_batch_size=mini_epoch_batch_size,
+                    dataloader_batch_size=dataloader_batch_size,
+                )
+            
+
+    def project_dataloader_sample(self, sample):
+        # Get the data
+        timeseries_val = sample["timeseries_vector"].to(device).float()
+        bldg_vect_val = sample["building_vector"].to(device).float()
+        loads = sample["results_vector"].to(device).float()
+        # Project timeseries to latent space
+        timeseries_latvect_val = self.timeseries_net(timeseries_val)
+        # Concatenate latent vector with building vector
+        x_val = torch.cat([timeseries_latvect_val, bldg_vect_val], axis=1).squeeze(1)
+        # Predict and compute loss
+        predicted_loads = self.energy_net(x_val)
+        loss = self.loss_fn(loads, predicted_loads)
+        return loads, predicted_loads, loss, timeseries_latvect_val
+    
+    def save_checkpoint(
+            self, 
+            run_name, 
+            epoch_num, 
+            batch_start,
+            train_test_split_idx, 
+            n_full_epochs, 
+            n_mini_epochs, 
+            mini_epoch_batch_size, 
+            dataloader_batch_size
+        ):
+        timestamp = datetime.now().strftime("%Y%m%d%H%M")
+        timeseries_dict = self.timeseries_net.state_dict()
+        energy_dict = self.energy_net.state_dict()
+        optim_dict = self.optimizer.state_dict()
+        checkpoint = {
+            "timeseries_net_state_dict": timeseries_dict,
+            "energy_net_state_dict": energy_dict,
+            "optimizer_state_dict": optim_dict,
+            "eui_max": self.eui_max,
+            "eui_min": self.eui_min,
+            "area_max": self.area_max,
+            "area_min": self.area_min,
+            "building_params_per_vector": self.building_params_per_vector,
+            "timeseries_per_vector": self.timeseries_per_vector,
+            "timeseries_per_output": self.timeseries_per_output,
+            "output_resolution": self.output_resolution,
+            "latent_size": self.latent_size,
+            "energy_cnn_in_size": self.energy_cnn_in_size,
+            "training_loss_history": self.training_loss_history,
+            "validation_loss_history": self.validation_loss_history,
+            "withheld_loss_history": self.withheld_loss_history,
+            "learning_rate": self.learning_rate,
+            "train_test_split_idx": train_test_split_idx, 
+            "n_full_epochs": n_full_epochs, 
+            "n_mini_epochs": n_mini_epochs, 
+            "mini_epoch_batch_size": mini_epoch_batch_size, 
+            "loader_batch_size": dataloader_batch_size,
+            "epoch": epoch_num
+        }
+        filename = f"{run_name}_{timestamp}_{epoch_num:03d}_{batch_start:05d}.pt"
+        path = root_dir / "checkpoints" / filename
+        torch.save(checkpoint, path)
+        upload_to_bucket(f"models/{run_name}/{filename}", path)
+    
+    def plot_true_results(self, start_ix, count, ylim):
+        results = normalize(self.results["eui"][start_ix:start_ix+count], self.eui_max, self.eui_min)
+        fig, axs = plt.subplots(2,2,figsize=(10,10))
+        for i in range(count):
+            axs[0,0].plot(results[i,0], "orange",alpha=0.3)
+            axs[0,1].plot(results[i,1], "lightblue",alpha=0.3)
+            axs[1,0].plot(results[i,2], "orange",alpha=0.3)
+            axs[1,1].plot(results[i,3], "lightblue",alpha=0.3)
+        axs[0,0].plot(np.mean(results[:,0],axis=0), 'orangered')
+        axs[0,1].plot(np.mean(results[:,1],axis=0), 'dodgerblue')
+        axs[1,0].plot(np.mean(results[:,2],axis=0), 'orangered')
+        axs[1,1].plot(np.mean(results[:,3],axis=0), 'dodgerblue')
+        axs[0,0].set_ylabel("Perimeter")
+        axs[1,0].set_ylabel("Core")
+        axs[1,0].set_xlabel("Heating")
+        axs[1,1].set_xlabel("Heating")
+        for i in range(2):
+            for j in range(2):
+                axs[i,j].set_ylim([ 0,ylim ])
+        fig.tight_layout()
+    
+    def plot_weather_vector(self, bldg_ix, param="dbt"):
+        batch = self.full_storage_batch[bldg_ix:bldg_ix+2]
+        ts = self.get_batch_climate_timeseries(batch)
+        ts_ix = ClimateData.series_ix[param]
+        ts = ts[0,ts_ix]
+        plt.figure()
+        plt.title(f"{ClimateData.config[param]['description']} [Building {bldg_ix:05d}]")
+        plt.plot(ts,lw=0.5)
+    
+    def plot_params(self, start_ix, count, include_whiskers=True, title=None):
+        batch = self.full_storage_batch[start_ix:start_ix+count]
+        areas = normalize(self.results["area"][start_ix:start_ix+count], self.area_max, self.area_min)
+        bldg_params = self.get_batch_building_vector(batch)
+        names = []
+
+        plt.figure()
+        if title:
+            plt.title(title)
+
+        boxplot_params = []
+        for parameter in self.schema.parameters:
+            if parameter.start_ml is not None:
+                vals = bldg_params[:,parameter.start_ml:parameter.start_ml+parameter.len_ml]
+                if not isinstance(parameter, (OneHotParameter, WindowParameter)):
+                    names.append(parameter.name)
+                    boxplot_params.append(vals)
+                elif isinstance(parameter, OneHotParameter):
+                    boxplot_params.append(np.argwhere(vals)[:,-1].reshape(-1,1) / (parameter.count-1))
+                    names.append(parameter.name)
+                elif isinstance(parameter, WindowParameter):
+                    for i in range(vals.shape[1]):
+                        vals_single = vals[:,i]
+                        boxplot_params.append(vals_single.reshape(-1,1))
+                    names.append("U-Value")
+                    names.append("SHGC")
+                    names.append("VLT")
+
+
+        boxplot_params.append(areas.reshape(-1,1))
+        names.append("Area")
+
+        offset = 1
+        for i,vals in enumerate(boxplot_params):
+            column_loc = np.repeat((offset),count) + np.random.normal(0,0.02, count)
+            plt.plot(column_loc, vals.flatten(), '.', alpha=0.025)
+            offset = offset + 1
+
+        if include_whiskers:
+            boxplot_params = np.hstack(boxplot_params)
+            plt.boxplot(boxplot_params)
+            
+
+        plt.xticks(ticks = list(range(1, len(names)+1)), labels=names, rotation = 90)
