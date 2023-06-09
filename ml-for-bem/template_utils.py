@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import re
 import pandas as pd
+from random import randint
 
 # Import window schema
 from nrel_uitls import WINDTYPES
@@ -146,7 +147,7 @@ class minimumTemplate(UmiTemplateLibrary):
         # Year schedules
         # Always on
         dict_on = {
-            "$id": 1,
+            "$id": self.get_unique_key(),
             "Category": "Year",
             "Parts": [
                 {
@@ -165,7 +166,7 @@ class minimumTemplate(UmiTemplateLibrary):
         )
         # Always off
         dict_off = {
-            "$id": 2,
+            "$id": self.get_unique_key(),
             "Category": "Year",
             "Parts": [
                 {
@@ -618,6 +619,11 @@ class minimumTemplate(UmiTemplateLibrary):
                 wwr=row["WWR"] / 100,
             )
         print(self.BuildingTemplates)
+
+        ## Clean up templates
+        self.unique_components()
+        self.check_key_duplicates()
+
         self.save(
             path_or_buf=os.path.join(
                 os.getcwd(),
@@ -632,82 +638,113 @@ class minimumTemplate(UmiTemplateLibrary):
 
         return self
 
+    def get_unique_key(self, key_length=13):
+        data_dict = self.to_dict()
+        all_keys = []
+        for key, component in data_dict.items():
+            all_keys.extend([int(x["$id"]) for x in component])
+        id = randint(10 ** (key_length - 1), 10**key_length)
+        while id in all_keys:
+            id = randint(10 ** (key_length - 1), 10**key_length)
+        return id
+
+    def check_key_duplicates(self):
+        data_dict = self.to_dict()
+        all_keys = []
+        for key, component in data_dict.items():
+            for x in component:
+                try:
+                    all_keys.extend(int(x["$id"]))
+                except:
+                    None
+        if len(all_keys) != len(set(all_keys)):
+            raise ("There are key duplicates")
+
 
 def test_template(lib, epw_path, outdir):
     """
     Test new templates in EnergyPlus
     """
+    print("Energy testing iteration beginning for ", lib.name)
     for template in lib.BuildingTemplates:
-        wwr_map = {0: 0, 90: 0, 180: 0.4, 270: 0}  # N is 0, E is 90
-        # Convert to coords
-        width = 3.0
-        depth = 10.0
-        perim_depth = 3.0
-        height = 3.0
-        zones_data = [
-            {
-                "name": "Perim",
-                "coordinates": [
-                    (width, 0),
-                    (width, perim_depth),
-                    (0, perim_depth),
-                    (0, 0),
-                ],
-                "height": height,
-                "num_stories": 1,
-                "zoning": "by_storey",
-            },
-            {
-                "name": "Core",
-                "coordinates": [
-                    (width, perim_depth),
-                    (width, depth),
-                    (0, depth),
-                    (0, perim_depth),
-                ],
-                "height": height,
-                "num_stories": 1,
-                "zoning": "by_storey",
-            },
-        ]
-
-        sb = ShoeBox.from_template(
-            building_template=template,
-            zones_data=zones_data,
-            wwr_map=wwr_map,
-        )
-
-        # Set floor and roof geometry for each zone
-        for surface in sb.getsurfaces(surface_type="roof"):
-            name = surface.Name
-            name = name.replace("Roof", "Ceiling")
-            sb.add_adiabatic_to_surface(surface, name, 0.4)
-        for surface in sb.getsurfaces(surface_type="floor"):
-            name = surface.Name
-            name = name.replace("Floor", "Int Floor")
-            sb.add_adiabatic_to_surface(surface, name, 0.4)
-        # Internal partition and glazing
-        # Orientation
-        sb.outputs.add_basics().apply()
-        out_df = sb.simulate(
-            epw=epw_path,
-            output_directory=outdir,
-            annual=True,
-            keep_data_err=True,
-            process_files=True,
-            verbose=False,
-        )
-        print(out_df)
+        try:
+            print("Testing energy for ", template.Name)
+            wwr_map = {0: 0, 90: 0, 180: 0.4, 270: 0}  # N is 0, E is 90
+            # Convert to coords
+            width = 3.0
+            depth = 10.0
+            perim_depth = 3.0
+            height = 3.0
+            zones_data = [
+                {
+                    "name": "Perim",
+                    "coordinates": [
+                        (width, 0),
+                        (width, perim_depth),
+                        (0, perim_depth),
+                        (0, 0),
+                    ],
+                    "height": height,
+                    "num_stories": 1,
+                    "zoning": "by_storey",
+                },
+                {
+                    "name": "Core",
+                    "coordinates": [
+                        (width, perim_depth),
+                        (width, depth),
+                        (0, depth),
+                        (0, perim_depth),
+                    ],
+                    "height": height,
+                    "num_stories": 1,
+                    "zoning": "by_storey",
+                },
+            ]
+            print("Making shoebox")
+            sb = ShoeBox.from_template(
+                building_template=template,
+                zones_data=zones_data,
+                wwr_map=wwr_map,
+            )
+            print("Adding adiabatic surfaces")
+            # Set floor and roof geometry for each zone
+            for surface in sb.getsurfaces(surface_type="roof"):
+                name = surface.Name
+                name = name.replace("Roof", "Ceiling")
+                sb.add_adiabatic_to_surface(surface, name, 0.4)
+            for surface in sb.getsurfaces(surface_type="floor"):
+                name = surface.Name
+                name = name.replace("Floor", "Int Floor")
+                sb.add_adiabatic_to_surface(surface, name, 0.4)
+            sb.view_model()
+            # Intersect surfaces then set/update boundary conditions:
+            sb.intersect_match()
+            # Internal partition and glazing?
+            # Orientation?
+            sb.outputs.add_basics().apply()
+            print("Simulating...")
+            out_df = sb.simulate(
+                epw=epw_path,
+                output_directory=outdir,
+                annual=True,
+                keep_data_err=True,
+                # process_files=True,
+                # verbose=False,
+            )
+            print(out_df)
+        except Exception as e:
+            print(e)
 
 
 if __name__ == "__main__":
-    overwrite = True
-    sim = False
+    overwrite = False
+    sim = True
 
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
-    buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    buildings_df_path = "C:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
     cz_templatelist = os.listdir(buildings_df_path)
     cz_templatelist = [x for x in cz_templatelist if "residentialtemplates" in x]
     cz_templatelist = [x for x in cz_templatelist if ".csv" in x]
@@ -758,6 +795,11 @@ if __name__ == "__main__":
             template.construct_cz_templates(cz_df, name)
 
         elif name + ".json" in existing:
-            template = UmiTemplateLibrary.open(os.path.join(tpath, name + ".json"))
+            # p = os.path.join(tpath, name + ".json")
+            p = "./ml-for-bem/data/template_libs/BostonTemplateLibrary.json"
+            template = UmiTemplateLibrary.open(p)
+            print(template)
+        energy_df = pd.DataFrame()
         if sim:
             test_template(template, epw_path, outdir)
+            x()

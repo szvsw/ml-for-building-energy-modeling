@@ -141,3 +141,6 @@ NREL/data/ComStock/
 ml-for-bem/data/template_libs/cz_libs/residential/epresults
 ml-for-bem/data/**/*.npy
 ml-for-bem/checkpoints/
+
+# umi urban files
+umi/*
