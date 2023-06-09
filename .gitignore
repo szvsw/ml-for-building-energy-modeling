@@ -140,12 +140,7 @@ ml-for-bem/data/epws/city_epws_indexed.zip
 NREL/data/ComStock/
 ml-for-bem/data/template_libs/cz_libs/residential/epresults
 ml-for-bem/data/**/*.npy
-<<<<<<< HEAD
-ml-for-bem/checkpoints/
-
-# umi urban files
-umi/*
-=======
 ml-for-bem/checkpoints/**/*.pt
 ml-for-bem/checkpoints/**/*.pth
->>>>>>> 0b07fda2c26b7b66fc07fe7467886a5e33fc1058
+
+umi/*
