@@ -145,10 +145,20 @@ class Surrogate:
         "results",
         "full_storage_batch",
         "default_schedules",
-        "eui_max",
-        "eui_min",
+        "eui_perim_heating_max",
+        "eui_perim_heating_min",
+        "eui_perim_cooling_max",
+        "eui_perim_cooling_min",
+        "eui_core_heating_max",
+        "eui_core_heating_min",
+        "eui_core_cooling_max",
+        "eui_core_cooling_min",
         "area_max",
         "area_min",
+        "area_core_max",
+        "area_core_min",
+        "area_perim_max",
+        "area_perim_min",
         "building_params_per_vector",
         "timeseries_per_vector",
         "timeseries_per_output",
@@ -220,10 +230,41 @@ class Surrogate:
             self.results["monthly"] = f["monthly"][
                 ...
             ]  # this loads the whole batch into memory!
-            self.results["eui"] = 2.7777e-7 * self.results["monthly"] / self.results["area"].reshape(-1,1,1) # kwh/m2
             self.full_storage_batch = f["storage_batch"][...]
-        self.eui_max = np.max(self.results["eui"])
-        self.eui_min = np.min(self.results["eui"])
+            self.results["area_core"] = self.results["area"] * (1-self.schema["perim_2_footprint"].extract_storage_values_batch(self.full_storage_batch))
+            self.results["area_perim"] = self.results["area"] * self.schema["perim_2_footprint"].extract_storage_values_batch(self.full_storage_batch)
+            perim_heating_eui = self.results["monthly"][:,0]* 2.7777e-7 / self.results["area_perim"]
+            perim_cooling_eui = self.results["monthly"][:,1]* 2.7777e-7 / self.results["area_perim"]
+            core_heating_eui = self.results["monthly"][:,2]* 2.7777e-7 / self.results["area_core"]
+            core_cooling_eui = self.results["monthly"][:,3]* 2.7777e-7 / self.results["area_core"]
+            eui_unnorm = np.stack([perim_heating_eui, perim_cooling_eui, core_heating_eui, core_cooling_eui], axis=1)
+            perim_heating_eui_max = np.max(perim_heating_eui)
+            perim_heating_eui_min = np.min(perim_heating_eui)
+            perim_cooling_eui_max = np.max(perim_cooling_eui)
+            perim_cooling_eui_min = np.min(perim_cooling_eui)
+            core_heating_eui_max = np.max(core_heating_eui)
+            core_heating_eui_min = np.min(core_heating_eui)
+            core_cooling_eui_max = np.max(core_cooling_eui)
+            core_cooling_eui_min = np.min(core_cooling_eui)
+            self.eui_perim_heating_max = perim_heating_eui_max
+            self.eui_perim_heating_min = perim_heating_eui_min
+            self.eui_perim_cooling_max = perim_cooling_eui_max
+            self.eui_perim_cooling_min = perim_cooling_eui_min
+            self.eui_core_heating_max = core_heating_eui_max
+            self.eui_core_heating_min = core_heating_eui_min
+            self.eui_core_cooling_max = core_cooling_eui_max
+            self.eui_core_cooling_min = core_cooling_eui_min
+            perim_heating_eui_norm = normalize(perim_heating_eui, perim_heating_eui_max, perim_heating_eui_min)
+            perim_cooling_eui_norm = normalize(perim_cooling_eui, perim_cooling_eui_max, perim_cooling_eui_min)
+            core_heating_eui_norm = normalize(core_heating_eui, core_heating_eui_max, core_heating_eui_min)
+            core_cooling_eui_norm = normalize(core_cooling_eui, core_cooling_eui_max, core_cooling_eui_min)
+            eui_norm = np.stack([perim_heating_eui_norm, perim_cooling_eui_norm, core_heating_eui_norm, core_cooling_eui_norm], axis=1)
+            self.results["eui_unnormalized"] = eui_unnorm 
+            self.results["eui_normalized"] = eui_norm 
+        self.area_core_max = np.max(self.results["area_core"])
+        self.area_core_min = np.min(self.results["area_core"])
+        self.area_perim_max = np.max(self.results["area_perim"])
+        self.area_perim_min = np.min(self.results["area_perim"])
         self.area_max = np.max(self.results["area"])
         self.area_min = np.min(self.results["area"])
 
@@ -331,17 +372,22 @@ class Surrogate:
         logger.info("Constructing dataset...")
         areas = self.results["area"][start_ix:start_ix+count]
         areas_normalized = normalize(areas, self.area_max, self.area_min)
+        perim_areas = self.results["area_perim"][start_ix:start_ix+count]
+        core_areas = self.results["area_core"][start_ix:start_ix+count]
+        perim_areas_norm = normalize(perim_areas, self.area_perim_max,self.area_perim_min)
+        core_areas_norm = normalize(core_areas, self.area_core_max,self.area_core_min)
 
         batch = self.full_storage_batch[start_ix:start_ix+count] 
         bldg_params = self.get_batch_building_vector(batch)
-        building_vector = np.concatenate([ bldg_params,areas_normalized ], axis=1)
+        building_vector = np.concatenate([ bldg_params,areas_normalized, perim_areas_norm, core_areas_norm ], axis=1)
 
         climate_timeseries = self.get_batch_climate_timeseries(batch)
         schedules = self.get_batch_schedules(batch)
         timeseries_vector = np.concatenate([climate_timeseries, schedules], axis=1)
 
-        loads = self.results["eui"][start_ix:start_ix+count]
-        loads_normalized = normalize(loads, self.eui_max, self.eui_min)
+        # loads = self.results["eui"][start_ix:start_ix+count]
+        # loads_normalized = normalize(loads, self.eui_max, self.eui_min)
+        loads_normalized = self.results["eui_normalized"][start_ix:start_ix+count]
 
         logger.info("Dataset constructed.")
         return building_vector, timeseries_vector, loads_normalized
@@ -389,6 +435,7 @@ class Surrogate:
         mini_epoch_batch_size=50000,
         dataloader_batch_size=200,
         step_loss_frequency=50,
+        lr_schedule=None,
     ):
         # TODO: implement annual regularizer / possibly adaptive loss fns
         assert train_test_split_ix % mini_epoch_batch_size == 0, "The train/test split ix must be divisible by the mini epoch batch size."
@@ -399,6 +446,9 @@ class Surrogate:
         unseen_testing_cities = self.make_dataloader(train_test_split_ix+50000, count=20000, dataloader_batch_size=dataloader_batch_size)
 
         for full_epoch_num in range(n_full_epochs):
+            if lr_schedule is not None:
+                for group in self.optimizer.param_groups:
+                    group["lr"] = lr_schedule[full_epoch_num]
             logger.info(f"\n\n\n {'-'*20} MAJOR Epoch {full_epoch_num} {'-'*20}")
             for start_idx in range(0, final_start_ix+1, mini_epoch_batch_size):
                 logger.info(f"{'-'*15} BATCH {start_idx:05d}:{(start_idx+mini_epoch_batch_size):05d}{'-'*15}")
@@ -470,7 +520,10 @@ class Surrogate:
         x_val = torch.cat([timeseries_latvect_val, bldg_vect_val], axis=1).squeeze(1)
         # Predict and compute loss
         predicted_loads = self.energy_net(x_val)
-        loss = self.loss_fn(loads, predicted_loads)
+        annual_pred = torch.sum(predicted_loads, axis=2)
+        annual_true = torch.sum(loads, axis=2)
+        # TODO: implement adaptive weighting?
+        loss = self.loss_fn(predicted_loads, loads) + 0.1*self.loss_fn(annual_pred, annual_true)
         return loads, predicted_loads, loss, timeseries_latvect_val
     
     def save_checkpoint(
@@ -492,8 +545,14 @@ class Surrogate:
             "timeseries_net_state_dict": timeseries_dict,
             "energy_net_state_dict": energy_dict,
             "optimizer_state_dict": optim_dict,
-            "eui_max": self.eui_max,
-            "eui_min": self.eui_min,
+            "eui_perim_heating_max": self.eui_perim_heating_max,
+            "eui_perim_heating_min": self.eui_perim_heating_min,
+            "eui_perim_cooling_max": self.eui_perim_cooling_max,
+            "eui_perim_cooling_min": self.eui_perim_cooling_min,
+            "eui_core_heating_max": self.eui_core_heating_max,
+            "eui_core_heating_min": self.eui_core_heating_min,
+            "eui_core_cooling_max": self.eui_core_cooling_max,
+            "eui_core_cooling_min": self.eui_core_cooling_min,
             "area_max": self.area_max,
             "area_min": self.area_min,
             "building_params_per_vector": self.building_params_per_vector,
@@ -617,7 +676,8 @@ class Surrogate:
         plt.show()
     
     def plot_true_results(self, start_ix, count, ylim):
-        results = normalize(self.results["eui"][start_ix:start_ix+count], self.eui_max, self.eui_min)
+        # results = normalize(self.results["eui"][start_ix:start_ix+count], self.eui_max, self.eui_min)
+        results =self.results["eui_normalized"][start_ix:start_ix+count]
         fig, axs = plt.subplots(2,2,figsize=(10,10))
         plt.suptitle("Simulation Results (shoebox area normalized)")
         for i in range(count):
@@ -649,7 +709,11 @@ class Surrogate:
     
     def plot_params(self, start_ix, count, include_whiskers=True, title=None):
         batch = self.full_storage_batch[start_ix:start_ix+count]
-        areas = normalize(self.results["area"][start_ix:start_ix+count], self.area_max, self.area_min)
+        areas_norm = normalize(self.results["area"][start_ix:start_ix+count], self.area_max, self.area_min)
+        perim_areas = self.results["area_perim"][start_ix:start_ix+count]
+        core_areas = self.results["area_core"][start_ix:start_ix+count]
+        perim_areas_norm = normalize(perim_areas, self.area_perim_max,self.area_perim_min)
+        core_areas_norm = normalize(core_areas, self.area_core_max,self.area_core_min)
         bldg_params = self.get_batch_building_vector(batch)
         names = []
 
@@ -676,8 +740,12 @@ class Surrogate:
                     names.append("VLT")
 
 
-        boxplot_params.append(areas.reshape(-1,1))
+        boxplot_params.append(areas_norm.reshape(-1,1))
+        boxplot_params.append(perim_areas_norm.reshape(-1,1))
+        boxplot_params.append(core_areas_norm.reshape(-1,1))
         names.append("Area")
+        names.append("Area:Perim")
+        names.append("Area:Core")
 
         offset = 1
         for i,vals in enumerate(boxplot_params):
