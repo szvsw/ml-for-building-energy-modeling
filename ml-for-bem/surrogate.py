@@ -520,10 +520,10 @@ class Surrogate:
         x_val = torch.cat([timeseries_latvect_val, bldg_vect_val], axis=1).squeeze(1)
         # Predict and compute loss
         predicted_loads = self.energy_net(x_val)
-        annual_pred = torch.sum(predicted_loads, axis=2)
-        annual_true = torch.sum(loads, axis=2)
+        # annual_pred = torch.sum(predicted_loads, axis=2)
+        # annual_true = torch.sum(loads, axis=2)
         # TODO: implement adaptive weighting?
-        loss = self.loss_fn(predicted_loads, loads) + 0.1*self.loss_fn(annual_pred, annual_true)
+        loss = self.loss_fn(predicted_loads, loads) #+ 0.1*self.loss_fn(annual_pred, annual_true)
         return loads, predicted_loads, loss, timeseries_latvect_val
     
     def save_checkpoint(
@@ -661,7 +661,7 @@ class Surrogate:
         fig.tight_layout()
         logger.setLevel(level)
     
-    def plot_loss_histories(self):
+    def plot_loss_histories(self, y_max=0.001):
         training_loss_history_array = np.array(self.training_loss_history)
         validation_loss_history_array = np.array(self.validation_loss_history)
         withheld_loss_history_array = np.array(self.withheld_loss_history)
@@ -671,7 +671,7 @@ class Surrogate:
         plt.plot(validation_loss_history_array[:,0],validation_loss_history_array[:,1], label="Validation Loss (in-sample EPWs)")
         plt.plot(withheld_loss_history_array[:,0],withheld_loss_history_array[:,1], lw=2, label="Validation Loss (out-of-sample EPWs)")
         # TODO: figure out better scaling for these plots
-        plt.ylim([0,0.001])
+        plt.ylim([0,y_max])
         plt.legend()
         plt.show()
     
