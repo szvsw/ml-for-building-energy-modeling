@@ -100,7 +100,7 @@ class minimumTemplate(UmiTemplateLibrary):
             Name="dwh_setting",
             IsOn=True,
             WaterSchedule=self.always_on,
-            FlowRatePerFloorArea=0.03,
+            FlowRatePerFloorArea=0.00805,
             WaterSupplyTemperature=65,
             WaterTemperatureInlet=10,
         )
@@ -661,12 +661,12 @@ class minimumTemplate(UmiTemplateLibrary):
             raise ("There are key duplicates")
 
 
-def test_template(lib, epw_path, outdir):
+def test_template(lib, epw_path, outdir, energy_df, csv_name):
     """
     Test new templates in EnergyPlus
     """
     print("Energy testing iteration beginning for ", lib.name)
-    for template in lib.BuildingTemplates:
+    for i, template in enumerate(lib.BuildingTemplates):
         try:
             print("Testing energy for ", template.Name)
             wwr_map = {0: 0, 90: 0, 180: 0.4, 270: 0}  # N is 0, E is 90
@@ -717,38 +717,60 @@ def test_template(lib, epw_path, outdir):
                 name = surface.Name
                 name = name.replace("Floor", "Int Floor")
                 sb.add_adiabatic_to_surface(surface, name, 0.4)
-            sb.view_model()
             # Intersect surfaces then set/update boundary conditions:
             sb.intersect_match()
             # Internal partition and glazing?
             # Orientation?
-            sb.outputs.add_basics().apply()
+            sb.outputs.add_basics()
+            sb.outputs.add_umi_template_outputs().apply()
             print("Simulating...")
             out_df = sb.simulate(
                 epw=epw_path,
                 output_directory=outdir,
                 annual=True,
+                expandobjects=True,
                 keep_data_err=True,
+                prep_outputs=True,
+                readvars=True,
                 # process_files=True,
                 # verbose=False,
             )
-            print(out_df)
+            j_per_kwh = 3600000
+            heating = (
+                out_df.meters.OutputMeter.Heating__DistrictHeating.values().sum()
+                / j_per_kwh
+            )
+            cooling = (
+                out_df.meters.OutputMeter.Cooling__DistrictCooling.values().sum()
+                / j_per_kwh
+            )
+            energy_df = energy_df.append(
+                pd.Series(
+                    [csv_name, template.Name, heating, cooling], index=energy_df.columns
+                ),
+                ignore_index=True,
+            )
         except Exception as e:
             print(e)
+            raise
+    return energy_df
 
 
 if __name__ == "__main__":
-    overwrite = False
+    overwrite = True
     sim = True
 
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
-    buildings_df_path = "C:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
     cz_templatelist = os.listdir(buildings_df_path)
     cz_templatelist = [x for x in cz_templatelist if "residentialtemplates" in x]
     cz_templatelist = [x for x in cz_templatelist if ".csv" in x]
-    for csv_name in cz_templatelist:
+    energy_df = pd.DataFrame(columns=["cz", "archetype", "heating", "cooling"])
+    print(cz_templatelist)
+
+    for i, csv_name in enumerate(cz_templatelist):
         tpath = os.path.join(
             os.getcwd(),
             "ml-for-bem",
@@ -795,11 +817,12 @@ if __name__ == "__main__":
             template.construct_cz_templates(cz_df, name)
 
         elif name + ".json" in existing:
-            # p = os.path.join(tpath, name + ".json")
-            p = "./ml-for-bem/data/template_libs/BostonTemplateLibrary.json"
+            p = os.path.join(tpath, name + ".json")
             template = UmiTemplateLibrary.open(p)
-            print(template)
-        energy_df = pd.DataFrame()
         if sim:
-            test_template(template, epw_path, outdir)
-            x()
+            energy_df = test_template(template, epw_path, outdir, energy_df, name)
+            print
+            if i % 2:
+                print(energy_df)
+
+    energy_df.to_csv(os.path.join(outdir, "shoebox_test.csv"), index=False)
