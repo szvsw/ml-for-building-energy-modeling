@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List
+from typing import List, Literal
 from datetime import datetime
 from pathlib import Path
 
@@ -27,7 +27,6 @@ root_dir = Path(os.path.abspath(os.path.dirname(__file__)))
 checkpoints_dir = root_dir / "checkpoints"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-logger.info(f"Using {device} for surrogate model.")
 DATA_PATH = root_dir / "data"
 
 HOURS_IN_YEAR = 8760
@@ -187,8 +186,43 @@ class Surrogate:
         schema: Schema,
         learning_rate=1e-3,
         checkpoint=None,
+        load_training_data=True,
+        cpu=False
     ) -> None:
+        if cpu:
+            device = "cpu"
+        logger.info(f"Using {device} for surrogate model.")
         self.schema = schema
+        if load_training_data:
+            self.load_all_training_data()
+        self.config_network_dims(dim_source="checkpoint" if checkpoint is not None else "training", checkpoint=checkpoint)
+        logger.info(f"{self.building_params_per_vector} building parameters per input vector")
+        logger.info(f"{self.timeseries_per_vector} timeseries per input vector")
+        logger.info(f"{self.timeseries_per_output} timeseries per output vector")
+        logger.info(f"{self.output_resolution} timesteps in output.")
+
+        logger.info("Initializing machine learning objects...")
+        self.timeseries_net = MonthlyEnergyCNN(
+            in_channels=self.timeseries_per_vector,
+            out_channels=self.latent_size
+        ).to(device)
+        self.energy_net = EnergyCNN(
+            in_channels=self.energy_cnn_in_size,
+            out_channels=self.timeseries_per_output
+        ).to(device)
+        self.loss_fn = nn.MSELoss()
+        self.learning_rate = learning_rate
+        self.optimizer = torch.optim.Adam(list(self.timeseries_net.parameters()) + list(self.energy_net.parameters()), lr=self.learning_rate)
+        self.training_loss_history = []
+        self.validation_loss_history = []
+        self.withheld_loss_history = []
+        self.latentvect_history = []
+        logger.info("ML objects initialized.")
+
+        if checkpoint is not None:
+            self.load_checkpoint(checkpoint)
+        
+    def load_all_training_data(self):
         if not os.path.exists(Surrogate.full_results_path):
             os.makedirs(DATA_PATH, exist_ok=True)
             logger.info(
@@ -276,6 +310,22 @@ class Surrogate:
         self.climate_data = ClimateData()
         logger.info("Finished loading climate data.")
 
+    def config_network_dims(self, dim_source: Literal["training", "checkpoint" ]="training", checkpoint=None):
+        if dim_source == "training":
+            self.configure_network_dims_from_training_data()
+        elif dim_source == "checkpoint":
+            checkpoint_path = checkpoints_dir / checkpoint
+            if not os.path.exists(checkpoint_path):
+                os.makedirs(checkpoints_dir / checkpoint.split("/")[0], exist_ok=True)
+                download_from_bucket("models/"+checkpoint, checkpoint_path)
+            self.building_params_per_vector = checkpoint["building_params_per_vector"]
+            self.timeseries_per_vector = checkpoint["timeseries_per_vector"] 
+            self.timeseries_per_output = checkpoint["timeseries_per_output"] 
+            self.output_resolution = checkpoint["output_resolution"] 
+            self.latent_size = checkpoint["latent_size"] 
+            self.energy_cnn_in_size = checkpoint["energy_cnn_in_size"] 
+    
+    def configure_network_dims_from_training_data(self):
         logger.info("Checking model dimensions...")
         level = logger.level
         logger.setLevel(logging.ERROR)
@@ -287,32 +337,7 @@ class Surrogate:
         self.latent_size = self.building_params_per_vector
         self.energy_cnn_in_size  = self.latent_size + self.building_params_per_vector
         logger.setLevel(level)
-        logger.info(f"{self.building_params_per_vector} building parameters per input vector")
-        logger.info(f"{self.timeseries_per_vector} timeseries per input vector")
-        logger.info(f"{self.timeseries_per_output} timeseries per output vector")
-        logger.info(f"{self.output_resolution} timesteps in output.")
 
-        logger.info("Initializing machine learning objects...")
-        self.timeseries_net = MonthlyEnergyCNN(
-            in_channels=self.timeseries_per_vector,
-            out_channels=self.latent_size
-        ).to(device)
-        self.energy_net = EnergyCNN(
-            in_channels=self.energy_cnn_in_size,
-            out_channels=self.timeseries_per_output
-        ).to(device)
-        self.loss_fn = nn.MSELoss()
-        self.learning_rate = learning_rate
-        self.optimizer = torch.optim.Adam(list(self.timeseries_net.parameters()) + list(self.energy_net.parameters()), lr=self.learning_rate)
-        self.training_loss_history = []
-        self.validation_loss_history = []
-        self.withheld_loss_history = []
-        self.latentvect_history = []
-        logger.info("ML objects initialized.")
-
-        if checkpoint is not None:
-            self.load_checkpoint(checkpoint)
-        
     def load_checkpoint(self, checkpoint):
         # TODO: implement full surrogate config from checkpoint
         # TODO: implement detection of latest checkpoint available
@@ -462,10 +487,12 @@ class Surrogate:
                     logger.info(f"{'-'*20} MiniBatch Epoch number {epoch_num} {'-'*20}")
                     for j, sample in enumerate(training_dataloader):
                         self.optimizer.zero_grad()
-                        _, _, loss, timeseries_latvect = self.project_dataloader_sample(sample)
+                        projection_results = self.project_dataloader_sample(sample)
+                        loss = projection_results["loss"]
+                        latvect = projection_results["timeseries_latvect"]
                         if j%step_loss_frequency == 0:
                             logger.info(f"Step {j} loss: {loss.item()}")
-                            self.latentvect_history.append(timeseries_latvect.detach())
+                            self.latentvect_history.append(latvect.detach())
                         self.training_loss_history.append([len(self.training_loss_history),loss.item()])
                         loss.backward()
                         self.optimizer.step()
@@ -473,7 +500,8 @@ class Surrogate:
                     with torch.no_grad():
                         epoch_validation_loss = []
                         for sample in validation_dataloader:
-                            _, _, loss, _ = self.project_dataloader_sample(sample)
+                            projection_results = self.project_dataloader_sample(sample)
+                            loss = projection_results["loss"]
                             epoch_validation_loss.append(loss.item())
                         mean_validation_loss = np.mean(epoch_validation_loss)
                         logger.info(f"Mean validation loss for batch: {mean_validation_loss}")
@@ -485,7 +513,8 @@ class Surrogate:
                 epoch_validation_loss = []
                 with torch.no_grad():
                     for sample in unseen_testing_cities["dataloaders"]["train"]: # using train is fine since this data is never seen
-                        _, _, loss, _ = self.project_dataloader_sample(sample)
+                        projection_results = self.project_dataloader_sample(sample)
+                        loss = projection_results["loss"]
                         epoch_validation_loss.append(loss.item())
                     mean_validation_loss = np.mean(epoch_validation_loss)
                     logger.info(f"Mean validation loss for withheld climate zone data: {mean_validation_loss}")
@@ -509,11 +538,11 @@ class Surrogate:
                 )
             
 
-    def project_dataloader_sample(self, sample):
+    def project_dataloader_sample(self, sample, compute_loss=True):
         # Get the data
         timeseries_val = sample["timeseries_vector"].to(device).float()
         bldg_vect_val = sample["building_vector"].to(device).float()
-        loads = sample["results_vector"].to(device).float()
+        loads = sample["results_vector"].to(device).float() if compute_loss else None
         # Project timeseries to latent space
         timeseries_latvect_val = self.timeseries_net(timeseries_val)
         # Concatenate latent vector with building vector
@@ -523,8 +552,13 @@ class Surrogate:
         # annual_pred = torch.sum(predicted_loads, axis=2)
         # annual_true = torch.sum(loads, axis=2)
         # TODO: implement adaptive weighting?
-        loss = self.loss_fn(predicted_loads, loads) #+ 0.1*self.loss_fn(annual_pred, annual_true)
-        return loads, predicted_loads, loss, timeseries_latvect_val
+        loss = self.loss_fn(predicted_loads, loads) if compute_loss else None #+ 0.1*self.loss_fn(annual_pred, annual_true) 
+        return {
+            "timeseries_latvect": timeseries_latvect_val,
+            "predicted_loads": predicted_loads,
+            "loads": loads,
+            "loss": loss,
+        }
     
     def save_checkpoint(
             self, 
@@ -593,10 +627,10 @@ class Surrogate:
             test_dataloader = data_to_plot["dataloaders"][segment] 
             with torch.no_grad():
                 for test_samples in test_dataloader:
-                    loads, predicted_loads, loss, _ = self.project_dataloader_sample(test_samples)
-                    true_loads.append(loads)
-                    pred_loads.append(predicted_loads)
-                    all_losses.append(loss)
+                    projection_results = self.project_dataloader_sample(test_samples)
+                    true_loads.append(projection_results["loads"])
+                    pred_loads.append(projection_results["predicted_loads"])
+                    all_losses.append(projection_results["loss"])
 
 
         true_loads = torch.vstack(true_loads)
