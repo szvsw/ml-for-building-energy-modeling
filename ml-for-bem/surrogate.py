@@ -189,6 +189,7 @@ class Surrogate:
         load_training_data=True,
         cpu=False
     ) -> None:
+        global device
         if cpu:
             device = "cpu"
         logger.info(f"Using {device} for surrogate model.")
@@ -318,12 +319,13 @@ class Surrogate:
             if not os.path.exists(checkpoint_path):
                 os.makedirs(checkpoints_dir / checkpoint.split("/")[0], exist_ok=True)
                 download_from_bucket("models/"+checkpoint, checkpoint_path)
-            self.building_params_per_vector = checkpoint["building_params_per_vector"]
-            self.timeseries_per_vector = checkpoint["timeseries_per_vector"] 
-            self.timeseries_per_output = checkpoint["timeseries_per_output"] 
-            self.output_resolution = checkpoint["output_resolution"] 
-            self.latent_size = checkpoint["latent_size"] 
-            self.energy_cnn_in_size = checkpoint["energy_cnn_in_size"] 
+            data = torch.load(checkpoint_path)
+            self.building_params_per_vector = data["building_params_per_vector"]
+            self.timeseries_per_vector = data["timeseries_per_vector"] 
+            self.timeseries_per_output = data["timeseries_per_output"] 
+            self.output_resolution = data["output_resolution"] 
+            self.latent_size = data["latent_size"] 
+            self.energy_cnn_in_size = data["energy_cnn_in_size"] 
     
     def configure_network_dims_from_training_data(self):
         logger.info("Checking model dimensions...")
@@ -671,7 +673,7 @@ class Surrogate:
         true_loads, pred_loads = self.evaluate_over_range(start_ix=start_ix, count=count, segment=segment)
         true_loads = torch.sum(true_loads, axis=2) 
         pred_loads = torch.sum(pred_loads, axis=2) 
-        maxes = torch.max(pred_loads,dim=0)[0].reshape(1,4)
+        maxes = torch.max(true_loads,dim=0)[0].reshape(1,4)
         true_loads = true_loads / maxes
         pred_loads = pred_loads / maxes
         true_loads = true_loads.cpu()
