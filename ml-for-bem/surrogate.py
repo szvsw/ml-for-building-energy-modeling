@@ -570,6 +570,8 @@ class Surrogate:
 
                 for epoch_num in range(n_mini_epochs):
                     logger.info(f"{'-'*20} MiniBatch Epoch number {epoch_num} {'-'*20}")
+                    self.timeseries_net.train()
+                    self.energy_net.train()
                     for j, sample in enumerate(training_dataloader):
                         self.optimizer.zero_grad()
                         projection_results = self.project_dataloader_sample(sample)
@@ -584,6 +586,8 @@ class Surrogate:
                         loss.backward()
                         self.optimizer.step()
 
+                    self.timeseries_net.eval()
+                    self.energy_net.eval()
                     with torch.no_grad():
                         epoch_validation_loss = []
                         for sample in validation_dataloader:
@@ -602,6 +606,8 @@ class Surrogate:
                 # Finished repeating training on MiniBatch, check loss on fully unseen cities
                 logger.info("Computing loss on withheld climate zone data...")
                 epoch_validation_loss = []
+                self.timeseries_net.eval()
+                self.energy_net.eval()
                 with torch.no_grad():
                     for sample in unseen_testing_cities["dataloaders"][
                         "train"
