@@ -599,24 +599,24 @@ class SchemaParameter:
         ]
         return data.reshape(-1, *self.shape_storage)
 
-    def to_ml(self, storage_batch):
+    def to_ml(self, storage_batch=None, value=None):
         if not self.in_ml:
             logger.warning(
                 f"Attempted to call 'SchemaParameter.to_ml(storage_batch)' on PARAMETER:{self.name} but that parameter is not included in the ML vector.  You can ignore this message."
             )
         else:
             if isinstance(self, OneHotParameter):
-                counts = self.extract_storage_values_batch(storage_batch)
+                counts = self.extract_storage_values_batch(storage_batch) if value == None else value
                 onehots = np.zeros((counts.shape[0], self.count))
-                onehots[np.arange(counts.shape[0]),counts[:,0].astype(int) ] = 1
+                onehots[np.arange(counts.shape[0]), counts[:, 0].astype(int)] = 1
                 return onehots
             elif isinstance(self, SchedulesParameters):
-                return self.extract_storage_values_batch(storage_batch)
+                return self.extract_storage_values_batch(storage_batch) if value is None else value
             else:
                 vals = self.normalize(
                     self.extract_storage_values_batch(storage_batch).reshape(
                         -1, *self.shape_ml
-                    )
+                    ) if value == None else value
                 )
                 return vals
 
@@ -664,6 +664,16 @@ class SchemaParameter:
         semantic logic.
         Args:
             whitebox_sim: WhiteboxSimulation
+        """
+        pass
+
+    def extract_from_template(self):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
         """
         pass
 
@@ -730,6 +740,19 @@ class ShoeboxGeometryParameter(NumericParameter):
         value = self.extract_storage_values(whitebox_sim.storage_vector)
         setattr(whitebox_sim.shoebox_config, self.name, value)
 
+    def extract_from_template(self, whitebox_sim=None):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        if whitebox_sim:
+            return self.to_ml(value=getattr(whitebox_sim.shoebox_config, self.name))
+        else:
+            return self.to_ml(value=self.mean)
+
 
 class ShoeboxOrientationParameter(OneHotParameter):
     __slots__ = ()
@@ -766,6 +789,19 @@ class BuildingTemplateParameter(NumericParameter):
             path = path[:-1]
             object_to_update = reduce(lambda a, b: a[b], path)
             setattr(object_to_update, template_param, value)
+
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate
+        """
+        val = building_template.Perimeter
+        for attr in self.path:
+            val = getattr(val, attr)
+        return self.to_ml(value=val)
 
 
 class RValueParameter(BuildingTemplateParameter):
@@ -825,6 +861,26 @@ class RValueParameter(BuildingTemplateParameter):
             if insulation_layer.Thickness <= 0.003:
                 construction.Layers = all_layers_except_insulation_layer
 
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        if "Facade" in self.name:
+            surface = "Facade"
+        elif "Roof" in self.name:
+            surface = "Roof"
+        elif "Slab" in self.name:
+            surface = "Slab"
+        path = ["Constructions", surface]
+        val = building_template.Perimeter
+        for attr in path:
+            val = getattr(val, attr)
+        return self.to_ml(value=val.r_value)
+
 
 class TMassParameter(BuildingTemplateParameter):
     def __init__(self, path, **kwargs):
@@ -858,6 +914,27 @@ class TMassParameter(BuildingTemplateParameter):
                 construction.Layers = all_layers_except_mass
             else:
                 concrete_layer.Thickness = thickness
+
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        zone = "Perimeter"
+        if "Facade" in self.name:
+            surface = "Facade"
+        elif "Roof" in self.name:
+            surface = "Roof"
+        elif "Slab" in self.name:
+            surface = "Slab"
+        path = ["Constructions", surface, "heat_capacity_per_unit_wall_area"]
+        val = building_template.Perimeter
+        for attr in path:
+            val = getattr(val, attr)
+        return self.to_ml(value=val)
 
 
 class WindowParameter(NumericParameter):
@@ -904,6 +981,22 @@ class WindowParameter(NumericParameter):
 
         # Update the window
         whitebox_sim.template.Windows.Construction = window
+
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        return self.to_ml(value=np.array(
+            [
+                building_template.Windows.Construction.u_value,
+                0.5,  # TODO SHGC
+                building_template.Windows.Construction.visible_transmittance,
+            ]
+        ))
 
 
 class SchedulesParameters(SchemaParameter):
@@ -961,6 +1054,18 @@ class SchedulesParameters(SchemaParameter):
             whitebox_sim.template.Perimeter.Loads.OccupancySchedule
         )
 
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        schedules = get_schedules(
+            building_template, zones=["Core"], paths=self.paths
+        )
+        return self.to_ml(value=schedules)
 
 class TimeSeriesOutput:
     __slots__ = (
@@ -1433,7 +1538,28 @@ class Schema:
                     ml_vector_components.append(vector_components)
         ml_vectors = np.hstack(ml_vector_components)
         return ml_vectors, timeseries_ops
-
+    
+    def extract_from_template(self, building_template):
+        # storage_vector = self.generate_empty_storage_vector()
+        template_vect = []
+        schedules_vect =[]
+        parameters = self.parameters
+        for parameter in parameters:
+            if parameter.in_ml:
+                # print("Extracting value(s) for ", parameter.name)
+                if isinstance(parameter, SchedulesParameters):
+                    schedules_vect = parameter.extract_from_template(building_template)
+                    # print(f"Got schedules of {type(schedules_vect)} with shape {schedules_vect.shape}")
+                elif isinstance(parameter, BuildingTemplateParameter): # TODO: check
+                    val = parameter.extract_from_template(building_template) 
+                    # append to template vector
+                    template_vect.append(val)
+            
+        # return values which will be used for a building parameter vector and/or timeseries vector (schedules)
+        return dict(
+            template_vect = np.array(template_vect),
+            schedules_vect = schedules_vect,
+        )
 
 if __name__ == "__main__":
     schema = Schema()
