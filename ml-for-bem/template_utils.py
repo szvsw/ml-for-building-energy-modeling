@@ -58,6 +58,10 @@ with warnings.catch_warnings():
 from nrel_uitls import RESTYPES
 
 
+PEOPLE_DENSITY = 0.2  # pp/m2
+DHW_USE_PP = 0.05125  # m3/day
+
+
 class minimumTemplate(UmiTemplateLibrary):
     pass
 
@@ -99,9 +103,12 @@ class minimumTemplate(UmiTemplateLibrary):
         dhw_setting = DomesticHotWaterSetting(
             Name="dwh_setting",
             IsOn=True,
-            WaterSchedule=self.always_on,
-            FlowRatePerFloorArea=0.00805,
-            WaterSupplyTemperature=65,
+            WaterSchedule=self.YearSchedules[0],  # self.always_on
+            FlowRatePerFloorArea=DHW_USE_PP
+            * PEOPLE_DENSITY
+            * 0.5  # assume less people than people density
+            / 24,  # [m3/hr-m2] 0.05 m3/day/pp * pp/m2 * 1 day/24h - ASHRAE
+            WaterSupplyTemperature=50,  # 65
             WaterTemperatureInlet=10,
         )
         # List of DomesticHotWaterSetting objects (needed for Umi template creation)
@@ -423,7 +430,7 @@ class minimumTemplate(UmiTemplateLibrary):
                 EquipmentAvailabilitySchedule=self.YearSchedules[2],
                 LightsAvailabilitySchedule=self.YearSchedules[1],
                 OccupancySchedule=self.YearSchedules[0],
-                PeopleDensity=0.2,
+                PeopleDensity=PEOPLE_DENSITY,
             )
             # List of ZoneLoad objects (needed for Umi template creation)
             self.ZoneLoads.append(zone_load)
@@ -728,7 +735,7 @@ def test_template(lib, epw_path, outdir, energy_df, csv_name):
                 epw=epw_path,
                 output_directory=outdir,
                 annual=True,
-                expandobjects=True,
+                # expandobjects=True,
                 keep_data_err=True,
                 prep_outputs=True,
                 readvars=True,
@@ -750,20 +757,32 @@ def test_template(lib, epw_path, outdir, energy_df, csv_name):
                 ),
                 ignore_index=True,
             )
+            dhw = (
+                out_df.variables.OutputVariable.Water_Use_Equipment_Heating_Energy.values().sum()
+                / j_per_kwh
+            )
+            print("*" * 50)
+            print("Heating EUI: ", heating / (width * depth))
+            print("Cooling EUI: ", cooling / (width * depth))
+            dhw = dhw.sum()
+            print("DHW EUI: ", dhw / (width * depth))
+            print("*" * 50)
+            # x()
+
         except Exception as e:
             print(e)
-            raise
+            raise ValueError
     return energy_df
 
 
 if __name__ == "__main__":
-    overwrite = True
+    overwrite = False
     sim = True
 
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
-    buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    buildings_df_path = "D:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
     cz_templatelist = os.listdir(buildings_df_path)
     cz_templatelist = [x for x in cz_templatelist if "residentialtemplates" in x]
     cz_templatelist = [x for x in cz_templatelist if ".csv" in x]
@@ -821,8 +840,5 @@ if __name__ == "__main__":
             template = UmiTemplateLibrary.open(p)
         if sim:
             energy_df = test_template(template, epw_path, outdir, energy_df, name)
-            print
-            if i % 2:
-                print(energy_df)
-
-    energy_df.to_csv(os.path.join(outdir, "shoebox_test.csv"), index=False)
+    if sim:
+        energy_df.to_csv(os.path.join(outdir, "shoebox_test.csv"), index=False)
