@@ -11,12 +11,19 @@ import pandas as pd
 from shapely import Polygon, LineString, MultiPoint, Point
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
-ti.init(arch=ti.cpu, kernel_profiler=True)
-# ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True)
+# ti.init(arch=ti.cpu, kernel_profiler=True)
+ti.init(arch=ti.gpu, device_memory_fraction=0.9, kernel_profiler=True)
 
 logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
 logger.setLevel(logging.INFO)
+
+
+# TODO: migrate node_heights field to a Node.field()
+@ti.dataclass
+class Node:
+    height: float
+
 
 @ti.dataclass
 class Edge:
@@ -28,11 +35,12 @@ class Edge:
     slope: float
     normal: ti.math.vec2
     normal_theta: float
-    height: float # TODO: This could be rounded to save memory, e.g. uint16, or a quantized datatype e.g. uint10
+    height: float  # TODO: This could be rounded to save memory, e.g. uint16, or a quantized datatype e.g. uint10
 
-    sensor_start_ix: int # TODO: should these be forced to 64 bit?
+    sensor_start_ix: int  # TODO: should these be forced to 64 bit?
     sensor_end_ix: int
-    sensor_ct: int 
+    sensor_ct: int
+
 
 @ti.dataclass
 class XYSensor:
@@ -50,7 +58,12 @@ class Hit:
 
     @ti.func
     def centroid(self) -> ti.math.vec2:
-        return ti.Vector([self.loc_x_ix + 0.5, self.loc_y_ix + 0.5]) # TODO: assumes a bin spacing of 1m!
+        return ti.Vector(
+            [self.loc_x_ix + 0.5, self.loc_y_ix + 0.5]
+        )  # TODO: assumes a bin spacing of 1m!
+
+
+N_LOOPS_TO_UNROLL = 1
 
 
 @ti.data_oriented
@@ -59,6 +72,10 @@ class Tracer:
     sensor_inset: float  # meters
     sensor_spacing: float  # meters
     f2f_height: float  # floor-to-floor height, meters
+    max_ray_length: float  # meters
+    ray_step_size: float  # meters
+    n_ray_steps: int
+
     depth: int  # quadtree level count
     levels: List[ti.SNode]  # pointers to each 2x2 level of the quadtree
     node_heights: ti.ScalarField  # stores the height of each populated node in the quadtree
@@ -83,10 +100,13 @@ class Tracer:
         sensor_inset: float = 0.5,
         sensor_spacing: float = 1,
         f2f_height: float = 3,
+        max_ray_length: float = 400.0,
+        ray_step_size: float = 1.0,
         convert_crs=False,
     ):
         # TODO: add meter conversion, better crs validation/conversion
         # store the bin size in meters
+        global N_LOOPS_TO_UNROLL
         assert (
             node_width == 1
         ), "Currently only supports dividing the space into 1 m node widths"
@@ -97,6 +117,13 @@ class Tracer:
         self.sensor_inset = sensor_inset
         self.sensor_spacing = sensor_spacing
         self.f2f_height = f2f_height
+        self.max_ray_length = max_ray_length
+        self.ray_step_size = ray_step_size
+        self.n_ray_steps = int(self.max_ray_length / ray_step_size)
+        self.steps_per_unroll_loop = 100  # TODO: add to init args
+        N_LOOPS_TO_UNROLL = int(
+            np.ceil(self.n_ray_steps / self.steps_per_unroll_loop)
+        )  # TODO: this should be a class property but it throws an error in the static unroll command in the kernel if so
 
         # Load the GDF
         self.gdf: gpd.GeoDataFrame = gpd.read_file(
@@ -125,9 +152,8 @@ class Tracer:
             -x_low + padding, -y_low + padding
         )
 
-        # self.gdf = self.gdf.loc[self.gdf.index.repeat(200)].reset_index()
         base_gdf = self.gdf.copy()
-        tile_ct = 7
+        tile_ct = 9
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -197,28 +223,31 @@ class Tracer:
         sensor_count = self.edge_sensor_parent_ix.shape[0]
         logger.info(f"XY sensor count: {sensor_count}")
 
-
         # Build a dynamic list of hits per ray
         logger.info("Building dynamic hit tracking data structure...")
         self.n_azimuths = 24
         self.azimuth_inc = 2 * np.pi / self.n_azimuths
         self.sensor_root = ti.root.dense(ti.i, sensor_count)
-        self.ray_root = self.sensor_root.dense(ti.j,  self.n_azimuths)
-        self.hit_block = self.ray_root.dynamic(ti.k, 1024, chunk_size=32)
+        self.ray_root = self.sensor_root.dense(ti.j, self.n_azimuths)
+        self.hit_block = self.ray_root.dynamic(
+            ti.k, 2 ** (int(np.ceil(np.log2(self.n_ray_steps)))), chunk_size=32
+        )  # TODO: big performance hit on gpu
         self.hits = Hit.field()
         self.hit_block.place(self.hits)
 
         # Init xy sensor locations
         logger.info("Initializing xy-plane sensors...")
-        self.xy_sensors = XYSensor.field() # TODO: Why do I have to place hit_block first for compilation to work?
+        self.xy_sensors = (
+            XYSensor.field()
+        )  # TODO: Why do I have to place hit_block first for compilation to work?
         self.sensor_root.place(self.xy_sensors)
         self.init_xy_sensors()
         ti.sync()
 
         # Ray trace in xy plane
         logger.info("XY tracing...")
-        self.xy_trace_divergent()
-        # self.xy_trace()
+        # self.xy_trace_divergent()
+        self.xy_trace()
         ti.sync()
         logger.info("XY tracing complete.")
 
@@ -294,7 +323,6 @@ class Tracer:
         sensor_starts = np.roll(sensor_ends, shift=1)
         sensor_starts[0] = 0
 
-
         # Create the fields
         self.edge_starts = ti.field(float, shape=starts.shape)
         self.edge_ends = ti.field(float, shape=ends.shape)
@@ -305,7 +333,6 @@ class Tracer:
         self.edge_sensor_ends = ti.field(int, shape=sensor_ends.shape)
         self.edge_sensor_counts = ti.field(int, shape=sensor_counts.shape)
 
-
         # Copy the numpy data over
         self.edge_starts.from_numpy(starts)
         self.edge_ends.from_numpy(ends)
@@ -315,7 +342,7 @@ class Tracer:
         self.edge_sensor_starts.from_numpy(sensor_starts)
         self.edge_sensor_ends.from_numpy(sensor_ends)
         self.edge_sensor_counts.from_numpy(sensor_counts)
-        
+
         # Create the semantic edge objects in a dense struct field for better memory access
         self.edges = Edge.field(shape=self.edge_heights.shape)
         self.make_edges()
@@ -329,7 +356,6 @@ class Tracer:
         self.edge_sensor_parent_ix = ti.field(int, shape=sensor_parent_ix.shape)
         self.edge_sensor_parent_ix.from_numpy(sensor_parent_ix)
 
-    
     @ti.kernel
     def make_edges(self):
         for edge_ix in self.edges:
@@ -339,23 +365,23 @@ class Tracer:
             x1 = self.edge_ends[edge_ix, 0]
             y1 = self.edge_ends[edge_ix, 1]
             h = self.edge_heights[edge_ix]
-            xn = self.edge_normals[edge_ix, 0] 
-            yn = self.edge_normals[edge_ix, 1] 
+            xn = self.edge_normals[edge_ix, 0]
+            yn = self.edge_normals[edge_ix, 1]
             sensor_start_ix = self.edge_sensor_starts[edge_ix]
             sensor_end_ix = self.edge_sensor_ends[edge_ix]
             sensor_ct = self.edge_sensor_counts[edge_ix]
 
             # make vectors
-            normal = ti.Vector([xn,yn])
-            start = ti.Vector([x0,y0])
-            end = ti.Vector([x1,y1])
-            slopevec = end-start
+            normal = ti.Vector([xn, yn])
+            start = ti.Vector([x0, y0])
+            end = ti.Vector([x1, y1])
+            slopevec = end - start
 
             # compute slope
             slope = (y1 - y0) / (x1 - x0)  # TODO: handle vert/hor lines
 
             # Compute the normal angle
-            normal_theta = ti.atan2(yn,xn)
+            normal_theta = ti.atan2(yn, xn)
 
             # Create the edge object
             self.edges[edge_ix] = Edge(
@@ -374,7 +400,7 @@ class Tracer:
     @ti.kernel
     def add_edges_to_tree(self):
         """
-        This function determines where each line crosses a node threshold and 
+        This function determines where each line crosses a node threshold and
         updates that node's height accordingly.
         """
         for edge_ix in self.edges:
@@ -387,7 +413,6 @@ class Tracer:
             y1 = edge.end.y
             h = edge.height
             slope = edge.slope
-
 
             # Sort the end points
             x_min = ti.min(x0, x1)
@@ -445,14 +470,16 @@ class Tracer:
             slope = edge.slopevec
 
             # Determine the inset edge gap for the sensor
-            start_gap = slope * self.sensor_inset # TODO: this could be stored with parent # TODO: this could be centered
+            start_gap = (
+                slope * self.sensor_inset
+            )  # TODO: this could be stored with parent # TODO: this could be centered
 
-            # Determine which sensor this is along a the parent edge 
+            # Determine which sensor this is along a the parent edge
             gap_ct = sensor_ix - edge.sensor_start_ix
 
             # compute the distance from the edge start vertex
             distance = start_gap + gap_ct * slope * self.sensor_spacing
-            
+
             # Copy the parent edge start vertex over
             start_loc = edge.start
 
@@ -463,83 +490,91 @@ class Tracer:
             # and then 1.5m away from the wall following the normal
             self.xy_sensors[sensor_ix].loc = (
                 start_loc + distance + normal * 1.5
-            )   # TODO: make the offset distance a class attr
+            )  # TODO: make the offset distance a class attr
 
             # Store the parent id
             self.xy_sensors[sensor_ix].parent_edge_id = parent_id
 
     @ti.kernel
     def xy_trace(self):
+        ray_step_size = self.ray_step_size  # TODO: will cause duplicate collisions
+        # n_loops = self.n_loops_to_unroll
+        steps_per_loop = self.steps_per_unroll_loop
 
-        max_ray_length = 400.0 # TODO: assumes max radius for rays
-        ray_step_size = 1.0 # TODO: assumes 1m ray hops, will cause duplicate collisions
-        n_ray_steps = ti.floor(max_ray_length / ray_step_size, dtype=int)
+        # Break ray stepping up into portions of ray
+        # In order to prevent ti.ndrange overflow (there may be several billion checks to make even in 2d)
+        # Use loop unnrolling via ti.static to keep inner loop parallelized
+        for loop_ix in ti.static(range(N_LOOPS_TO_UNROLL)):
+            step_offset = loop_ix * steps_per_loop
+            for sensor_ix, az_ix, ray_step_ix in ti.ndrange(
+                self.xy_sensors.shape[0], self.n_azimuths, steps_per_loop
+            ):
+                # Compute the rays's azimuth angle
+                sensor = self.xy_sensors[sensor_ix]
 
-        # TODO: this version (i.e. the non divergent version which does not use nested for loop) may cause 
-        # overflow in ndrange if the product is too large
-        for sensor_ix, az_ix, ray_step_ix in ti.ndrange(self.xy_sensors.shape[0],self.n_azimuths, n_ray_steps):
-            # Compute the rays's azimuth angle
-            sensor = self.xy_sensors[sensor_ix]
+                az_angle = self.azimuth_inc * az_ix
 
-            az_angle = self.azimuth_inc * az_ix 
+                # Compute the ray's xy-plane slope
+                dx = ti.cos(
+                    az_angle
+                )  # TODO: precompute as a lookup in init based off of n_azimuths?
+                dy = ti.sin(az_angle)
+                slope = ti.Vector([dx, dy])
 
-            # Compute the ray's xy-plane slope
-            dx = ti.cos(az_angle)  # TODO: precompute as a lookup in init based off of n_azimuths?
-            dy = ti.sin(az_angle)  
-            slope = ti.Vector([dx, dy])
+                # Get the ray's starting point
+                start = sensor.loc
 
-            # Get the ray's starting point
-            start = sensor.loc
+                # Length of ray to check
+                distance = ray_step_size * (ray_step_ix + step_offset)
 
-            # Length of ray to check
-            # TODO: store this
-            distance = ray_step_size * ray_step_ix
+                # Initializing the next location to check
+                next_loc = start + distance * slope
 
-            # Initializing the next location to check
-            next_loc = start + ray_step_ix*ray_step_size * slope
-            
-            # Tester for ray termination
-            in_domain = (
-                (next_loc.x > 0)
-                and (next_loc.y > 0)
-                and (next_loc.x < self.width)
-                and (next_loc.y < self.length)
-            )
-            if in_domain:
-                # Get ray terminus node index
-                x_loc_ix = ti.floor(next_loc.x, int)  # TODO: assumes grid spacing = 1
-                y_loc_ix = ti.floor(next_loc.y, int)  
+                # Tester for ray termination
+                in_domain = (
+                    (next_loc.x > 0)
+                    and (next_loc.y > 0)
+                    and (next_loc.x < self.width)
+                    and (next_loc.y < self.length)
+                )
+                if in_domain:
+                    # Get ray terminus node index
+                    x_loc_ix = ti.floor(
+                        next_loc.x, int
+                    )  # TODO: assumes grid spacing = 1
+                    y_loc_ix = ti.floor(next_loc.y, int)
 
-                # Check if node is active
-                if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
-                    # Get the node height and register a hit
-                    node_height = self.node_heights[x_loc_ix, y_loc_ix]
-                    # TODO: this is causing a large performance hit on gpu backend
-                    self.hits[sensor_ix, az_ix].append(
-                        Hit(
-                            loc_x_ix=x_loc_ix,
-                            loc_y_ix=y_loc_ix,
-                            height=node_height,
-                            distance=distance, # TODO: should this use the node centroid distance instead?
-                        )  # TODO: assumes a  grid spacing = 1
-                    )
-                    self.xy_sensors[sensor_ix].hit_count += 1
+                    # Check if node is active
+                    if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
+                        # Get the node height and register a hit
+                        node_height = self.node_heights[x_loc_ix, y_loc_ix]
+                        # TODO: this is causing a large performance hit on gpu backend
+                        self.hits[sensor_ix, az_ix].append(
+                            Hit(
+                                loc_x_ix=x_loc_ix,
+                                loc_y_ix=y_loc_ix,
+                                height=node_height,
+                                distance=distance,  # TODO: should this use the node centroid distance instead?
+                            )  # TODO: assumes a  grid spacing = 1
+                        )
+                        self.xy_sensors[sensor_ix].hit_count += 1
 
     @ti.kernel
     def xy_trace_divergent(self):
+        max_ray_length = self.max_ray_length
+        ray_step_size = self.ray_step_size  # TODO: will cause duplicate collisions
 
-        max_ray_length = 400.0 # TODO: make this a class attr
-        ray_step_size = 1.0 # TODO: make this a class attr, # TODO: will cause duplicate collisions
-
-        for sensor_ix, az_ix in ti.ndrange(self.xy_sensors.shape[0],self.n_azimuths):
+        for sensor_ix, az_ix in ti.ndrange(self.xy_sensors.shape[0], self.n_azimuths):
             # Compute the rays's azimuth angle
             sensor = self.xy_sensors[sensor_ix]
 
-            az_angle = self.azimuth_inc * az_ix 
+            az_angle = self.azimuth_inc * az_ix
 
             # Compute the ray's xy-plane slope
-            dx = ti.cos(az_angle)  # TODO: precompute as a lookup in init based off of n_azimuths?
-            dy = ti.sin(az_angle)  
+            dx = ti.cos(
+                az_angle
+            )  # TODO: precompute as a lookup in init based off of n_azimuths?
+            dy = ti.sin(az_angle)
             slope = ti.Vector([dx, dy])
 
             # Get the ray's starting point
@@ -551,7 +586,7 @@ class Tracer:
             # Initializing the next location to check
             distance = ray_step_ix * ray_step_size
             next_loc = start + distance * slope
-            
+
             # Tester for ray termination
             in_domain = (
                 (next_loc.x > 0)
@@ -563,7 +598,7 @@ class Tracer:
             while in_domain:
                 # Get ray terminus node index
                 x_loc_ix = ti.floor(next_loc.x, int)  # TODO: assumes grid spacing = 1
-                y_loc_ix = ti.floor(next_loc.y, int)  
+                y_loc_ix = ti.floor(next_loc.y, int)
 
                 # Check if node is active
                 if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
@@ -575,7 +610,7 @@ class Tracer:
                             loc_x_ix=x_loc_ix,
                             loc_y_ix=y_loc_ix,
                             height=node_height,
-                            distance=distance, # TODO: should this use the node centroid distance instead?
+                            distance=distance,  # TODO: should this use the node centroid distance instead?
                         )  # TODO: assumes a  grid spacing = 1
                     )
                     self.xy_sensors[sensor_ix].hit_count += 1
@@ -588,7 +623,7 @@ class Tracer:
 
                 # Compute the new location
                 next_loc = start + distance * slope
-                
+
                 # Tester for ray termination
                 in_domain = (
                     (next_loc.x > 0)
@@ -624,30 +659,33 @@ class Tracer:
         return color_im
 
     def get_sensor_to_first_hit_rays(self, sensor_ix: int) -> ti.math.vec2:
-        first_hit_points = ti.Vector.field(
-            2, dtype=float, shape=self.n_azimuths+1
+        first_hit_points = ti.Vector.field(2, dtype=float, shape=self.n_azimuths + 1)
+        indices = ti.field(int, shape=2 * self.n_azimuths)
+        self.set_first_hit_points_kernel(
+            sensor_ix=sensor_ix, pts=first_hit_points, indices=indices
         )
-        indices = ti.field(int, shape=2*self.n_azimuths)
-        self.set_first_hit_points_kernel(sensor_ix=sensor_ix, pts=first_hit_points, indices=indices)
         return first_hit_points, indices
-    
+
     @ti.kernel
-    def set_first_hit_points_kernel(self, sensor_ix: int, pts: ti.template(), indices: ti.template()):
+    def set_first_hit_points_kernel(
+        self, sensor_ix: int, pts: ti.template(), indices: ti.template()
+    ):
         # TODO: ASSUMES POINTS ARE SORTED
         pts[self.n_azimuths] = self.xy_sensors[sensor_ix].loc
         for az_ix in range(self.n_azimuths):
             if self.hits[sensor_ix, az_ix].length() > 0:
-                loc = self.hits[sensor_ix, az_ix, 0].centroid() # TODO: Assumes a 1m grid spacing
+                loc = self.hits[
+                    sensor_ix, az_ix, 0
+                ].centroid()  # TODO: Assumes a 1m grid spacing
                 pts[az_ix] = loc
             else:
                 az_angle = self.azimuth_inc * az_ix
                 dx = ti.cos(az_angle)  # TODO: precompute as a lookup
                 dy = ti.sin(az_angle)  # TODO: precompute as a lookup
                 slope = ti.Vector([dx, dy])
-                pts[az_ix] = pts[self.n_azimuths] + slope*500
-            indices[az_ix*2] = self.n_azimuths
-            indices[az_ix*2+1] = az_ix
-
+                pts[az_ix] = pts[self.n_azimuths] + slope * 500
+            indices[az_ix * 2] = self.n_azimuths
+            indices[az_ix * 2 + 1] = az_ix
 
     @ti.kernel
     def set_sensor_hits_pts_kernel(
@@ -656,7 +694,10 @@ class Tracer:
         for az_ix in range(self.n_azimuths):
             for hit_ix in range(self.hits[sensor_ix, az_ix].length()):
                 hit = self.hits[sensor_ix, az_ix, hit_ix]
-                pts[ti.atomic_add(cur[None], 1)] = hit.centroid() # TODO: Assumes a 1m grid spacing
+                pts[
+                    ti.atomic_add(cur[None], 1)
+                ] = hit.centroid()  # TODO: Assumes a 1m grid spacing
+
     @ti.kernel
     def set_sensor_hits_im_kernel(self, im: ti.template(), sensor_ix: int):
         for az_ix in range(self.n_azimuths):
@@ -702,10 +743,9 @@ if __name__ == "__main__":
 
     ############
     # debug viz
-    window = ti.ui.Window("GIS", (1024,1024), pos=(50, 50))
+    window = ti.ui.Window("GIS", (1024, 1024), pos=(50, 50))
     canv = window.get_canvas()
     ui = window.get_gui()
-
 
     # TODO: move edge points into class
     @ti.kernel
@@ -723,7 +763,6 @@ if __name__ == "__main__":
                 ti.Vector([ti.random(), ti.random(), ti.random()]) * 0.5
             )
             edge_colors[2 * i + 1] = edge_colors[2 * i]
-
 
     @ti.kernel
     def zoom_pan_im_kernel(
@@ -770,7 +809,6 @@ if __name__ == "__main__":
     sensor_ix = 0
     circs = tracer.get_sensor_hits_as_pts(sensor_ix)
     hit_lines, indices = tracer.get_sensor_to_first_hit_rays(sensor_ix)
-
 
     zoom = 0.5
     x_offset = 0
@@ -858,9 +896,7 @@ if __name__ == "__main__":
         canv.lines(
             borderline_verts, 0.001, color=(1, 1, 1)
         )  # per_vertex_color=borderline_colors)
-        canv.lines(
-            hit_verts, 0.002, color=(1, 0,0), indices=indices
-        )  
+        canv.lines(hit_verts, 0.002, color=(1, 0, 0), indices=indices)
         canv.circles(circs, radius=0.002, color=(1, 0, 0))
 
         window.show()
