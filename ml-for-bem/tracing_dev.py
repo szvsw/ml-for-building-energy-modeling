@@ -10,8 +10,8 @@ import pandas as pd
 
 from shapely import Polygon, LineString, MultiPoint, Point
 
-# ti.init(arch=ti.gpu, device_memory_fraction=0.9)
-ti.init(arch=ti.cpu)
+ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True)
+# ti.init(arch=ti.cpu)
 
 logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
@@ -203,7 +203,7 @@ class Tracer:
         ti.sync()
         logger.info("XY tracing complete.")
 
-        # ti.profiler.print_kernel_profiler_info()
+        ti.profiler.print_kernel_profiler_info()
 
     def extract_flat_edge_list(self):
         """
@@ -402,7 +402,8 @@ class Tracer:
     def xy_trace(self):
         max_ray_length = 400.0 # TODO: assumes max radius for rays
         dcur = 1.0 # TODO: assumes 1m ray hops, will cause duplicate collisions
-        for sensor_ix, az_ix in ti.ndrange(self.xy_sensors.shape[0], self.n_azimuths):
+        n_curs = ti.floor(max_ray_length / dcur, dtype=int)
+        for sensor_ix, az_ix, cur_ix in ti.ndrange(self.xy_sensors.shape[0], self.n_azimuths, 200):
             # Compute the rays's azimuth angle
             az_angle = self.azimuth_inc * az_ix
 
@@ -414,11 +415,12 @@ class Tracer:
             # Get the ray's starting point
             start = self.xy_sensors[sensor_ix].loc
 
-            # Make a counter for the ray
-            cur = 0.0
+            # Length of ray to check
+            # TODO: store this
+            l = dcur * cur_ix
 
             # Initializing the next location to check
-            next_loc = start + cur * slope
+            next_loc = start + cur_ix*dcur * slope
             
             # Tester for ray termination
             in_domain = (
@@ -426,10 +428,8 @@ class Tracer:
                 and (next_loc.y > 0)
                 and (next_loc.x < self.width)
                 and (next_loc.y < self.length)
-                and (cur < max_ray_length) 
             )
-
-            while in_domain:  
+            if in_domain:
                 # Get ray terminus node index
                 x_loc_ix = ti.floor(next_loc.x, int)  # TODO: assumes grid spacing = 1
                 y_loc_ix = ti.floor(next_loc.y, int)  
@@ -446,21 +446,6 @@ class Tracer:
                         )  # TODO: assumes a  grid spacing = 1
                     )
                     self.xy_sensors[sensor_ix].hit_count += 1
-                
-                # Increment the cursor parameter 
-                cur = cur + dcur 
-
-                # Compute the next location
-                next_loc = start + cur * slope
-
-                # Verify ray termination
-                in_domain = (
-                    (next_loc.x > 0)
-                    and (next_loc.y > 0)
-                    and (next_loc.x < self.width)
-                    and (next_loc.y < self.length)
-                    and (cur < max_ray_length)
-                )
 
     def get_sensor_hits_as_im(self, sensor_ix: int) -> ti.ScalarField:
         im = ti.field(float, shape=(2**self.depth, 2**self.depth))
@@ -562,7 +547,8 @@ if __name__ == "__main__":
     # id_col = "OBJECTID"
 
     tracer = Tracer(filepath=fp, height_col=height_col, id_col=id_col, node_width=1)
-    print(tracer.node_heights.shape)
+    ti.sync()
+    # print(tracer.node_heights.shape)
 
     #
 
