@@ -4,6 +4,7 @@ from os import PathLike
 from typing import List, Union
 
 import taichi as ti
+from taichi.algorithms._algorithms import PrefixSumExecutor
 import numpy as np
 import geopandas as gpd
 import pandas as pd
@@ -37,10 +38,12 @@ class Edge:
     normal_theta: float
     az_start_angle: float
     height: float  # TODO: This could be rounded to save memory, e.g. uint16, or a quantized datatype e.g. uint10
+    n_floors: ti.int8
 
     sensor_start_ix: int  # TODO: should these be forced to 64 bit?
     sensor_end_ix: int
     sensor_ct: int
+
 
 
 @ti.dataclass
@@ -48,6 +51,15 @@ class XYSensor:
     hit_count: int
     loc: ti.math.vec2
     parent_edge_id: int
+
+    xyz_sensor_start_ix: int # TODO: should these be forced to 64 bit?
+    xyz_sensor_ct: int
+
+@ti.dataclass
+class XYZSensor:
+    height: float
+    rad: float
+    parent_sensor_id: int
 
 
 @ti.dataclass
@@ -100,7 +112,7 @@ class Tracer:
         node_width: float = 1,
         sensor_inset: float = 0.5,
         sensor_spacing: float = 1,
-        f2f_height: float = 3,
+        f2f_height: float = 1,
         max_ray_length: float = 400.0,
         ray_step_size: float = 1.0,
         convert_crs=False,
@@ -154,7 +166,7 @@ class Tracer:
         )
 
         base_gdf = self.gdf.copy()
-        tile_ct = 0
+        tile_ct = 14
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -238,6 +250,10 @@ class Tracer:
         self.hits = Hit.field()
         self.hit_block.place(self.hits)
 
+        # Build
+        self.n_elevations = 8 # TODO: make this an init arg
+        self.elevation_inc = 0.5*np.pi / self.n_elevations
+
         # Init xy sensor locations
         logger.info("Initializing xy-plane sensors...")
         self.xy_sensors = (
@@ -246,13 +262,39 @@ class Tracer:
         self.sensor_root.place(self.xy_sensors)
         self.init_xy_sensors()
         ti.sync()
+        
+        # Determine how many xyz sensors are needed for data collection
+        xyz_cts = self.xy_sensors.xyz_sensor_ct.to_numpy()
+        xyz_ends = np.cumsum(xyz_cts) # use cumulative sums so that a sensor
+        xyz_starts = np.roll(xyz_ends, shift=1)
+        xyz_starts[0] = 0
+        self.xy_sensors.xyz_sensor_start_ix.from_numpy(xyz_starts)
+        xy_sensor_parent_ix = np.repeat(
+            np.arange(xyz_cts.shape[0]), xyz_cts.astype(int)
+        )
+
+        xyz_sensor_count = xy_sensor_parent_ix.shape[0]
+        self.xyz_sensors = XYZSensor.field()
+        xyz_sensor_root = ti.root.dense(ti.i, xyz_sensor_count)
+        xyz_sensor_root.place(self.xyz_sensors)
+        self.xyz_sensors.parent_sensor_id.from_numpy(xy_sensor_parent_ix)
+        self.init_xyz_sensors()
+        ti.sync()
+        # TODO: add n_azimuths and then n_elevations tree branches to skip compute
 
         # Ray trace in xy plane
         logger.info("XY tracing...")
-        # self.xy_trace_divergent()
-        self.xy_trace()
+        self.xy_trace_divergent()
+        # self.xy_trace()
         ti.sync()
         logger.info("XY tracing complete.")
+
+        # Ray trace using xyz data
+        logger.info("XYZ tracing...")
+        # self.xy_trace_divergent()
+        self.xyz_trace()
+        ti.sync()
+        logger.info("XYZ tracing complete.")
 
         ti.profiler.print_kernel_profiler_info()
 
@@ -265,11 +307,12 @@ class Tracer:
         ends = []
         run_rises = []
         heights = []
+        n_floors = []
         normals = []
         building_ids = []
         normal_fails = 0
         for i, _geom in enumerate(self.gdf.geometry):
-            # Manual expldoe of geometry for multiploygon handling
+            # Manual explode of geometry for multiploygon handling
             for geom in _geom.geoms if type(_geom) != Polygon else [_geom]:
                 # Get the points from the boundary
                 # shapely poly linestrings are closed, so we don't need the repeated point
@@ -308,7 +351,8 @@ class Tracer:
                 starts.append(points)
                 ends.append(next_points)
                 run_rises.append(run_rise)
-                heights.append(np.ones(points.shape[0]) * self.gdf[self.height_col][i])
+                heights.append(np.ones(points.shape[0]) * self.gdf[self.height_col][i]) # TODO: these could be found via a building parent ref
+                n_floors.append(np.ones(points.shape[0]) * self.gdf["N_FLOORS"][i])
                 normals.append(normal)
 
         # Create flattened list of all edge data (i.e. flattened over buildings axis)
@@ -317,6 +361,7 @@ class Tracer:
         run_rises = np.vstack(run_rises)
         normals = np.vstack(normals)
         heights = np.concatenate(heights)
+        n_floors = np.concatenate(n_floors)
 
         # Determine necessary sensor count per edge
         lengths = np.linalg.norm(starts - ends, axis=1)
@@ -332,6 +377,7 @@ class Tracer:
         self.edge_slopes = ti.field(float, shape=run_rises.shape)
         self.edge_heights = ti.field(float, shape=heights.shape)
         self.edge_normals = ti.field(float, shape=normals.shape)
+        self.edge_n_floors = ti.field(float, shape=n_floors.shape)
         self.edge_sensor_starts = ti.field(int, shape=sensor_starts.shape)
         self.edge_sensor_ends = ti.field(int, shape=sensor_ends.shape)
         self.edge_sensor_counts = ti.field(int, shape=sensor_counts.shape)
@@ -341,6 +387,7 @@ class Tracer:
         self.edge_ends.from_numpy(ends)
         self.edge_slopes.from_numpy(run_rises)
         self.edge_heights.from_numpy(heights)
+        self.edge_n_floors.from_numpy(n_floors)
         self.edge_normals.from_numpy(normals)
         self.edge_sensor_starts.from_numpy(sensor_starts)
         self.edge_sensor_ends.from_numpy(sensor_ends)
@@ -367,11 +414,13 @@ class Tracer:
             y0 = self.edge_starts[edge_ix, 1]
             x1 = self.edge_ends[edge_ix, 0]
             y1 = self.edge_ends[edge_ix, 1]
-            h = self.edge_heights[edge_ix]
             xn = self.edge_normals[edge_ix, 0]
             yn = self.edge_normals[edge_ix, 1]
             xm = self.edge_slopes[edge_ix, 0]
             ym = self.edge_slopes[edge_ix, 1]
+            h = self.edge_heights[edge_ix]
+            n_floors = self.edge_n_floors[edge_ix]
+
             sensor_start_ix = self.edge_sensor_starts[edge_ix]
             sensor_end_ix = self.edge_sensor_ends[edge_ix]
             sensor_ct = self.edge_sensor_counts[edge_ix]
@@ -401,6 +450,7 @@ class Tracer:
                 normal_theta=normal_theta,
                 az_start_angle=az_start_angle,
                 height=h,
+                n_floors=n_floors,
                 sensor_start_ix=sensor_start_ix,
                 sensor_end_ix=sensor_end_ix,
                 sensor_ct=sensor_ct,
@@ -502,12 +552,24 @@ class Tracer:
             )  # TODO: make the offset distance a class attr
 
             # Store the parent id
+            self.xy_sensors[sensor_ix].xyz_sensor_ct = edge.n_floors
+
+            # Store the parent id
             self.xy_sensors[sensor_ix].parent_edge_id = parent_id
+
+    @ti.kernel
+    def init_xyz_sensors(self):
+        for sensor_ix in self.xyz_sensors:
+            parent_id = self.xyz_sensors[sensor_ix].parent_sensor_id
+            xy_sensor = self.xy_sensors[parent_id]
+            floor_ix = sensor_ix - xy_sensor.xyz_sensor_start_ix
+            # Sensors should be in floor midpoint, so use 1.5xf2f
+            height = floor_ix * 1.5*self.f2f_height
+            self.xyz_sensors[sensor_ix].height = height
 
     @ti.kernel
     def xy_trace(self):
         ray_step_size = self.ray_step_size  # TODO: will cause duplicate collisions
-        # n_loops = self.n_loops_to_unroll
         steps_per_loop = self.steps_per_unroll_loop
 
         # Break ray stepping up into portions of ray
@@ -647,6 +709,29 @@ class Tracer:
                     and (next_loc.y < self.length)
                     and distance < max_ray_length
                 )
+
+    @ti.kernel
+    def xyz_trace(self):
+        for sensor_ix, az_ix, el_ix in ti.ndrange(self.xyz_sensors.shape[0], self.n_azimuths, self.n_elevations):
+            parent_sensor_id = self.xyz_sensors[sensor_ix].parent_sensor_id
+            xyz_sensor_height = self.xyz_sensors[sensor_ix].height
+            n_hits_to_check = self.hits[parent_sensor_id, az_ix].length()
+            el_angle = el_ix * self.elevation_inc # TODO: precompute these? or store slopes?
+            hit_ix = 0
+            hit_found = 0
+            while hit_ix < n_hits_to_check and hit_found != 1:
+                hit =  self.hits[parent_sensor_id, az_ix, hit_ix]
+                hit_height = hit.height
+                hit_distance = hit.distance
+                height_diff = hit_height - xyz_sensor_height
+                theta = ti.atan2(height_diff, hit_distance)
+                if theta > el_angle:
+                    hit_found = 1
+
+                hit_ix = hit_ix + 1
+            if hit_found == 1:
+                self.xyz_sensors[sensor_ix].rad += 1 # TODO: look up sky matrix
+            
 
     def get_sensor_hits_as_im(self, sensor_ix: int) -> ti.ScalarField:
         im = ti.field(float, shape=(2**self.depth, 2**self.depth))
