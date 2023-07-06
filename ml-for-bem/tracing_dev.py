@@ -19,6 +19,22 @@ logger = logging.getLogger("Radiation Analysis")
 logger.setLevel(logging.INFO)
 
 @ti.dataclass
+class Edge:
+    # building_id: ti.int16 # TODO: add an assertion which checks for fewer than 2**16-1 buildings
+
+    start: ti.math.vec2
+    end: ti.math.vec2
+    slopevec: ti.math.vec2
+    slope: float
+    normal: ti.math.vec2
+    normal_theta: float
+    height: float # TODO: This could be rounded to save memory, e.g. uint16, or a quantized datatype e.g. uint10
+
+    sensor_start_ix: int # TODO: should these be forced to 64 bit?
+    sensor_end_ix: int
+    sensor_ct: int 
+
+@ti.dataclass
 class XYSensor:
     hit_count: int
     loc: ti.math.vec2
@@ -30,6 +46,7 @@ class Hit:
     loc_x_ix: ti.i16
     loc_y_ix: ti.i16
     height: float
+    distance: float
 
     @ti.func
     def centroid(self) -> ti.math.vec2:
@@ -110,7 +127,7 @@ class Tracer:
 
         # self.gdf = self.gdf.loc[self.gdf.index.repeat(200)].reset_index()
         base_gdf = self.gdf.copy()
-        tile_ct = 14
+        tile_ct = 7
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -201,6 +218,7 @@ class Tracer:
         # Ray trace in xy plane
         logger.info("XY tracing...")
         self.xy_trace_divergent()
+        # self.xy_trace()
         ti.sync()
         logger.info("XY tracing complete.")
 
@@ -261,21 +279,21 @@ class Tracer:
                 heights.append(np.ones(points.shape[0]) * self.gdf[self.height_col][i])
                 normals.append(normal)
 
+        # Create flattened list of all edge data (i.e. flattened over buildings axis)
         starts = np.vstack(starts)
         ends = np.vstack(ends)
         run_rises = np.vstack(run_rises)
         normals = np.vstack(normals)
         heights = np.concatenate(heights)
 
+        # Determine necessary sensor count per edge
         lengths = np.linalg.norm(starts - ends, axis=1)
         sensor_counts = (lengths - 2 * self.sensor_inset) / self.sensor_spacing
         sensor_counts = np.floor(np.where(sensor_counts >= 1, sensor_counts + 1, 0))
         sensor_ends = np.cumsum(sensor_counts)
         sensor_starts = np.roll(sensor_ends, shift=1)
         sensor_starts[0] = 0
-        sensor_parent_ix = np.repeat(
-            np.arange(sensor_counts.shape[0]), sensor_counts.astype(int)
-        )
+
 
         # Create the fields
         self.edge_starts = ti.field(float, shape=starts.shape)
@@ -286,7 +304,7 @@ class Tracer:
         self.edge_sensor_starts = ti.field(int, shape=sensor_starts.shape)
         self.edge_sensor_ends = ti.field(int, shape=sensor_ends.shape)
         self.edge_sensor_counts = ti.field(int, shape=sensor_counts.shape)
-        self.edge_sensor_parent_ix = ti.field(int, shape=sensor_parent_ix.shape)
+
 
         # Copy the numpy data over
         self.edge_starts.from_numpy(starts)
@@ -297,7 +315,61 @@ class Tracer:
         self.edge_sensor_starts.from_numpy(sensor_starts)
         self.edge_sensor_ends.from_numpy(sensor_ends)
         self.edge_sensor_counts.from_numpy(sensor_counts)
+        
+        # Create the semantic edge objects in a dense struct field for better memory access
+        self.edges = Edge.field(shape=self.edge_heights.shape)
+        self.make_edges()
+        ti.sync()
+
+        # This array will allow non-divergent sensor construction
+        # It has one row per sensor which lets the sensor identify the parent edge
+        sensor_parent_ix = np.repeat(
+            np.arange(sensor_counts.shape[0]), sensor_counts.astype(int)
+        )
+        self.edge_sensor_parent_ix = ti.field(int, shape=sensor_parent_ix.shape)
         self.edge_sensor_parent_ix.from_numpy(sensor_parent_ix)
+
+    
+    @ti.kernel
+    def make_edges(self):
+        for edge_ix in self.edges:
+            # extract the endpoints/data
+            x0 = self.edge_starts[edge_ix, 0]
+            y0 = self.edge_starts[edge_ix, 1]
+            x1 = self.edge_ends[edge_ix, 0]
+            y1 = self.edge_ends[edge_ix, 1]
+            h = self.edge_heights[edge_ix]
+            xn = self.edge_normals[edge_ix, 0] 
+            yn = self.edge_normals[edge_ix, 1] 
+            sensor_start_ix = self.edge_sensor_starts[edge_ix]
+            sensor_end_ix = self.edge_sensor_ends[edge_ix]
+            sensor_ct = self.edge_sensor_counts[edge_ix]
+
+            # make vectors
+            normal = ti.Vector([xn,yn])
+            start = ti.Vector([x0,y0])
+            end = ti.Vector([x1,y1])
+            slopevec = end-start
+
+            # compute slope
+            slope = (y1 - y0) / (x1 - x0)  # TODO: handle vert/hor lines
+
+            # Compute the normal angle
+            normal_theta = ti.atan2(yn,xn)
+
+            # Create the edge object
+            self.edges[edge_ix] = Edge(
+                start=start,
+                end=end,
+                slopevec=slopevec,
+                slope=slope,
+                normal=normal,
+                normal_theta=normal_theta,
+                height=h,
+                sensor_start_ix=sensor_start_ix,
+                sensor_end_ix=sensor_end_ix,
+                sensor_ct=sensor_ct,
+            )
 
     @ti.kernel
     def add_edges_to_tree(self):
@@ -305,17 +377,17 @@ class Tracer:
         This function determines where each line crosses a node threshold and 
         updates that node's height accordingly.
         """
-        for edge_ix in self.edge_heights:
+        for edge_ix in self.edges:
             # TODO: Update if edges switch to a dataclass representation
             # extract the endpoints/data
-            x0 = self.edge_starts[edge_ix, 0]
-            y0 = self.edge_starts[edge_ix, 1]
-            x1 = self.edge_ends[edge_ix, 0]
-            y1 = self.edge_ends[edge_ix, 1]
-            h = self.edge_heights[edge_ix]
+            edge = self.edges[edge_ix]
+            x0 = edge.start.x
+            y0 = edge.start.y
+            x1 = edge.end.x
+            y1 = edge.end.y
+            h = edge.height
+            slope = edge.slope
 
-            # compute slope
-            slope = (y1 - y0) / (x1 - x0)  # TODO: handle vert/hor lines
 
             # Sort the end points
             x_min = ti.min(x0, x1)
@@ -367,46 +439,45 @@ class Tracer:
         for sensor_ix in self.xy_sensors:
             # Locate the sensor in the original field and copy the parent id over
             parent_id = self.edge_sensor_parent_ix[sensor_ix]
-            self.xy_sensors[sensor_ix].parent_edge_id = parent_id
+            edge = self.edges[parent_id]
 
-            # copy the parent slope over
-            slope = ti.Vector(
-                [self.edge_slopes[parent_id, 0], self.edge_slopes[parent_id, 1]]
-            )  # TODO: the slope field should be a vector2 field)
+            # get the parent slope over
+            slope = edge.slopevec
 
             # Determine the inset edge gap for the sensor
-            start_gap = slope * self.sensor_inset
+            start_gap = slope * self.sensor_inset # TODO: this could be stored with parent # TODO: this could be centered
 
             # Determine which sensor this is along a the parent edge 
-            gap_ct = sensor_ix - self.edge_sensor_starts[parent_id]
+            gap_ct = sensor_ix - edge.sensor_start_ix
 
             # compute the distance from the edge start vertex
             distance = start_gap + gap_ct * slope * self.sensor_spacing
             
             # Copy the parent edge start vertex over
-            start_loc = ti.Vector(
-                [self.edge_starts[parent_id, 0], self.edge_starts[parent_id, 1]]
-            )  # TODO: the point field should be a vector2 field)
+            start_loc = edge.start
 
             # Copy the parent edge normal over
-            normal = ti.Vector(
-                [self.edge_normals[parent_id, 0], self.edge_normals[parent_id, 1]]
-            )  # TODO: the point field should be a vector2 field)
+            normal = edge.normal
 
             # Set the new location by moving along edge the appropriate amount
             # and then 1.5m away from the wall following the normal
             self.xy_sensors[sensor_ix].loc = (
                 start_loc + distance + normal * 1.5
-            )   # TODO: make this a class attr
+            )   # TODO: make the offset distance a class attr
+
+            # Store the parent id
+            self.xy_sensors[sensor_ix].parent_edge_id = parent_id
 
     @ti.kernel
     def xy_trace(self):
+
         max_ray_length = 400.0 # TODO: assumes max radius for rays
-        dcur = 1.0 # TODO: assumes 1m ray hops, will cause duplicate collisions
-        n_curs = ti.floor(max_ray_length / dcur, dtype=int)
+        ray_step_size = 1.0 # TODO: assumes 1m ray hops, will cause duplicate collisions
+        n_ray_steps = ti.floor(max_ray_length / ray_step_size, dtype=int)
+
         # TODO: this version (i.e. the non divergent version which does not use nested for loop) may cause 
         # overflow in ndrange if the product is too large
-        for sensor_ix, az_ix, cur_ix in ti.ndrange(self.xy_sensors.shape[0],self.n_azimuths, n_curs):
+        for sensor_ix, az_ix, ray_step_ix in ti.ndrange(self.xy_sensors.shape[0],self.n_azimuths, n_ray_steps):
             # Compute the rays's azimuth angle
             sensor = self.xy_sensors[sensor_ix]
 
@@ -422,10 +493,10 @@ class Tracer:
 
             # Length of ray to check
             # TODO: store this
-            l = dcur * cur_ix
+            distance = ray_step_size * ray_step_ix
 
             # Initializing the next location to check
-            next_loc = start + cur_ix*dcur * slope
+            next_loc = start + ray_step_ix*ray_step_size * slope
             
             # Tester for ray termination
             in_domain = (
@@ -449,16 +520,17 @@ class Tracer:
                             loc_x_ix=x_loc_ix,
                             loc_y_ix=y_loc_ix,
                             height=node_height,
+                            distance=distance, # TODO: should this use the node centroid distance instead?
                         )  # TODO: assumes a  grid spacing = 1
                     )
                     self.xy_sensors[sensor_ix].hit_count += 1
+
     @ti.kernel
     def xy_trace_divergent(self):
-        max_ray_length = 400.0 # TODO: assumes max radius for rays
-        dcur = 1.0 # TODO: assumes 1m ray hops, will cause duplicate collisions
-        n_curs = ti.floor(max_ray_length / dcur, dtype=int)
-        # TODO: this version (i.e. the non divergent version which does not use nested for loop) may cause 
-        # overflow in ndrange if the product is too large
+
+        max_ray_length = 400.0 # TODO: make this a class attr
+        ray_step_size = 1.0 # TODO: make this a class attr, # TODO: will cause duplicate collisions
+
         for sensor_ix, az_ix in ti.ndrange(self.xy_sensors.shape[0],self.n_azimuths):
             # Compute the rays's azimuth angle
             sensor = self.xy_sensors[sensor_ix]
@@ -474,11 +546,11 @@ class Tracer:
             start = sensor.loc
 
             # Tracker for ray extension
-            cur_ix = 0.0
+            ray_step_ix = 0.0
 
             # Initializing the next location to check
-            l = cur_ix * dcur
-            next_loc = start + l * slope
+            distance = ray_step_ix * ray_step_size
+            next_loc = start + distance * slope
             
             # Tester for ray termination
             in_domain = (
@@ -486,7 +558,7 @@ class Tracer:
                 and (next_loc.y > 0)
                 and (next_loc.x < self.width)
                 and (next_loc.y < self.length)
-                and l < max_ray_length
+                and distance < max_ray_length
             )
             while in_domain:
                 # Get ray terminus node index
@@ -503,18 +575,19 @@ class Tracer:
                             loc_x_ix=x_loc_ix,
                             loc_y_ix=y_loc_ix,
                             height=node_height,
+                            distance=distance, # TODO: should this use the node centroid distance instead?
                         )  # TODO: assumes a  grid spacing = 1
                     )
                     self.xy_sensors[sensor_ix].hit_count += 1
 
-                # Advance the cursor
-                cur_ix = cur_ix + 1.0
+                # Advance the ray stepper
+                ray_step_ix = ray_step_ix + 1.0
 
                 # Compute the new length
-                l = cur_ix * dcur
+                distance = ray_step_ix * ray_step_size
 
                 # Compute the new location
-                next_loc = start + l * slope
+                next_loc = start + distance * slope
                 
                 # Tester for ray termination
                 in_domain = (
@@ -522,7 +595,7 @@ class Tracer:
                     and (next_loc.y > 0)
                     and (next_loc.x < self.width)
                     and (next_loc.y < self.length)
-                    and l < max_ray_length
+                    and distance < max_ray_length
                 )
 
     def get_sensor_hits_as_im(self, sensor_ix: int) -> ti.ScalarField:
@@ -626,13 +699,10 @@ if __name__ == "__main__":
 
     tracer = Tracer(filepath=fp, height_col=height_col, id_col=id_col, node_width=1)
     ti.sync()
-    # print(tracer.node_heights.shape)
-
-    #
 
     ############
     # debug viz
-    window = ti.ui.Window("GIS", (512, 512), pos=(100, 100))
+    window = ti.ui.Window("GIS", (1024,1024), pos=(50, 50))
     canv = window.get_canvas()
     ui = window.get_gui()
 
@@ -708,7 +778,7 @@ if __name__ == "__main__":
 
     controls_changed = True
     while window.running:
-        with ui.sub_window("Sensor selector", 0.1, 0.1, 0.3, 0.3):
+        with ui.sub_window("Sensor selector", 0.1, 0.1, 0.8, 0.15):
             old_ix = sensor_ix
             sensor_ix = ui.slider_int(
                 text="Sensor Index",
@@ -786,11 +856,11 @@ if __name__ == "__main__":
             controls_changed = False
 
         canv.lines(
-            borderline_verts, 0.005, color=(1, 1, 1)
+            borderline_verts, 0.001, color=(1, 1, 1)
         )  # per_vertex_color=borderline_colors)
         canv.lines(
-            hit_verts, 0.005, color=(1, 0,0), indices=indices
-        )  # per_vertex_color=borderline_colors)
-        canv.circles(circs, radius=0.005, color=(1, 0, 0))
+            hit_verts, 0.002, color=(1, 0,0), indices=indices
+        )  
+        canv.circles(circs, radius=0.002, color=(1, 0, 0))
 
         window.show()
