@@ -64,7 +64,7 @@ class Tracer:
         id_col: str,
         node_width: float = 1,
         sensor_inset: float = 0.5,
-        sensor_spacing: float = 3,
+        sensor_spacing: float = 1,
         f2f_height: float = 3,
         convert_crs=False,
     ):
@@ -110,7 +110,7 @@ class Tracer:
 
         # self.gdf = self.gdf.loc[self.gdf.index.repeat(200)].reset_index()
         base_gdf = self.gdf.copy()
-        tile_ct = 10
+        tile_ct = 14
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -200,7 +200,7 @@ class Tracer:
 
         # Ray trace in xy plane
         logger.info("XY tracing...")
-        self.xy_trace()
+        self.xy_trace_divergent()
         ti.sync()
         logger.info("XY tracing complete.")
 
@@ -452,6 +452,78 @@ class Tracer:
                         )  # TODO: assumes a  grid spacing = 1
                     )
                     self.xy_sensors[sensor_ix].hit_count += 1
+    @ti.kernel
+    def xy_trace_divergent(self):
+        max_ray_length = 400.0 # TODO: assumes max radius for rays
+        dcur = 1.0 # TODO: assumes 1m ray hops, will cause duplicate collisions
+        n_curs = ti.floor(max_ray_length / dcur, dtype=int)
+        # TODO: this version (i.e. the non divergent version which does not use nested for loop) may cause 
+        # overflow in ndrange if the product is too large
+        for sensor_ix, az_ix in ti.ndrange(self.xy_sensors.shape[0],self.n_azimuths):
+            # Compute the rays's azimuth angle
+            sensor = self.xy_sensors[sensor_ix]
+
+            az_angle = self.azimuth_inc * az_ix 
+
+            # Compute the ray's xy-plane slope
+            dx = ti.cos(az_angle)  # TODO: precompute as a lookup in init based off of n_azimuths?
+            dy = ti.sin(az_angle)  
+            slope = ti.Vector([dx, dy])
+
+            # Get the ray's starting point
+            start = sensor.loc
+
+            # Tracker for ray extension
+            cur_ix = 0.0
+
+            # Initializing the next location to check
+            l = cur_ix * dcur
+            next_loc = start + l * slope
+            
+            # Tester for ray termination
+            in_domain = (
+                (next_loc.x > 0)
+                and (next_loc.y > 0)
+                and (next_loc.x < self.width)
+                and (next_loc.y < self.length)
+                and l < max_ray_length
+            )
+            while in_domain:
+                # Get ray terminus node index
+                x_loc_ix = ti.floor(next_loc.x, int)  # TODO: assumes grid spacing = 1
+                y_loc_ix = ti.floor(next_loc.y, int)  
+
+                # Check if node is active
+                if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
+                    # Get the node height and register a hit
+                    node_height = self.node_heights[x_loc_ix, y_loc_ix]
+                    # TODO: this is causing a large performance hit on gpu backend
+                    self.hits[sensor_ix, az_ix].append(
+                        Hit(
+                            loc_x_ix=x_loc_ix,
+                            loc_y_ix=y_loc_ix,
+                            height=node_height,
+                        )  # TODO: assumes a  grid spacing = 1
+                    )
+                    self.xy_sensors[sensor_ix].hit_count += 1
+
+                # Advance the cursor
+                cur_ix = cur_ix + 1.0
+
+                # Compute the new length
+                l = cur_ix * dcur
+
+                # Compute the new location
+                next_loc = start + l * slope
+                
+                # Tester for ray termination
+                in_domain = (
+                    (next_loc.x > 0)
+                    and (next_loc.y > 0)
+                    and (next_loc.x < self.width)
+                    and (next_loc.y < self.length)
+                    and l < max_ray_length
+                )
 
     def get_sensor_hits_as_im(self, sensor_ix: int) -> ti.ScalarField:
         im = ti.field(float, shape=(2**self.depth, 2**self.depth))
