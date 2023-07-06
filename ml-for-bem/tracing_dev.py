@@ -35,6 +35,7 @@ class Edge:
     slope: float
     normal: ti.math.vec2
     normal_theta: float
+    az_start_angle: float
     height: float  # TODO: This could be rounded to save memory, e.g. uint16, or a quantized datatype e.g. uint10
 
     sensor_start_ix: int  # TODO: should these be forced to 64 bit?
@@ -153,7 +154,7 @@ class Tracer:
         )
 
         base_gdf = self.gdf.copy()
-        tile_ct = 9
+        tile_ct = 0
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -225,12 +226,14 @@ class Tracer:
 
         # Build a dynamic list of hits per ray
         logger.info("Building dynamic hit tracking data structure...")
-        self.n_azimuths = 24
-        self.azimuth_inc = 2 * np.pi / self.n_azimuths
+        self.n_azimuths = 12  # TODO: make this an init arg
+        self.azimuth_inc = 2 * np.pi / (self.n_azimuths * 2)
         self.sensor_root = ti.root.dense(ti.i, sensor_count)
         self.ray_root = self.sensor_root.dense(ti.j, self.n_azimuths)
         self.hit_block = self.ray_root.dynamic(
-            ti.k, 2 ** (int(np.ceil(np.log2(self.n_ray_steps)))), chunk_size=32
+            ti.k,
+            2 ** (int(np.ceil(np.log2(self.n_ray_steps)))),
+            chunk_size=64,
         )  # TODO: big performance hit on gpu
         self.hits = Hit.field()
         self.hit_block.place(self.hits)
@@ -367,6 +370,8 @@ class Tracer:
             h = self.edge_heights[edge_ix]
             xn = self.edge_normals[edge_ix, 0]
             yn = self.edge_normals[edge_ix, 1]
+            xm = self.edge_slopes[edge_ix, 0]
+            ym = self.edge_slopes[edge_ix, 1]
             sensor_start_ix = self.edge_sensor_starts[edge_ix]
             sensor_end_ix = self.edge_sensor_ends[edge_ix]
             sensor_ct = self.edge_sensor_counts[edge_ix]
@@ -375,13 +380,16 @@ class Tracer:
             normal = ti.Vector([xn, yn])
             start = ti.Vector([x0, y0])
             end = ti.Vector([x1, y1])
-            slopevec = end - start
+            slopevec = ti.Vector([xm, ym])
 
             # compute slope
-            slope = (y1 - y0) / (x1 - x0)  # TODO: handle vert/hor lines
+            slope = ym / xm  # TODO: handle vert/hor lines
 
             # Compute the normal angle
             normal_theta = ti.atan2(yn, xn)
+
+            # Compute the azimuth start angle for any sensor placed on this edge
+            az_start_angle = normal_theta - np.pi * 0.5
 
             # Create the edge object
             self.edges[edge_ix] = Edge(
@@ -391,6 +399,7 @@ class Tracer:
                 slope=slope,
                 normal=normal,
                 normal_theta=normal_theta,
+                az_start_angle=az_start_angle,
                 height=h,
                 sensor_start_ix=sensor_start_ix,
                 sensor_end_ix=sensor_end_ix,
@@ -512,7 +521,10 @@ class Tracer:
                 # Compute the rays's azimuth angle
                 sensor = self.xy_sensors[sensor_ix]
 
-                az_angle = self.azimuth_inc * az_ix
+                az_angle = (
+                    self.azimuth_inc * az_ix
+                    + self.edges[sensor.parent_edge_id].az_start_angle
+                )
 
                 # Compute the ray's xy-plane slope
                 dx = ti.cos(
@@ -568,7 +580,10 @@ class Tracer:
             # Compute the rays's azimuth angle
             sensor = self.xy_sensors[sensor_ix]
 
-            az_angle = self.azimuth_inc * az_ix
+            az_angle = (
+                self.azimuth_inc * az_ix
+                + self.edges[sensor.parent_edge_id].az_start_angle
+            )
 
             # Compute the ray's xy-plane slope
             dx = ti.cos(
@@ -679,7 +694,12 @@ class Tracer:
                 ].centroid()  # TODO: Assumes a 1m grid spacing
                 pts[az_ix] = loc
             else:
-                az_angle = self.azimuth_inc * az_ix
+                az_angle = (
+                    self.azimuth_inc * az_ix
+                    + self.edges[
+                        self.xy_sensors[sensor_ix].parent_edge_id
+                    ].az_start_angle
+                )
                 dx = ti.cos(az_angle)  # TODO: precompute as a lookup
                 dy = ti.sin(az_angle)  # TODO: precompute as a lookup
                 slope = ti.Vector([dx, dy])
@@ -810,7 +830,7 @@ if __name__ == "__main__":
     circs = tracer.get_sensor_hits_as_pts(sensor_ix)
     hit_lines, indices = tracer.get_sensor_to_first_hit_rays(sensor_ix)
 
-    zoom = 0.5
+    zoom = 1
     x_offset = 0
     y_offset = 0
 
