@@ -10,8 +10,9 @@ import pandas as pd
 
 from shapely import Polygon, LineString, MultiPoint, Point
 
-ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True)
-# ti.init(arch=ti.cpu)
+# ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
+ti.init(arch=ti.cpu, kernel_profiler=True)
+# ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True)
 
 logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
@@ -63,7 +64,7 @@ class Tracer:
         id_col: str,
         node_width: float = 1,
         sensor_inset: float = 0.5,
-        sensor_spacing: float = 1,
+        sensor_spacing: float = 3,
         f2f_height: float = 3,
         convert_crs=False,
     ):
@@ -403,9 +404,13 @@ class Tracer:
         max_ray_length = 400.0 # TODO: assumes max radius for rays
         dcur = 1.0 # TODO: assumes 1m ray hops, will cause duplicate collisions
         n_curs = ti.floor(max_ray_length / dcur, dtype=int)
-        for sensor_ix, az_ix, cur_ix in ti.ndrange(self.xy_sensors.shape[0], self.n_azimuths, 200):
+        # TODO: this version (i.e. the non divergent version which does not use nested for loop) may cause 
+        # overflow in ndrange if the product is too large
+        for sensor_ix, az_ix, cur_ix in ti.ndrange(self.xy_sensors.shape[0],self.n_azimuths, n_curs):
             # Compute the rays's azimuth angle
-            az_angle = self.azimuth_inc * az_ix
+            sensor = self.xy_sensors[sensor_ix]
+
+            az_angle = self.azimuth_inc * az_ix 
 
             # Compute the ray's xy-plane slope
             dx = ti.cos(az_angle)  # TODO: precompute as a lookup in init based off of n_azimuths?
@@ -413,7 +418,7 @@ class Tracer:
             slope = ti.Vector([dx, dy])
 
             # Get the ray's starting point
-            start = self.xy_sensors[sensor_ix].loc
+            start = sensor.loc
 
             # Length of ray to check
             # TODO: store this
@@ -438,6 +443,7 @@ class Tracer:
                 if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
                     # Get the node height and register a hit
                     node_height = self.node_heights[x_loc_ix, y_loc_ix]
+                    # TODO: this is causing a large performance hit on gpu backend
                     self.hits[sensor_ix, az_ix].append(
                         Hit(
                             loc_x_ix=x_loc_ix,
