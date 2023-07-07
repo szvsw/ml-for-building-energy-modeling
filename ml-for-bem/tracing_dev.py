@@ -212,7 +212,8 @@ class Tracer:
         logger.info(f"QuadTree Depth: {self.depth}")
 
         # Create Scene Tree
-        self.levels = [ti.root.pointer(ti.ij, (2**self.depth, 2**self.depth))]
+        # TODO: explore performance and memory implications of using bitmasked instead
+        self.levels = [ti.root.bitmasked(ti.ij, (2**self.depth, 2**self.depth))]
         # self.levels = []
         # root = ti.root.pointer(ti.ij, (2, 2))
         # self.levels.append(root)
@@ -280,7 +281,7 @@ class Tracer:
         self.xyz_sensor_root = ti.root.dense(ti.i, xyz_sensor_count)
         self.xyz_sensor_root.place(self.xyz_sensors)
         self.xyz_view_root = self.xyz_sensor_root.bitmasked(ti.jk, (self.n_azimuths, self.n_elevations))
-        self.xyz_views = ti.field(dtype=ti.i8)
+        self.xyz_views = ti.field(dtype=ti.i8) # TODO: use a quantized data type with a single bit (uint1)
         self.xyz_view_root.place(self.xyz_views)
         self.xyz_sensors.parent_sensor_id.from_numpy(xy_sensor_parent_ix)
         self.init_xyz_sensors()
@@ -288,7 +289,9 @@ class Tracer:
         # TODO: add n_azimuths and then n_elevations tree branches to skip compute
 
         logger.info(f"XY rays: {sensor_count * self.n_azimuths}")
-        logger.info(f"XYZ rays: {xyz_sensor_count * self.n_azimuths * self.n_elevations}")
+        xyz_ray_ct = xyz_sensor_count * self.n_azimuths * self.n_elevations
+        assert xyz_ray_ct < 2**32, f"This scene requires {xyz_ray_ct} rays which is greater than the currently supported max of 2^32 ~= 4e9."
+        logger.info(f"XYZ rays: {xyz_ray_ct}")
 
         # Ray trace in xy plane
         logger.info("XY tracing...")
@@ -720,25 +723,45 @@ class Tracer:
     @ti.kernel
     def xyz_trace(self):
         for sensor_ix, az_ix, el_ix in ti.ndrange(self.xyz_sensors.shape[0], self.n_azimuths, self.n_elevations):
+            # get the xyz sensors corresponding xy sensor
             parent_sensor_id = self.xyz_sensors[sensor_ix].parent_sensor_id
+
+            # get the xyz sensor's height
             xyz_sensor_height = self.xyz_sensors[sensor_ix].height
-            n_hits_to_check = self.hits[parent_sensor_id, az_ix].length()
+
+            # determine how many hits need to be checked based off of xy sensors hit table
+            # n_hits_to_check = self.hits[parent_sensor_id, az_ix].length()
+            n_hits_to_check = self.xy_sensors[parent_sensor_id].hit_count
             el_angle = el_ix * self.elevation_inc # TODO: precompute these? or store slopes?
+
+            # Initiate an iterator so we can bail out early
+            # via a while loop, rather than using automatic iteration
             hit_ix = 0
-            hit_found = 0
+            # create a flag for when a hit has been found
+            hit_found = 0 
             while hit_ix < n_hits_to_check and hit_found != 1:
+                # Extract an xy hit and its properties
                 hit =  self.hits[parent_sensor_id, az_ix, hit_ix]
                 hit_height = hit.height
                 hit_distance = hit.distance
+                # compute the height diff for the current xyz sensor
                 height_diff = hit_height - xyz_sensor_height
-                theta = ti.atan2(height_diff, hit_distance)
+
+                # compute the angle
+                theta = ti.atan2(height_diff, hit_distance) # TODO: would using a slope divison be more performant?
+
+                # Check if the sensor-to-other-building angle is greater than the sensor-to-sky-patch angle
                 if theta > el_angle:
+                    # Indicate a bail out if the building is obstructing
                     hit_found = 1
 
+                # increment the hit ix iterator
                 hit_ix = hit_ix + 1
 
+            # If no obstructions found, then add the result in
             if hit_found != 1:
                 self.xyz_sensors[sensor_ix].rad += 1 # TODO: look up sky matrix
+                # Store a hit mask
                 self.xyz_views[sensor_ix, az_ix, el_ix] = 1
     @ti.kernel
     def print_column_stats(self, xy_sensor: int):
