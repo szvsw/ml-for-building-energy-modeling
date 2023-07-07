@@ -45,15 +45,15 @@ class Edge:
     sensor_ct: int
 
 
-
 @ti.dataclass
 class XYSensor:
     hit_count: int
     loc: ti.math.vec2
     parent_edge_id: int
 
-    xyz_sensor_start_ix: int # TODO: should these be forced to 64 bit?
+    xyz_sensor_start_ix: int  # TODO: should these be forced to 64 bit?
     xyz_sensor_ct: int
+
 
 @ti.dataclass
 class XYZSensor:
@@ -252,8 +252,8 @@ class Tracer:
         self.hit_block.place(self.hits)
 
         # Build
-        self.n_elevations = 8 # TODO: make this an init arg
-        self.elevation_inc = 0.5*np.pi / self.n_elevations
+        self.n_elevations = 8  # TODO: make this an init arg
+        self.elevation_inc = 0.5 * np.pi / self.n_elevations
 
         # Init xy sensor locations
         logger.info("Initializing xy-plane sensors...")
@@ -263,10 +263,10 @@ class Tracer:
         self.sensor_root.place(self.xy_sensors)
         self.init_xy_sensors()
         ti.sync()
-        
+
         # Determine how many xyz sensors are needed for data collection
         xyz_cts = self.xy_sensors.xyz_sensor_ct.to_numpy()
-        xyz_ends = np.cumsum(xyz_cts) # use cumulative sums so that a sensor
+        xyz_ends = np.cumsum(xyz_cts)  # use cumulative sums so that a sensor
         xyz_starts = np.roll(xyz_ends, shift=1)
         xyz_starts[0] = 0
         self.xy_sensors.xyz_sensor_start_ix.from_numpy(xyz_starts)
@@ -280,8 +280,12 @@ class Tracer:
         self.xyz_sensors = XYZSensor.field()
         self.xyz_sensor_root = ti.root.dense(ti.i, xyz_sensor_count)
         self.xyz_sensor_root.place(self.xyz_sensors)
-        self.xyz_view_root = self.xyz_sensor_root.bitmasked(ti.jk, (self.n_azimuths, self.n_elevations))
-        self.xyz_views = ti.field(dtype=ti.i8) # TODO: use a quantized data type with a single bit (uint1)
+        self.xyz_view_root = self.xyz_sensor_root.bitmasked(
+            ti.jk, (self.n_azimuths, self.n_elevations)
+        )
+        self.xyz_views = ti.field(
+            dtype=ti.i8
+        )  # TODO: use a quantized data type with a single bit (uint1)
         self.xyz_view_root.place(self.xyz_views)
         self.xyz_sensors.parent_sensor_id.from_numpy(xy_sensor_parent_ix)
         self.init_xyz_sensors()
@@ -290,7 +294,9 @@ class Tracer:
 
         logger.info(f"XY rays: {sensor_count * self.n_azimuths}")
         xyz_ray_ct = xyz_sensor_count * self.n_azimuths * self.n_elevations
-        assert xyz_ray_ct < 2**32, f"This scene requires {xyz_ray_ct} rays which is greater than the currently supported max of 2^32 ~= 4e9."
+        assert (
+            xyz_ray_ct < 2**32
+        ), f"This scene requires {xyz_ray_ct} rays which is greater than the currently supported max of 2^32 ~= 4e9."
         logger.info(f"XYZ rays: {xyz_ray_ct}")
 
         # Ray trace in xy plane
@@ -361,7 +367,9 @@ class Tracer:
                 starts.append(points)
                 ends.append(next_points)
                 run_rises.append(run_rise)
-                heights.append(np.ones(points.shape[0]) * self.gdf[self.height_col][i]) # TODO: these could be found via a building parent ref
+                heights.append(
+                    np.ones(points.shape[0]) * self.gdf[self.height_col][i]
+                )  # TODO: these could be found via a building parent ref
                 n_floors.append(np.ones(points.shape[0]) * self.gdf["N_FLOORS"][i])
                 normals.append(normal)
 
@@ -574,7 +582,7 @@ class Tracer:
             xy_sensor = self.xy_sensors[parent_id]
             floor_ix = sensor_ix - xy_sensor.xyz_sensor_start_ix
             # Sensors should be in floor midpoint, so use 1.5xf2f
-            height = floor_ix * 1.5*self.f2f_height
+            height = floor_ix * 1.5 * self.f2f_height
             self.xyz_sensors[sensor_ix].height = height
 
     @ti.kernel
@@ -722,7 +730,9 @@ class Tracer:
 
     @ti.kernel
     def xyz_trace(self):
-        for sensor_ix, az_ix, el_ix in ti.ndrange(self.xyz_sensors.shape[0], self.n_azimuths, self.n_elevations):
+        for sensor_ix, az_ix, el_ix in ti.ndrange(
+            self.xyz_sensors.shape[0], self.n_azimuths, self.n_elevations
+        ):
             # get the xyz sensors corresponding xy sensor
             parent_sensor_id = self.xyz_sensors[sensor_ix].parent_sensor_id
 
@@ -732,23 +742,27 @@ class Tracer:
             # determine how many hits need to be checked based off of xy sensors hit table
             # n_hits_to_check = self.hits[parent_sensor_id, az_ix].length()
             n_hits_to_check = self.xy_sensors[parent_sensor_id].hit_count
-            el_angle = el_ix * self.elevation_inc # TODO: precompute these? or store slopes?
+            el_angle = (
+                el_ix * self.elevation_inc
+            )  # TODO: precompute these? or store slopes?
 
             # Initiate an iterator so we can bail out early
             # via a while loop, rather than using automatic iteration
             hit_ix = 0
             # create a flag for when a hit has been found
-            hit_found = 0 
+            hit_found = 0
             while hit_ix < n_hits_to_check and hit_found != 1:
                 # Extract an xy hit and its properties
-                hit =  self.hits[parent_sensor_id, az_ix, hit_ix]
+                hit = self.hits[parent_sensor_id, az_ix, hit_ix]
                 hit_height = hit.height
                 hit_distance = hit.distance
                 # compute the height diff for the current xyz sensor
                 height_diff = hit_height - xyz_sensor_height
 
                 # compute the angle
-                theta = ti.atan2(height_diff, hit_distance) # TODO: would using a slope divison be more performant?
+                theta = ti.atan2(
+                    height_diff, hit_distance
+                )  # TODO: would using a slope divison be more performant?
 
                 # Check if the sensor-to-other-building angle is greater than the sensor-to-sky-patch angle
                 if theta > el_angle:
@@ -760,9 +774,10 @@ class Tracer:
 
             # If no obstructions found, then add the result in
             if hit_found != 1:
-                self.xyz_sensors[sensor_ix].rad += 1 # TODO: look up sky matrix
+                self.xyz_sensors[sensor_ix].rad += 1  # TODO: look up sky matrix
                 # Store a hit mask
                 self.xyz_views[sensor_ix, az_ix, el_ix] = 1
+
     @ti.kernel
     def print_column_stats(self, xy_sensor: int):
         sensor = self.xy_sensors[xy_sensor]
@@ -775,11 +790,10 @@ class Tracer:
         ti.sync()
         for xyz_sensor_ix in range(xyz_s, xyz_e):
             sum = 0.0
-            for az_ix,el_ix in ti.ndrange(self.n_azimuths, self.n_elevations):
+            for az_ix, el_ix in ti.ndrange(self.n_azimuths, self.n_elevations):
                 if ti.is_active(self.xyz_view_root, [xyz_sensor_ix, az_ix, el_ix]) == 1:
                     sum = sum + 1
             print(f"Floor {xyz_sensor_ix}: {sum} rad")
-            
 
     def get_sensor_hits_as_im(self, sensor_ix: int) -> ti.ScalarField:
         im = ti.field(float, shape=(2**self.depth, 2**self.depth))
