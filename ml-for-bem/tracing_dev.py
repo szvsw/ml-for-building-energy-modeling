@@ -239,7 +239,7 @@ class Tracer:
 
         # Build a dynamic list of hits per ray
         logger.info("Building dynamic hit tracking data structure...")
-        self.n_azimuths = 24  # TODO: make this an init arg
+        self.n_azimuths = 48  # TODO: make this an init arg
         self.azimuth_inc = 2 * np.pi / (self.n_azimuths * 2)
         self.sensor_root = ti.root.dense(ti.i, sensor_count)
         self.ray_root = self.sensor_root.dense(ti.j, self.n_azimuths)
@@ -252,7 +252,7 @@ class Tracer:
         self.hit_block.place(self.hits)
 
         # Build
-        self.n_elevations = 8  # TODO: make this an init arg
+        self.n_elevations = 16  # TODO: make this an init arg
         self.elevation_inc = 0.5 * np.pi / self.n_elevations
 
         # Init xy sensor locations
@@ -299,16 +299,22 @@ class Tracer:
         ), f"This scene requires {xyz_ray_ct} rays which is greater than the currently supported max of 2^32 ~= 4e9."
         logger.info(f"XYZ rays: {xyz_ray_ct}")
 
-        # Ray trace in xy plane
-        logger.info("XY tracing...")
-        # self.xy_trace_divergent()
-        self.xy_trace()
-        ti.sync()
-        logger.info("XY tracing complete.")
+        # # Ray trace in xy plane
+        # logger.info("XY tracing...")
+        # # self.xy_trace_divergent()
+        # self.xy_trace()
+        # ti.sync()
+        # logger.info("XY tracing complete.")
+
+        # # Ray trace using xyz data
+        # logger.info("XYZ tracing...")
+        # self.xyz_trace()
+        # ti.sync()
+        # logger.info("XYZ tracing complete.")
 
         # Ray trace using xyz data
         logger.info("XYZ tracing...")
-        self.xyz_trace()
+        self.xyz_trace_unified()
         ti.sync()
         logger.info("XYZ tracing complete.")
 
@@ -779,7 +785,104 @@ class Tracer:
                 self.xyz_views[sensor_ix, az_ix, el_ix] = 1
 
     @ti.kernel
+    def xyz_trace_unified(self):
+        for sensor_ix, az_ix, el_ix in ti.ndrange(
+            self.xyz_sensors.shape[0], self.n_azimuths, self.n_elevations
+        ):
+            # get the xyz sensors corresponding xy sensor
+            parent_sensor_id = self.xyz_sensors[sensor_ix].parent_sensor_id
+            parent_sensor = self.xy_sensors[parent_sensor_id]
+
+            # get the xyz sensor's height
+            xyz_sensor_height = self.xyz_sensors[sensor_ix].height
+
+            el_angle = (
+                el_ix * self.elevation_inc
+            )  # TODO: precompute these? or store slopes?
+
+            az_angle = (
+                self.azimuth_inc * az_ix
+                + self.edges[parent_sensor.parent_edge_id].az_start_angle
+            )
+
+            # Compute the ray's xy-plane slope
+            dx = ti.cos(
+                az_angle
+            )  # TODO: precompute as a lookup in init based off of n_azimuths?
+            dy = ti.sin(az_angle)
+            slope = ti.Vector([dx, dy])
+
+            # Get the ray's starting point
+            start = parent_sensor.loc
+
+            # Tracker for ray extension
+            ray_step_ix = 0.0
+
+            # Initializing the next location to check
+            distance = ray_step_ix * self.ray_step_size
+            next_loc = start + distance * slope
+
+            # Tester for ray termination
+            in_domain = (
+                (next_loc.x > 0)
+                and (next_loc.y > 0)
+                and (next_loc.x < self.width)
+                and (next_loc.y < self.length)
+                and distance < self.max_ray_length
+            )
+
+            hit_found = 0
+            while in_domain and hit_found != 1:
+                # Get ray terminus node index
+                x_loc_ix = ti.floor(next_loc.x, int)  # TODO: assumes grid spacing = 1
+                y_loc_ix = ti.floor(next_loc.y, int)
+
+                # Check if node is active
+                if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
+                    # Get the height of the node in the xy plane
+                    node_height = self.node_heights[x_loc_ix, y_loc_ix]
+
+                    # Compute the height difference to the edge crossed
+                    height_diff = node_height - xyz_sensor_height
+
+                    # compute the angle
+                    theta = ti.atan2(
+                        height_diff, distance
+                    )  # TODO: would using a slope divison be more performant?
+
+                    # Check if the sensor-to-other-building angle is greater than the sensor-to-sky-patch angle
+                    if theta > el_angle:
+                        # Indicate a bail out if the building is obstructing
+                        hit_found = 1
+
+                # Advance the ray stepper
+                ray_step_ix = ray_step_ix + 1.0
+
+                # Compute the new length
+                distance = ray_step_ix * self.ray_step_size
+
+                # Compute the new location
+                next_loc = start + distance * slope
+
+                # Tester for ray termination
+                in_domain = (
+                    (next_loc.x > 0)
+                    and (next_loc.y > 0)
+                    and (next_loc.x < self.width)
+                    and (next_loc.y < self.length)
+                    and distance < self.max_ray_length
+                )
+
+            # If no obstructions found, then add the result in
+            if hit_found != 1:
+                self.xyz_sensors[sensor_ix].rad += 1  # TODO: look up sky matrix
+                # Store a hit mask
+                self.xyz_views[sensor_ix, az_ix, el_ix] = 1
+                # TODO: track hit location
+
+    @ti.kernel
     def print_column_stats(self, xy_sensor: int):
+        print(f"\ncolumn for xy sensor {xy_sensor}")
         sensor = self.xy_sensors[xy_sensor]
         xyz_s = sensor.xyz_sensor_start_ix
         xyz_e = xyz_s + sensor.xyz_sensor_ct
@@ -909,6 +1012,7 @@ if __name__ == "__main__":
     ti.sync()
     tracer.print_column_stats(0)
     ti.sync()
+    exit()
 
     ############
     # debug viz
