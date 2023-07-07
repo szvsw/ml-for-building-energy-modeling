@@ -865,10 +865,10 @@ class Tracer:
             # Get the ray's starting point
             start = parent_sensor.loc
 
-            hit_found = self.trace_xyz_ray(start, slope, el_angle, xyz_sensor_height)
+            distance = self.trace_xyz_ray(start, slope, el_angle, xyz_sensor_height)
 
             # If no obstructions found, then add the result in
-            if hit_found == 0:
+            if distance < 0:
                 self.xyz_sensors[sensor_ix].rad += 1  # TODO: look up sky matrix
                 # Store a hit mask
                 self.xyz_views[sensor_ix, az_ix, el_ix] = 1
@@ -936,7 +936,8 @@ class Tracer:
             )
         
         if hit_found == 0:
-            distance = 0
+            distance = -1
+        # TODO: this is bad!
         return distance
 
     @ti.kernel
@@ -983,16 +984,16 @@ class Tracer:
 
             distance = self.trace_xyz_ray(start, slope, el_angle, xyz_sensor_height)
 
-            if distance != 0:
-                # If no obstructions found, then show the ray
-                self.sensor_3d_rays[2*ray_ix].x = distance * slope.x + parent_sensor.loc.x
-                self.sensor_3d_rays[2*ray_ix].y = xyz_sensor_height + ti.tan(el_angle) * ti.sqrt(slope.x*slope.x + slope.y*slope.y)*distance
-                self.sensor_3d_rays[2*ray_ix].z = distance * slope.y + parent_sensor.loc.y
-            else:
+            if distance < 0:
                 # hide the ray by setting the target to the source
                 self.sensor_3d_rays[2*ray_ix].x = parent_sensor.loc.x
                 self.sensor_3d_rays[2*ray_ix].y = xyz_sensor_height
                 self.sensor_3d_rays[2*ray_ix].z = parent_sensor.loc.y
+            else:
+                # the ray hit something
+                self.sensor_3d_rays[2*ray_ix].x = distance * slope.x + parent_sensor.loc.x
+                self.sensor_3d_rays[2*ray_ix].y = xyz_sensor_height + ti.tan(el_angle) * ti.sqrt(slope.x*slope.x + slope.y*slope.y)*distance
+                self.sensor_3d_rays[2*ray_ix].z = distance * slope.y + parent_sensor.loc.y
             
             self.sensor_3d_rays[2*ray_ix+1].x = parent_sensor.loc.x
             self.sensor_3d_rays[2*ray_ix+1].y = xyz_sensor_height
