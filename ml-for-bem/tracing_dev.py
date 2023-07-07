@@ -112,7 +112,7 @@ class Tracer:
         node_width: float = 1,
         sensor_inset: float = 0.5,
         sensor_spacing: float = 1,
-        f2f_height: float = 1,
+        f2f_height: float = 3,
         max_ray_length: float = 400.0,
         ray_step_size: float = 1.0,
         convert_crs=False,
@@ -238,7 +238,7 @@ class Tracer:
 
         # Build a dynamic list of hits per ray
         logger.info("Building dynamic hit tracking data structure...")
-        self.n_azimuths = 12  # TODO: make this an init arg
+        self.n_azimuths = 24  # TODO: make this an init arg
         self.azimuth_inc = 2 * np.pi / (self.n_azimuths * 2)
         self.sensor_root = ti.root.dense(ti.i, sensor_count)
         self.ray_root = self.sensor_root.dense(ti.j, self.n_azimuths)
@@ -274,24 +274,31 @@ class Tracer:
         )
 
         xyz_sensor_count = xy_sensor_parent_ix.shape[0]
+        logger.info(f"XYZ sensor count: {xyz_sensor_count}")
+        logger.info("Initializing xyz sensors...")
         self.xyz_sensors = XYZSensor.field()
-        xyz_sensor_root = ti.root.dense(ti.i, xyz_sensor_count)
-        xyz_sensor_root.place(self.xyz_sensors)
+        self.xyz_sensor_root = ti.root.dense(ti.i, xyz_sensor_count)
+        self.xyz_sensor_root.place(self.xyz_sensors)
+        self.xyz_view_root = self.xyz_sensor_root.bitmasked(ti.jk, (self.n_azimuths, self.n_elevations))
+        self.xyz_views = ti.field(dtype=ti.i8)
+        self.xyz_view_root.place(self.xyz_views)
         self.xyz_sensors.parent_sensor_id.from_numpy(xy_sensor_parent_ix)
         self.init_xyz_sensors()
         ti.sync()
         # TODO: add n_azimuths and then n_elevations tree branches to skip compute
 
+        logger.info(f"XY rays: {sensor_count * self.n_azimuths}")
+        logger.info(f"XYZ rays: {xyz_sensor_count * self.n_azimuths * self.n_elevations}")
+
         # Ray trace in xy plane
         logger.info("XY tracing...")
-        self.xy_trace_divergent()
-        # self.xy_trace()
+        # self.xy_trace_divergent()
+        self.xy_trace()
         ti.sync()
         logger.info("XY tracing complete.")
 
         # Ray trace using xyz data
         logger.info("XYZ tracing...")
-        # self.xy_trace_divergent()
         self.xyz_trace()
         ti.sync()
         logger.info("XYZ tracing complete.")
@@ -729,8 +736,26 @@ class Tracer:
                     hit_found = 1
 
                 hit_ix = hit_ix + 1
-            if hit_found == 1:
+
+            if hit_found != 1:
                 self.xyz_sensors[sensor_ix].rad += 1 # TODO: look up sky matrix
+                self.xyz_views[sensor_ix, az_ix, el_ix] = 1
+    @ti.kernel
+    def print_column_stats(self, xy_sensor: int):
+        sensor = self.xy_sensors[xy_sensor]
+        xyz_s = sensor.xyz_sensor_start_ix
+        xyz_e = xyz_s + sensor.xyz_sensor_ct
+        for xyz_sensor_ix in range(xyz_s, xyz_e):
+            sen = self.xyz_sensors[xyz_sensor_ix]
+            print(f"Floor {xyz_sensor_ix}: {sen.rad} rad")
+
+        ti.sync()
+        for xyz_sensor_ix in range(xyz_s, xyz_e):
+            sum = 0.0
+            for az_ix,el_ix in ti.ndrange(self.n_azimuths, self.n_elevations):
+                if ti.is_active(self.xyz_view_root, [xyz_sensor_ix, az_ix, el_ix]) == 1:
+                    sum = sum + 1
+            print(f"Floor {xyz_sensor_ix}: {sum} rad")
             
 
     def get_sensor_hits_as_im(self, sensor_ix: int) -> ti.ScalarField:
@@ -844,6 +869,8 @@ if __name__ == "__main__":
     # id_col = "OBJECTID"
 
     tracer = Tracer(filepath=fp, height_col=height_col, id_col=id_col, node_width=1)
+    ti.sync()
+    tracer.print_column_stats(0)
     ti.sync()
 
     ############
