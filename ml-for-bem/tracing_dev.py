@@ -14,10 +14,13 @@ from shapely import Polygon, LineString, MultiPoint, Point
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)
 ti.init(arch=ti.gpu, device_memory_fraction=0.9, kernel_profiler=True)
+uint1 = ti.types.quant.int(1, signed=False)
 
 logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
 logger.setLevel(logging.INFO)
+
+# TODO: deal with collinear edges which result in sensors inside neighboring building!
 
 
 # TODO: migrate node_heights field to a Node.field()
@@ -93,7 +96,7 @@ class Tracer:
     levels: List[ti.SNode]  # pointers to each 2x2 level of the quadtree
     node_heights: ti.ScalarField  # stores the height of each populated node in the quadtree
 
-    # TODO: consider combining edges into a structfield with @ti.dataclass (requires a copy kernel to populate)
+    # TODO: make sure all class attrs are represented here
     edge_starts: ti.ScalarField
     edge_ends: ti.ScalarField
     edge_slopes: ti.ScalarField
@@ -283,11 +286,15 @@ class Tracer:
         self.xyz_view_root = self.xyz_sensor_root.bitmasked(
             ti.jk, (self.n_azimuths, self.n_elevations)
         )
+
         self.xyz_views = ti.field(
-            dtype=ti.i8
+            dtype=uint1
         )  # TODO: use a quantized data type with a single bit (uint1)
-        self.xyz_view_root.place(self.xyz_views)
+        self.ui1bitpacker = ti.BitpackedFields(max_num_bits=32)
+        self.ui1bitpacker.place(self.xyz_views)
+        self.xyz_view_root.place(self.ui1bitpacker)
         self.xyz_sensors.parent_sensor_id.from_numpy(xy_sensor_parent_ix)
+
         self.init_xyz_sensors()
         ti.sync()
         # TODO: add n_azimuths and then n_elevations tree branches to skip compute
@@ -318,7 +325,50 @@ class Tracer:
         ti.sync()
         logger.info("XYZ tracing complete.")
 
+        self.sensor_3d_points = ti.Vector.field(3, dtype=float, shape=xyz_sensor_count)
+        self.sensor_3d_colors = ti.Vector.field(3, dtype=float, shape=xyz_sensor_count)
+        self.sensor_3d_rays = ti.Vector.field(3, dtype=float, shape=2*(self.n_azimuths*self.n_elevations))
+        self.load_3d_points()
+        self.load_3d_sensor_rays(0)
+
         ti.profiler.print_kernel_profiler_info()
+
+    def init_gui(self):
+        self.window = ti.ui.Window("UMI RayTrace", (1024, 1024), pos=(100,100))
+        self.gui = self.window.get_gui()
+        self.canvas = self.window.get_canvas()
+        self.scene = ti.ui.Scene()
+        self.camera = ti.ui.Camera()
+        self.camera.up(0,1,0)
+        self.camera.position(0,10,0)
+        self.camera.lookat(1,10,1)
+    
+
+    def render_scene(self):
+        sensor_ix=0
+        controls_changed = True
+        while self.window.running:
+            with self.gui.sub_window("Sensor selector", 0.1, 0.1, 0.8, 0.15):
+                old_ix = sensor_ix
+                sensor_ix = self.gui.slider_int(
+                    text="Sensor Index",
+                    old_value=sensor_ix,
+                    minimum=0,
+                    maximum=self.xyz_sensors.shape[0],
+                )
+                if old_ix != sensor_ix:
+                    controls_changed = True
+                
+                if controls_changed:
+                    self.load_3d_sensor_rays(sensor_ix)
+                    controls_changed = False
+            self.camera.track_user_inputs(self.window, hold_key=ti.ui.RMB)
+            self.scene.ambient_light((1,1,1))
+            self.scene.particles(self.sensor_3d_points, radius=0.2, per_vertex_color=self.sensor_3d_colors)
+            self.scene.lines(self.sensor_3d_rays, width=1, color=(1,1,1))
+            self.scene.set_camera(self.camera)
+            self.canvas.scene(self.scene)
+            self.window.show()
 
     def extract_flat_edge_list(self):
         """
@@ -815,11 +865,65 @@ class Tracer:
             # Get the ray's starting point
             start = parent_sensor.loc
 
-            # Tracker for ray extension
-            ray_step_ix = 0.0
+            hit_found = self.trace_xyz_ray(start, slope, el_angle, xyz_sensor_height)
 
-            # Initializing the next location to check
+            # If no obstructions found, then add the result in
+            if hit_found == 0:
+                self.xyz_sensors[sensor_ix].rad += 1  # TODO: look up sky matrix
+                # Store a hit mask
+                self.xyz_views[sensor_ix, az_ix, el_ix] = 1
+                # TODO: track hit location
+
+    @ti.func
+    def trace_xyz_ray(self, start: ti.math.vec2, slope: ti.math.vec2, el_angle: float, xyz_sensor_height: float) -> float:
+
+        # Tracker for ray extension
+        ray_step_ix = 0.0
+
+        # Initializing the next location to check
+        distance = ray_step_ix * self.ray_step_size
+        next_loc = start + distance * slope
+
+        # Tester for ray termination
+        in_domain = (
+            (next_loc.x > 0)
+            and (next_loc.y > 0)
+            and (next_loc.x < self.width)
+            and (next_loc.y < self.length)
+            and distance < self.max_ray_length
+        )
+
+        hit_found = 0
+        while in_domain and hit_found != 1:
+            # Get ray terminus node index
+            x_loc_ix = ti.floor(next_loc.x, int)  # TODO: assumes grid spacing = 1
+            y_loc_ix = ti.floor(next_loc.y, int)
+
+            # Check if node is active
+            if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
+                # Get the height of the node in the xy plane
+                node_height = self.node_heights[x_loc_ix, y_loc_ix]
+
+                # Compute the height difference to the edge crossed
+                height_diff = node_height - xyz_sensor_height
+
+                # compute the angle
+                theta = ti.atan2(
+                    height_diff, distance
+                )  # TODO: would using a slope divison be more performant?
+
+                # Check if the sensor-to-other-building angle is greater than the sensor-to-sky-patch angle
+                if theta > el_angle:
+                    # Indicate a bail out if the building is obstructing
+                    hit_found = 1
+
+            # Advance the ray stepper
+            ray_step_ix = ray_step_ix + 1.0
+
+            # Compute the new length
             distance = ray_step_ix * self.ray_step_size
+
+            # Compute the new location
             next_loc = start + distance * slope
 
             # Tester for ray termination
@@ -830,55 +934,71 @@ class Tracer:
                 and (next_loc.y < self.length)
                 and distance < self.max_ray_length
             )
+        
+        if hit_found == 0:
+            distance = 0
+        return distance
 
-            hit_found = 0
-            while in_domain and hit_found != 1:
-                # Get ray terminus node index
-                x_loc_ix = ti.floor(next_loc.x, int)  # TODO: assumes grid spacing = 1
-                y_loc_ix = ti.floor(next_loc.y, int)
+    @ti.kernel
+    def load_3d_points(self):
+        for sensor_ix in self.xyz_sensors:
+            xyz_sensor = self.xyz_sensors[sensor_ix]
+            parent_xy_sen = self.xy_sensors[self.xyz_sensors[sensor_ix].parent_sensor_id]
+            self.sensor_3d_points[sensor_ix].x = parent_xy_sen.loc.x
+            self.sensor_3d_points[sensor_ix].y = xyz_sensor.height
+            self.sensor_3d_points[sensor_ix].z = parent_xy_sen.loc.y
+            self.sensor_3d_colors[sensor_ix].x = 0.5
+            self.sensor_3d_colors[sensor_ix].y = ti.min(ti.max((xyz_sensor.rad - 650.0) / (self.n_azimuths * self.n_elevations - 650),0.0),1.0)
+            self.sensor_3d_colors[sensor_ix].z = 0.5
+    
+    @ti.kernel
+    def load_3d_sensor_rays(self, sensor_ix: int):
+        for az_ix, el_ix in ti.ndrange(self.n_azimuths, self.n_elevations):
+            ray_ix = az_ix * self.n_elevations + el_ix
+            # get the xyz sensors corresponding xy sensor
+            parent_sensor_id = self.xyz_sensors[sensor_ix].parent_sensor_id
+            parent_sensor = self.xy_sensors[parent_sensor_id]
 
-                # Check if node is active
-                if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
-                    # Get the height of the node in the xy plane
-                    node_height = self.node_heights[x_loc_ix, y_loc_ix]
+            # get the xyz sensor's height
+            xyz_sensor_height = self.xyz_sensors[sensor_ix].height
 
-                    # Compute the height difference to the edge crossed
-                    height_diff = node_height - xyz_sensor_height
+            el_angle = (
+                el_ix * self.elevation_inc
+            )  # TODO: precompute these? or store slopes?
 
-                    # compute the angle
-                    theta = ti.atan2(
-                        height_diff, distance
-                    )  # TODO: would using a slope divison be more performant?
+            az_angle = (
+                self.azimuth_inc * az_ix
+                + self.edges[parent_sensor.parent_edge_id].az_start_angle
+            )
 
-                    # Check if the sensor-to-other-building angle is greater than the sensor-to-sky-patch angle
-                    if theta > el_angle:
-                        # Indicate a bail out if the building is obstructing
-                        hit_found = 1
+            # Compute the ray's xy-plane slope
+            dx = ti.cos(
+                az_angle
+            )  # TODO: precompute as a lookup in init based off of n_azimuths?
+            dy = ti.sin(az_angle)
+            slope = ti.Vector([dx, dy])
 
-                # Advance the ray stepper
-                ray_step_ix = ray_step_ix + 1.0
+            # Get the ray's starting point
+            start = parent_sensor.loc
 
-                # Compute the new length
-                distance = ray_step_ix * self.ray_step_size
+            distance = self.trace_xyz_ray(start, slope, el_angle, xyz_sensor_height)
 
-                # Compute the new location
-                next_loc = start + distance * slope
+            if distance != 0:
+                # If no obstructions found, then show the ray
+                self.sensor_3d_rays[2*ray_ix].x = distance * slope.x + parent_sensor.loc.x
+                self.sensor_3d_rays[2*ray_ix].y = xyz_sensor_height + ti.tan(el_angle) * ti.sqrt(slope.x*slope.x + slope.y*slope.y)*distance
+                self.sensor_3d_rays[2*ray_ix].z = distance * slope.y + parent_sensor.loc.y
+            else:
+                # hide the ray by setting the target to the source
+                self.sensor_3d_rays[2*ray_ix].x = parent_sensor.loc.x
+                self.sensor_3d_rays[2*ray_ix].y = xyz_sensor_height
+                self.sensor_3d_rays[2*ray_ix].z = parent_sensor.loc.y
+            
+            self.sensor_3d_rays[2*ray_ix+1].x = parent_sensor.loc.x
+            self.sensor_3d_rays[2*ray_ix+1].y = xyz_sensor_height
+            self.sensor_3d_rays[2*ray_ix+1].z = parent_sensor.loc.y
 
-                # Tester for ray termination
-                in_domain = (
-                    (next_loc.x > 0)
-                    and (next_loc.y > 0)
-                    and (next_loc.x < self.width)
-                    and (next_loc.y < self.length)
-                    and distance < self.max_ray_length
-                )
 
-            # If no obstructions found, then add the result in
-            if hit_found != 1:
-                self.xyz_sensors[sensor_ix].rad += 1  # TODO: look up sky matrix
-                # Store a hit mask
-                self.xyz_views[sensor_ix, az_ix, el_ix] = 1
-                # TODO: track hit location
 
     @ti.kernel
     def print_column_stats(self, xy_sensor: int):
@@ -1012,6 +1132,9 @@ if __name__ == "__main__":
     ti.sync()
     tracer.print_column_stats(0)
     ti.sync()
+
+    tracer.init_gui()
+    tracer.render_scene()
     exit()
 
     ############
