@@ -55,6 +55,7 @@ class Edge:
     normal: ti.math.vec2
     normal_theta: float
     az_start_angle: float
+    orientation: ti.int8  # this ought to be ti.int2
     height: float  # TODO: This could be rounded to save memory, or stored with a parent building, e.g. uint16, or a quantized datatype e.g. uint10
     n_floors: ti.int8
 
@@ -557,7 +558,21 @@ class Tracer:
             yn = self.edges[edge_ix].normal.y
             normal_theta = ti.atan2(yn, xn)
 
+            # Determine orientation
+            # in: 0deg, rotate 45: 45deg, divide by 90deg: 0.5, round down: 0 , out: 0 (east)
+            # in: 45deg, rotate 45: 90deg, divide by 90deg: 1, round down: 1 , out: 1 (north)
+            # in: 135deg, rotate 45: 180deg, divide by 90deg: 2, round down: 2 , out: 2 (west)
+            # in: 225deg, rotate 45: 270deg, divide by 90deg: 3, round down: 3 , out: 3 (south)
+            # in: 315deg, rotate 45: 360deg, divide by 90deg: 4, round down: 4 , out: 0 (south)
+            orientation = ti.floor(
+                ((((normal_theta + 2 * np.pi) % (2 * np.pi)) + np.pi / 4) / (np.pi / 2))
+                % 4,
+                dtype=ti.int8,
+            )
+            self.edges[edge_ix].orientation = orientation
+
             # Compute the azimuth start angle for any sensor placed on this edge
+            # TODO: this should be quantized to az_inc
             az_start_angle = normal_theta - np.pi * 0.5
 
             # Update the edge object
