@@ -759,9 +759,8 @@ class Tracer:
                 )
 
                 # Compute the ray's xy-plane slope
-                dx = ti.cos(
-                    az_angle
-                )  # TODO: precompute as a lookup in init based off of n_azimuths?
+                # TODO: precompute as a lookup in init based off of n_azimuths?
+                dx = ti.cos(az_angle)
                 dy = ti.sin(az_angle)
                 slope = ti.Vector([dx, dy])
 
@@ -817,9 +816,8 @@ class Tracer:
             )
 
             # Compute the ray's xy-plane slope
-            dx = ti.cos(
-                az_angle
-            )  # TODO: precompute as a lookup in init based off of n_azimuths?
+            # TODO: precompute as a lookup in init based off of n_azimuths?
+            dx = ti.cos(az_angle)
             dy = ti.sin(az_angle)
             slope = ti.Vector([dx, dy])
 
@@ -949,9 +947,8 @@ class Tracer:
             )
 
             # Compute the ray's xy-plane slope
-            dx = ti.cos(
-                az_angle
-            )  # TODO: precompute as a lookup in init based off of n_azimuths?
+            # TODO: precompute as a lookup in init based off of n_azimuths?
+            dx = ti.cos(az_angle)
             dy = ti.sin(az_angle)
             slope = ti.Vector([dx, dy])
 
