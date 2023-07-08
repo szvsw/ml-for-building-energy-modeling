@@ -936,9 +936,9 @@ class Tracer:
             # get the xyz sensor's height
             xyz_sensor_height = self.xyz_sensors[sensor_ix].height
 
-            el_angle = self.elevations[
-                el_ix
-            ]  # TODO: precompute these? or store slopes?
+            # Get Az/El Angles
+            # TODO: precompute these? or store slopes?
+            el_angle = self.elevations[el_ix]
 
             az_angle = (
                 self.azimuths[az_ix]
