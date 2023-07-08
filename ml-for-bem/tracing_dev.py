@@ -92,6 +92,8 @@ class Tracer:
     f2f_height: float  # meters, floor-to-floor height
     max_ray_length: float  # meters, how far to trace each ray before giving up
     ray_step_size: float  # meters, how far to advance with each ray step
+    n_azimuths: int  # number of azimuthal angles to use per sensor (from 0 to 180)
+    n_elevations: int  # number of elevation angles to use (counting zero, excluding zenith)
 
     n_ray_steps: int  # computed, max_ray_length / ray_step_size
 
@@ -114,6 +116,8 @@ class Tracer:
         f2f_height: float = 3,
         max_ray_length: float = 400.0,
         ray_step_size: float = 1.0,
+        n_azimuths: int = 48,
+        n_elevations: int = 16,
         convert_crs=False,
     ):
         # TODO: add meter conversion, better crs validation/conversion
@@ -241,7 +245,7 @@ class Tracer:
 
         # Build a dynamic list of hits per ray
         logger.info("Building dynamic hit tracking data structure...")
-        self.n_azimuths = 48  # TODO: make this an init arg
+        self.n_azimuths = n_azimuths
         self.azimuth_inc = 2 * np.pi / (self.n_azimuths * 2)
         self.sensor_root = ti.root.dense(ti.i, sensor_count)
         self.ray_root = self.sensor_root.dense(ti.j, self.n_azimuths)
@@ -249,12 +253,12 @@ class Tracer:
             ti.k,
             2 ** (int(np.ceil(np.log2(self.n_ray_steps)))),
             chunk_size=64,
-        )  # TODO: big performance hit on gpu
+        )  # TODO: using dynamic lists causes big performance hit on gpu
         self.hits = Hit.field()
         self.hit_block.place(self.hits)
 
         # Build
-        self.n_elevations = 16  # TODO: make this an init arg
+        self.n_elevations = n_elevations
         self.elevation_inc = 0.5 * np.pi / self.n_elevations
 
         # Init xy sensor locations
@@ -286,9 +290,7 @@ class Tracer:
             ti.jk, (self.n_azimuths, self.n_elevations)
         )
 
-        self.xyz_views = ti.field(
-            dtype=uint1
-        )  # TODO: use a quantized data type with a single bit (uint1)
+        self.xyz_views = ti.field(dtype=uint1)
         self.ui1bitpacker = ti.BitpackedFields(max_num_bits=32)
         self.ui1bitpacker.place(self.xyz_views)
         self.xyz_view_root.place(self.ui1bitpacker)
