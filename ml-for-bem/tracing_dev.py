@@ -377,6 +377,10 @@ class Tracer:
         ti.sync()
         logger.info("XYZ tracing complete.")
 
+        logger.info("Assemble results...")
+        self.assemble_results_df()
+
+        # Visualization
         self.sensor_3d_points = ti.Vector.field(3, dtype=float, shape=xyz_sensor_count)
         self.sensor_3d_colors = ti.Vector.field(3, dtype=float, shape=xyz_sensor_count)
         self.sensor_3d_rays = ti.Vector.field(
@@ -426,6 +430,46 @@ class Tracer:
             self.scene.set_camera(self.camera)
             self.canvas.scene(self.scene)
             self.window.show()
+
+    def assemble_results_df(self):
+        results_df = pd.DataFrame(
+            {
+                "XYZSensor ID": np.arange(self.xyz_sensors.shape[0]),
+                "Radiation": self.xyz_sensors.rad.to_numpy(),
+                "XYSensor ID": self.xyz_sensors.parent_sensor_id.to_numpy(),
+            }
+        )
+        xy_sensors_df = pd.DataFrame(
+            {
+                "XYSensor ID": np.arange(self.xy_sensors.shape[0]),
+                "Edge ID": self.xy_sensors.parent_edge_id.to_numpy(),
+            }
+        )
+
+        edges_df = pd.DataFrame(
+            {
+                "Edge ID": np.arange(self.edges.shape[0]),
+                "Orientation": self.edges.orientation.to_numpy(),
+                "Building ID": self.edges.building_id.to_numpy(),
+            }
+        )
+        buildings_df = pd.DataFrame(
+            {
+                "Building ID": np.arange(self.buildings.shape[0]),
+                "Archetype ID": self.buildings.archetype_ix.to_numpy(),
+            }
+        )
+        self.results_df = (
+            results_df.merge(
+                xy_sensors_df,
+                on="XYSensor ID",
+            )
+            .merge(
+                edges_df,
+                on="Edge ID",
+            )
+            .merge(buildings_df, on="Building ID")
+        )
 
     def init_buildings(self):
         self.buildings = Building.field(shape=len(self.gdf))
@@ -1227,6 +1271,9 @@ if __name__ == "__main__":
     ti.sync()
     tracer.print_column_stats(0)
     ti.sync()
+
+    tracer.assemble_results_df()
+    print(tracer.results_df)
 
     tracer.init_gui()
     tracer.render_scene()
