@@ -20,6 +20,8 @@ logger = logging.getLogger("Radiation Analysis")
 logger.setLevel(logging.INFO)
 
 # TODO: deal with collinear edges which result in sensors inside neighboring building!
+# TODO: azimuth angles should be starting at absolute not relative angles
+# TODO: consider implementing computation skipping using lower sensors/elevation angles to infer upper values
 
 # Declare a quantized datatype
 uint1 = ti.types.quant.int(1, signed=False)
@@ -88,10 +90,12 @@ class Tracer:
     # TODO: make sure all class attrs are represented here
     node_width: float  # meters, determines scene xy discretization
     sensor_inset: float  # meters, how far the first/last sensors ust be from edge endpoint
+    sensor_normal_offset: float  # meters, how far the sensors are moved off the parent surface
     sensor_spacing: float  # meters, gap between sensors
     f2f_height: float  # meters, floor-to-floor height
     max_ray_length: float  # meters, how far to trace each ray before giving up
     ray_step_size: float  # meters, how far to advance with each ray step
+    steps_per_unroll_loop: int  # when performing gpu xyplane tracing to find all hits, this allows for non divergence
     n_azimuths: int  # number of azimuthal angles to use per sensor (from 0 to 180)
     n_elevations: int  # number of elevation angles to use (counting zero, excluding zenith)
 
@@ -100,6 +104,11 @@ class Tracer:
     depth: int  # quadtree level count
     levels: List[ti.SNode]  # pointers to each 2x2 level of the quadtree
     nodes: ti.StructField  # stores the height of each populated node in the quadtree
+    edges: ti.StructField  # stores the semantic edge objects in a flattened list
+    xy_sensors: ti.StructField  # stores the semantic xy plane sensor objects in a flattened list
+    syz_sensors: ti.StructField  # stores the semantic xyz plane sensor objects in a flattened list
+    azimuths: ti.ScalarField  # stores precomputed aziuths
+    elevations: ti.ScalarField  # stores precomputed elevations
 
     gdf: gpd.GeoDataFrame
     height_col: str
@@ -112,12 +121,14 @@ class Tracer:
         id_col: str,
         node_width: float = 1,
         sensor_inset: float = 0.5,
+        sensor_normal_offset: float = 1.5,
         sensor_spacing: float = 1,
         f2f_height: float = 3,
         max_ray_length: float = 400.0,
         ray_step_size: float = 1.0,
         n_azimuths: int = 48,
         n_elevations: int = 16,
+        steps_per_unroll_loop: int = 100,
         convert_crs=False,
     ):
         # TODO: add meter conversion, better crs validation/conversion
@@ -131,12 +142,13 @@ class Tracer:
 
         # store the sensor grid config
         self.sensor_inset = sensor_inset
+        self.sensor_normal_offset = sensor_normal_offset
         self.sensor_spacing = sensor_spacing
         self.f2f_height = f2f_height
         self.max_ray_length = max_ray_length
         self.ray_step_size = ray_step_size
         self.n_ray_steps = int(self.max_ray_length / ray_step_size)
-        self.steps_per_unroll_loop = 100  # TODO: add to init args
+        self.steps_per_unroll_loop = steps_per_unroll_loop
         N_LOOPS_TO_UNROLL = int(
             np.ceil(self.n_ray_steps / self.steps_per_unroll_loop)
         )  # TODO: this should be a class property but it throws an error in the static unroll command in the kernel if so
@@ -243,10 +255,16 @@ class Tracer:
         sensor_count = self.edge_sensor_parent_ix.shape[0]
         logger.info(f"XY sensor count: {sensor_count}")
 
+        # Precompute azimuths
+        logger.info(f"Initializing azimuths...")
+        self.n_azimuths = n_azimuths
+        self.azimuths = ti.field(float, shape=self.n_azimuths)
+        self.azimuth_inc = 2 * np.pi / (self.n_azimuths * 2)
+        azimuths = np.arange(self.n_azimuths) * self.azimuth_inc
+        self.azimuths.from_numpy(azimuths)
+
         # Build a dynamic list of hits per ray
         logger.info("Building dynamic hit tracking data structure...")
-        self.n_azimuths = n_azimuths
-        self.azimuth_inc = 2 * np.pi / (self.n_azimuths * 2)
         self.sensor_root = ti.root.dense(ti.i, sensor_count)
         self.ray_root = self.sensor_root.dense(ti.j, self.n_azimuths)
         self.hit_block = self.ray_root.dynamic(
@@ -257,10 +275,6 @@ class Tracer:
         self.hits = Hit.field()
         self.hit_block.place(self.hits)
 
-        # Build
-        self.n_elevations = n_elevations
-        self.elevation_inc = 0.5 * np.pi / self.n_elevations
-
         # Init xy sensor locations
         logger.info("Initializing xy-plane sensors...")
         self.xy_sensors = (
@@ -270,7 +284,16 @@ class Tracer:
         self.init_xy_sensors()
         ti.sync()
 
+        # Building elevations
+        logger.info(f"Initializing elevations...")
+        self.n_elevations = n_elevations
+        self.elevations = ti.field(float, shape=self.n_elevations)
+        self.elevation_inc = 0.5 * np.pi / self.n_elevations
+        elevations = np.arange(self.n_elevations) * self.elevation_inc
+        self.elevations.from_numpy(elevations)
+
         # Determine how many xyz sensors are needed for data collection
+        logger.info("Initializing xyz sensors...")
         xyz_cts = self.xy_sensors.xyz_sensor_ct.to_numpy()
         xyz_ends = np.cumsum(xyz_cts)  # use cumulative sums so that a sensor
         xyz_starts = np.roll(xyz_ends, shift=1)
@@ -282,7 +305,6 @@ class Tracer:
 
         xyz_sensor_count = xy_sensor_parent_ix.shape[0]
         logger.info(f"XYZ sensor count: {xyz_sensor_count}")
-        logger.info("Initializing xyz sensors...")
         self.xyz_sensors = XYZSensor.field()
         self.xyz_sensor_root = ti.root.dense(ti.i, xyz_sensor_count)
         self.xyz_sensor_root.place(self.xyz_sensors)
@@ -298,7 +320,6 @@ class Tracer:
 
         self.init_xyz_sensors()
         ti.sync()
-        # TODO: add n_azimuths and then n_elevations tree branches to skip compute
 
         logger.info(f"XY rays: {sensor_count * self.n_azimuths}")
         xyz_ray_ct = xyz_sensor_count * self.n_azimuths * self.n_elevations
@@ -511,7 +532,6 @@ class Tracer:
         updates that node's height accordingly.
         """
         for edge_ix in self.edges:
-            # TODO: Update if edges switch to a dataclass representation
             # extract the endpoints/data
             edge = self.edges[edge_ix]
             x0 = edge.start.x
@@ -594,10 +614,10 @@ class Tracer:
             normal = edge.normal
 
             # Set the new location by moving along edge the appropriate amount
-            # and then 1.5m away from the wall following the normal
+            # and then an offset distance away from the wall following the normal
             self.xy_sensors[sensor_ix].loc = (
-                start_loc + distance + normal * 1.5
-            )  # TODO: make the offset distance a class attr
+                start_loc + distance + normal * self.sensor_normal_offset
+            )
 
             # Store the parent id
             self.xy_sensors[sensor_ix].xyz_sensor_ct = edge.n_floors
@@ -632,7 +652,7 @@ class Tracer:
                 sensor = self.xy_sensors[sensor_ix]
 
                 az_angle = (
-                    self.azimuth_inc * az_ix
+                    self.azimuths[az_ix]
                     + self.edges[sensor.parent_edge_id].az_start_angle
                 )
 
@@ -691,8 +711,7 @@ class Tracer:
             sensor = self.xy_sensors[sensor_ix]
 
             az_angle = (
-                self.azimuth_inc * az_ix
-                + self.edges[sensor.parent_edge_id].az_start_angle
+                self.azimuths[az_ix] + self.edges[sensor.parent_edge_id].az_start_angle
             )
 
             # Compute the ray's xy-plane slope
@@ -772,9 +791,9 @@ class Tracer:
             # determine how many hits need to be checked based off of xy sensors hit table
             # n_hits_to_check = self.hits[parent_sensor_id, az_ix].length()
             n_hits_to_check = self.xy_sensors[parent_sensor_id].hit_count
-            el_angle = (
-                el_ix * self.elevation_inc
-            )  # TODO: precompute these? or store slopes?
+            el_angle = self.elevations[
+                el_ix
+            ]  # TODO:  or store and use slopes?
 
             # Initiate an iterator so we can bail out early
             # via a while loop, rather than using automatic iteration
@@ -820,12 +839,12 @@ class Tracer:
             # get the xyz sensor's height
             xyz_sensor_height = self.xyz_sensors[sensor_ix].height
 
-            el_angle = (
-                el_ix * self.elevation_inc
-            )  # TODO: precompute these? or store slopes?
+            el_angle = self.elevations[
+                el_ix
+            ]  # TODO: precompute these? or store slopes?
 
             az_angle = (
-                self.azimuth_inc * az_ix
+                self.azimuths[az_ix]
                 + self.edges[parent_sensor.parent_edge_id].az_start_angle
             )
 
@@ -951,12 +970,12 @@ class Tracer:
             # get the xyz sensor's height
             xyz_sensor_height = self.xyz_sensors[sensor_ix].height
 
-            el_angle = (
-                el_ix * self.elevation_inc
-            )  # TODO: precompute these? or store slopes?
+            el_angle = self.elevations[
+                el_ix
+            ]  # TODO: or store and use slopes?
 
             az_angle = (
-                self.azimuth_inc * az_ix
+                self.azimuths[az_ix]
                 + self.edges[parent_sensor.parent_edge_id].az_start_angle
             )
 
@@ -1078,7 +1097,7 @@ class Tracer:
                 pts[az_ix] = loc
             else:
                 az_angle = (
-                    self.azimuth_inc * az_ix
+                    self.azimuths[az_ix]
                     + self.edges[
                         self.xy_sensors[sensor_ix].parent_edge_id
                     ].az_start_angle
