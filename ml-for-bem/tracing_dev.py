@@ -32,7 +32,7 @@ class Node:
 
 @ti.dataclass
 class Edge:
-    building_id: ti.int16  # TODO: add an assertion which checks for fewer than 2**16-1 buildings
+    building_id: ti.int16
 
     start: ti.math.vec2
     end: ti.math.vec2
@@ -86,13 +86,14 @@ N_LOOPS_TO_UNROLL = 1
 @ti.data_oriented
 class Tracer:
     # TODO: make sure all class attrs are represented here
-    node_width: float  # meters
-    sensor_inset: float  # meters
-    sensor_spacing: float  # meters
-    f2f_height: float  # floor-to-floor height, meters
-    max_ray_length: float  # meters
-    ray_step_size: float  # meters
-    n_ray_steps: int
+    node_width: float  # meters, determines scene xy discretization
+    sensor_inset: float  # meters, how far the first/last sensors ust be from edge endpoint
+    sensor_spacing: float  # meters, gap between sensors
+    f2f_height: float  # meters, floor-to-floor height
+    max_ray_length: float  # meters, how far to trace each ray before giving up
+    ray_step_size: float  # meters, how far to advance with each ray step
+
+    n_ray_steps: int  # computed, max_ray_length / ray_step_size
 
     depth: int  # quadtree level count
     levels: List[ti.SNode]  # pointers to each 2x2 level of the quadtree
@@ -140,6 +141,9 @@ class Tracer:
         self.gdf: gpd.GeoDataFrame = gpd.read_file(
             filepath
         )  # nb: assumes a flattened projection already holds.
+        assert (
+            len(self.gdf) < 2**16
+        ), f"Currently, only {2**16-1} buildings are supported, but this GIS file has {len(self.gdf)} buildings."
         if convert_crs:
             logger.info("Converting crs...")
             self.gdf = self.gdf.to_crs("EPSG:32633")
