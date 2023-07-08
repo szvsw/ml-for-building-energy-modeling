@@ -13,8 +13,7 @@ from shapely import Polygon, LineString, MultiPoint, Point
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)
-ti.init(arch=ti.gpu, device_memory_fraction=0.5, kernel_profiler=True)
-uint1 = ti.types.quant.int(1, signed=False)
+ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True)
 
 logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
@@ -22,8 +21,10 @@ logger.setLevel(logging.INFO)
 
 # TODO: deal with collinear edges which result in sensors inside neighboring building!
 
+# Declare a quantized datatype
+uint1 = ti.types.quant.int(1, signed=False)
 
-# TODO: migrate node_heights field to a Node.field()
+
 @ti.dataclass
 class Node:
     height: float
@@ -31,7 +32,7 @@ class Node:
 
 @ti.dataclass
 class Edge:
-    # building_id: ti.int16 # TODO: add an assertion which checks for fewer than 2**16-1 buildings
+    building_id: ti.int16  # TODO: add an assertion which checks for fewer than 2**16-1 buildings
 
     start: ti.math.vec2
     end: ti.math.vec2
@@ -84,6 +85,7 @@ N_LOOPS_TO_UNROLL = 1
 
 @ti.data_oriented
 class Tracer:
+    # TODO: make sure all class attrs are represented here
     node_width: float  # meters
     sensor_inset: float  # meters
     sensor_spacing: float  # meters
@@ -94,14 +96,7 @@ class Tracer:
 
     depth: int  # quadtree level count
     levels: List[ti.SNode]  # pointers to each 2x2 level of the quadtree
-    node_heights: ti.ScalarField  # stores the height of each populated node in the quadtree
-
-    # TODO: make sure all class attrs are represented here
-    edge_starts: ti.ScalarField
-    edge_ends: ti.ScalarField
-    edge_slopes: ti.ScalarField
-    edge_heights: ti.ScalarField
-    edge_normals: ti.ScalarField
+    nodes: ti.StructField  # stores the height of each populated node in the quadtree
 
     gdf: gpd.GeoDataFrame
     height_col: str
@@ -169,7 +164,7 @@ class Tracer:
         )
 
         base_gdf = self.gdf.copy()
-        tile_ct = 0
+        tile_ct = 14
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -225,8 +220,8 @@ class Tracer:
         #     self.levels.append(level)
 
         # create a struct field and place it
-        self.node_heights = ti.field(float)
-        self.tree_leaves.place(self.node_heights)
+        self.nodes = Node.field()
+        self.tree_leaves.place(self.nodes)
 
         # Extract edges into Fields
         logger.info("Extracting edges...")
@@ -432,6 +427,7 @@ class Tracer:
                     np.ones(points.shape[0]) * self.gdf[self.height_col][i]
                 )  # TODO: these could be found via a building parent ref
                 n_floors.append(np.ones(points.shape[0]) * self.gdf["N_FLOORS"][i])
+                building_ids.append(np.ones(points.shape[0]) * i)
                 normals.append(normal)
 
         # Create flattened list of all edge data (i.e. flattened over buildings axis)
@@ -441,6 +437,7 @@ class Tracer:
         normals = np.vstack(normals)
         heights = np.concatenate(heights)
         n_floors = np.concatenate(n_floors)
+        building_ids = np.concatenate(building_ids)
 
         # Determine necessary sensor count per edge
         lengths = np.linalg.norm(starts - ends, axis=1)
@@ -450,31 +447,21 @@ class Tracer:
         sensor_starts = np.roll(sensor_ends, shift=1)
         sensor_starts[0] = 0
 
-        # Create the fields
-        self.edge_starts = ti.field(float, shape=starts.shape)
-        self.edge_ends = ti.field(float, shape=ends.shape)
-        self.edge_slopes = ti.field(float, shape=run_rises.shape)
-        self.edge_heights = ti.field(float, shape=heights.shape)
-        self.edge_normals = ti.field(float, shape=normals.shape)
-        self.edge_n_floors = ti.field(float, shape=n_floors.shape)
-        self.edge_sensor_starts = ti.field(int, shape=sensor_starts.shape)
-        self.edge_sensor_ends = ti.field(int, shape=sensor_ends.shape)
-        self.edge_sensor_counts = ti.field(int, shape=sensor_counts.shape)
-
-        # Copy the numpy data over
-        self.edge_starts.from_numpy(starts)
-        self.edge_ends.from_numpy(ends)
-        self.edge_slopes.from_numpy(run_rises)
-        self.edge_heights.from_numpy(heights)
-        self.edge_n_floors.from_numpy(n_floors)
-        self.edge_normals.from_numpy(normals)
-        self.edge_sensor_starts.from_numpy(sensor_starts)
-        self.edge_sensor_ends.from_numpy(sensor_ends)
-        self.edge_sensor_counts.from_numpy(sensor_counts)
-
-        # Create the semantic edge objects in a dense struct field for better memory access
-        self.edges = Edge.field(shape=self.edge_heights.shape)
-        self.make_edges()
+        # Create the semantic edge objects in a dense flat struct field for better memory access
+        self.edges = Edge.field(shape=heights.shape)
+        # Load the scalar fields
+        self.edges.building_id.from_numpy(building_ids)
+        self.edges.height.from_numpy(heights)
+        self.edges.n_floors.from_numpy(n_floors)
+        self.edges.start.from_numpy(starts)
+        self.edges.end.from_numpy(ends)
+        self.edges.slopevec.from_numpy(run_rises)
+        self.edges.normal.from_numpy(normals)
+        self.edges.sensor_start_ix.from_numpy(sensor_starts)
+        self.edges.sensor_end_ix.from_numpy(sensor_ends)
+        self.edges.sensor_ct.from_numpy(sensor_counts)
+        ti.sync()
+        self.update_edge_properties()
         ti.sync()
 
         # This array will allow non-divergent sensor construction
@@ -486,54 +473,30 @@ class Tracer:
         self.edge_sensor_parent_ix.from_numpy(sensor_parent_ix)
 
     @ti.kernel
-    def make_edges(self):
+    def update_edge_properties(self):
+        """
+        Update computed edge properties
+        """
         for edge_ix in self.edges:
             # extract the endpoints/data
-            x0 = self.edge_starts[edge_ix, 0]
-            y0 = self.edge_starts[edge_ix, 1]
-            x1 = self.edge_ends[edge_ix, 0]
-            y1 = self.edge_ends[edge_ix, 1]
-            xn = self.edge_normals[edge_ix, 0]
-            yn = self.edge_normals[edge_ix, 1]
-            xm = self.edge_slopes[edge_ix, 0]
-            ym = self.edge_slopes[edge_ix, 1]
-            h = self.edge_heights[edge_ix]
-            n_floors = self.edge_n_floors[edge_ix]
-
-            sensor_start_ix = self.edge_sensor_starts[edge_ix]
-            sensor_end_ix = self.edge_sensor_ends[edge_ix]
-            sensor_ct = self.edge_sensor_counts[edge_ix]
-
-            # make vectors
-            normal = ti.Vector([xn, yn])
-            start = ti.Vector([x0, y0])
-            end = ti.Vector([x1, y1])
-            slopevec = ti.Vector([xm, ym])
 
             # compute slope
+            xm = self.edges[edge_ix].slopevec.x
+            ym = self.edges[edge_ix].slopevec.y
             slope = ym / xm  # TODO: handle vert/hor lines
 
             # Compute the normal angle
+            xn = self.edges[edge_ix].normal.x
+            yn = self.edges[edge_ix].normal.y
             normal_theta = ti.atan2(yn, xn)
 
             # Compute the azimuth start angle for any sensor placed on this edge
             az_start_angle = normal_theta - np.pi * 0.5
 
-            # Create the edge object
-            self.edges[edge_ix] = Edge(
-                start=start,
-                end=end,
-                slopevec=slopevec,
-                slope=slope,
-                normal=normal,
-                normal_theta=normal_theta,
-                az_start_angle=az_start_angle,
-                height=h,
-                n_floors=n_floors,
-                sensor_start_ix=sensor_start_ix,
-                sensor_end_ix=sensor_end_ix,
-                sensor_ct=sensor_ct,
-            )
+            # Update the edge object
+            self.edges[edge_ix].slope = slope
+            self.edges[edge_ix].normal_theta = normal_theta
+            self.edges[edge_ix].az_start_angle = az_start_angle
 
     @ti.kernel
     def add_edges_to_tree(self):
@@ -581,8 +544,8 @@ class Tracer:
                 y_ix = ti.floor(y, int)  # TODO: currently only supports node width of 1
 
                 # Add height to quadtree if the edge is taller than the existing edge
-                ti.atomic_max(self.node_heights[x - 1, y_ix], h)  # update left node
-                ti.atomic_max(self.node_heights[x, y_ix], h)  # update right node
+                ti.atomic_max(self.nodes[x - 1, y_ix].height, h)  # update left node
+                ti.atomic_max(self.nodes[x, y_ix].height, h)  # update right node
 
             for y_int_ix in range(n_y_thresholds):
                 y = y_start + y_int_ix  # TODO: currently only supports node width of 1
@@ -590,8 +553,8 @@ class Tracer:
                 x_ix = ti.floor(x, int)  # TODO: currently only supports node width of 1
 
                 # Add height to quadtree if the edge is taller than the existing edge
-                ti.atomic_max(self.node_heights[x_ix, y - 1], h)  # update lower node
-                ti.atomic_max(self.node_heights[x_ix, y], h)  # update upper node
+                ti.atomic_max(self.nodes[x_ix, y - 1].height, h)  # update lower node
+                ti.atomic_max(self.nodes[x_ix, y].height, h)  # update upper node
 
     @ti.kernel
     def init_xy_sensors(self):
@@ -700,7 +663,7 @@ class Tracer:
                     # Check if node is active
                     if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
                         # Get the node height and register a hit
-                        node_height = self.node_heights[x_loc_ix, y_loc_ix]
+                        node_height = self.nodes[x_loc_ix, y_loc_ix].height
                         # TODO: this is causing a large performance hit on gpu backend
                         self.hits[sensor_ix, az_ix].append(
                             Hit(
@@ -759,7 +722,7 @@ class Tracer:
                 # Check if node is active
                 if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
                     # Get the node height and register a hit
-                    node_height = self.node_heights[x_loc_ix, y_loc_ix]
+                    node_height = self.nodes[x_loc_ix, y_loc_ix].height
                     # TODO: this is causing a large performance hit on gpu backend
                     self.hits[sensor_ix, az_ix].append(
                         Hit(
@@ -912,7 +875,7 @@ class Tracer:
             # Check if node is active
             if ti.is_active(self.tree_leaves, [x_loc_ix, y_loc_ix]) == 1:
                 # Get the height of the node in the xy plane
-                node_height = self.node_heights[x_loc_ix, y_loc_ix]
+                node_height = self.nodes[x_loc_ix, y_loc_ix].height
 
                 # Compute the height difference to the edge crossed
                 height_diff = node_height - xyz_sensor_height
@@ -1282,9 +1245,7 @@ if __name__ == "__main__":
                 text="X Offset",
                 old_value=x_offset,
                 minimum=0,
-                maximum=int(
-                    tracer.node_heights.shape[0] - zoom * tracer.node_heights.shape[0]
-                ),
+                maximum=int(tracer.nodes.shape[0] - zoom * tracer.nodes.shape[0]),
             )
             if old_x_offset != x_offset:
                 controls_changed = True
@@ -1294,9 +1255,7 @@ if __name__ == "__main__":
                 text="Y Offset",
                 old_value=y_offset,
                 minimum=0,
-                maximum=int(
-                    tracer.node_heights.shape[0] - zoom * tracer.node_heights.shape[0]
-                ),
+                maximum=int(tracer.nodes.shape[0] - zoom * tracer.nodes.shape[0]),
             )
             if old_y_offset != y_offset:
                 controls_changed = True
@@ -1313,21 +1272,21 @@ if __name__ == "__main__":
                 zoom_pan_pts_kernel(
                     source_pts=circs,
                     zoom=zoom,
-                    zoom_base=tracer.node_heights.shape[0],
+                    zoom_base=tracer.nodes.shape[0],
                     x_offset=x_offset,
                     y_offset=y_offset,
                 )
                 zoom_pan_pts_kernel(
                     source_pts=hit_verts,
                     zoom=zoom,
-                    zoom_base=tracer.node_heights.shape[0],
+                    zoom_base=tracer.nodes.shape[0],
                     x_offset=x_offset,
                     y_offset=y_offset,
                 )
                 zoom_pan_pts_kernel(
                     source_pts=borderline_verts,
                     zoom=zoom,
-                    zoom_base=tracer.node_heights.shape[0],
+                    zoom_base=tracer.nodes.shape[0],
                     x_offset=x_offset,
                     y_offset=y_offset,
                 )
