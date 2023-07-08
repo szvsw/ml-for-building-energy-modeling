@@ -13,7 +13,7 @@ from shapely import Polygon, LineString, MultiPoint, Point
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)
-ti.init(arch=ti.gpu, device_memory_fraction=0.9, kernel_profiler=True)
+ti.init(arch=ti.gpu, device_memory_fraction=0.5, kernel_profiler=True)
 uint1 = ti.types.quant.int(1, signed=False)
 
 logging.basicConfig()
@@ -169,7 +169,7 @@ class Tracer:
         )
 
         base_gdf = self.gdf.copy()
-        tile_ct = 14
+        tile_ct = 0
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -327,25 +327,26 @@ class Tracer:
 
         self.sensor_3d_points = ti.Vector.field(3, dtype=float, shape=xyz_sensor_count)
         self.sensor_3d_colors = ti.Vector.field(3, dtype=float, shape=xyz_sensor_count)
-        self.sensor_3d_rays = ti.Vector.field(3, dtype=float, shape=2*(self.n_azimuths*self.n_elevations))
+        self.sensor_3d_rays = ti.Vector.field(
+            3, dtype=float, shape=2 * (self.n_azimuths * self.n_elevations)
+        )
         self.load_3d_points()
         self.load_3d_sensor_rays(0)
 
         ti.profiler.print_kernel_profiler_info()
 
     def init_gui(self):
-        self.window = ti.ui.Window("UMI RayTrace", (1024, 1024), pos=(100,100))
+        self.window = ti.ui.Window("UMI RayTrace", (1024, 1024), pos=(100, 100))
         self.gui = self.window.get_gui()
         self.canvas = self.window.get_canvas()
         self.scene = ti.ui.Scene()
         self.camera = ti.ui.Camera()
-        self.camera.up(0,1,0)
-        self.camera.position(0,10,0)
-        self.camera.lookat(1,10,1)
-    
+        self.camera.up(0, 1, 0)
+        self.camera.position(0, 10, 0)
+        self.camera.lookat(1, 10, 1)
 
     def render_scene(self):
-        sensor_ix=0
+        sensor_ix = 0
         controls_changed = True
         while self.window.running:
             with self.gui.sub_window("Sensor selector", 0.1, 0.1, 0.8, 0.15):
@@ -358,14 +359,18 @@ class Tracer:
                 )
                 if old_ix != sensor_ix:
                     controls_changed = True
-                
+
                 if controls_changed:
                     self.load_3d_sensor_rays(sensor_ix)
                     controls_changed = False
             self.camera.track_user_inputs(self.window, hold_key=ti.ui.RMB)
-            self.scene.ambient_light((1,1,1))
-            self.scene.particles(self.sensor_3d_points, radius=0.2, per_vertex_color=self.sensor_3d_colors)
-            self.scene.lines(self.sensor_3d_rays, width=1, color=(1,1,1))
+            self.scene.ambient_light((1, 1, 1))
+            self.scene.particles(
+                self.sensor_3d_points,
+                radius=0.2,
+                per_vertex_color=self.sensor_3d_colors,
+            )
+            self.scene.lines(self.sensor_3d_rays, width=1, color=(1, 1, 1))
             self.scene.set_camera(self.camera)
             self.canvas.scene(self.scene)
             self.window.show()
@@ -875,8 +880,13 @@ class Tracer:
                 # TODO: track hit location
 
     @ti.func
-    def trace_xyz_ray(self, start: ti.math.vec2, slope: ti.math.vec2, el_angle: float, xyz_sensor_height: float) -> float:
-
+    def trace_xyz_ray(
+        self,
+        start: ti.math.vec2,
+        slope: ti.math.vec2,
+        el_angle: float,
+        xyz_sensor_height: float,
+    ) -> float:
         # Tracker for ray extension
         ray_step_ix = 0.0
 
@@ -934,7 +944,7 @@ class Tracer:
                 and (next_loc.y < self.length)
                 and distance < self.max_ray_length
             )
-        
+
         if hit_found == 0:
             distance = -1
         # TODO: this is bad!
@@ -944,14 +954,23 @@ class Tracer:
     def load_3d_points(self):
         for sensor_ix in self.xyz_sensors:
             xyz_sensor = self.xyz_sensors[sensor_ix]
-            parent_xy_sen = self.xy_sensors[self.xyz_sensors[sensor_ix].parent_sensor_id]
+            parent_xy_sen = self.xy_sensors[
+                self.xyz_sensors[sensor_ix].parent_sensor_id
+            ]
             self.sensor_3d_points[sensor_ix].x = parent_xy_sen.loc.x
             self.sensor_3d_points[sensor_ix].y = xyz_sensor.height
             self.sensor_3d_points[sensor_ix].z = parent_xy_sen.loc.y
             self.sensor_3d_colors[sensor_ix].x = 0.5
-            self.sensor_3d_colors[sensor_ix].y = ti.min(ti.max((xyz_sensor.rad - 650.0) / (self.n_azimuths * self.n_elevations - 650),0.0),1.0)
+            self.sensor_3d_colors[sensor_ix].y = ti.min(
+                ti.max(
+                    (xyz_sensor.rad - 650.0)
+                    / (self.n_azimuths * self.n_elevations - 650),
+                    0.0,
+                ),
+                1.0,
+            )
             self.sensor_3d_colors[sensor_ix].z = 0.5
-    
+
     @ti.kernel
     def load_3d_sensor_rays(self, sensor_ix: int):
         for az_ix, el_ix in ti.ndrange(self.n_azimuths, self.n_elevations):
@@ -986,38 +1005,62 @@ class Tracer:
 
             if distance < 0:
                 # hide the ray by setting the target to the source
-                self.sensor_3d_rays[2*ray_ix].x = parent_sensor.loc.x
-                self.sensor_3d_rays[2*ray_ix].y = xyz_sensor_height
-                self.sensor_3d_rays[2*ray_ix].z = parent_sensor.loc.y
+                self.sensor_3d_rays[2 * ray_ix].x = parent_sensor.loc.x
+                self.sensor_3d_rays[2 * ray_ix].y = xyz_sensor_height
+                self.sensor_3d_rays[2 * ray_ix].z = parent_sensor.loc.y
             else:
                 # the ray hit something
-                self.sensor_3d_rays[2*ray_ix].x = distance * slope.x + parent_sensor.loc.x
-                self.sensor_3d_rays[2*ray_ix].y = xyz_sensor_height + ti.tan(el_angle) * ti.sqrt(slope.x*slope.x + slope.y*slope.y)*distance
-                self.sensor_3d_rays[2*ray_ix].z = distance * slope.y + parent_sensor.loc.y
-            
-            self.sensor_3d_rays[2*ray_ix+1].x = parent_sensor.loc.x
-            self.sensor_3d_rays[2*ray_ix+1].y = xyz_sensor_height
-            self.sensor_3d_rays[2*ray_ix+1].z = parent_sensor.loc.y
+                self.sensor_3d_rays[2 * ray_ix].x = (
+                    distance * slope.x + parent_sensor.loc.x
+                )
+                self.sensor_3d_rays[2 * ray_ix].y = (
+                    xyz_sensor_height
+                    + ti.tan(el_angle)
+                    * ti.sqrt(slope.x * slope.x + slope.y * slope.y)
+                    * distance
+                )
+                self.sensor_3d_rays[2 * ray_ix].z = (
+                    distance * slope.y + parent_sensor.loc.y
+                )
 
-
+            self.sensor_3d_rays[2 * ray_ix + 1].x = parent_sensor.loc.x
+            self.sensor_3d_rays[2 * ray_ix + 1].y = xyz_sensor_height
+            self.sensor_3d_rays[2 * ray_ix + 1].z = parent_sensor.loc.y
 
     @ti.kernel
     def print_column_stats(self, xy_sensor: int):
+        """
+        Given an xy sensor, this function will print out the
+        stats for each of the xyz sensors in the column above it.
+        Useful for debugging.
+        """
         print(f"\ncolumn for xy sensor {xy_sensor}")
-        sensor = self.xy_sensors[xy_sensor]
-        xyz_s = sensor.xyz_sensor_start_ix
-        xyz_e = xyz_s + sensor.xyz_sensor_ct
-        for xyz_sensor_ix in range(xyz_s, xyz_e):
-            sen = self.xyz_sensors[xyz_sensor_ix]
-            print(f"Floor {xyz_sensor_ix}: {sen.rad} rad")
 
+        # Get the XY Sensor
+        sensor = self.xy_sensors[xy_sensor]
+
+        # Find where the stack of xyz sensors starts
+        xyz_s = sensor.xyz_sensor_start_ix
+
+        # Get the number of sensors above (from n floors)
+        xyz_e = xyz_s + sensor.xyz_sensor_ct
+
+        for xyz_sensor_ix in range(xyz_s, xyz_e):
+            # Get the corresponding sensor
+            sen = self.xyz_sensors[xyz_sensor_ix]
+            # Get the radiation
+            rad = sen.rad
+            print(f"Floor {xyz_sensor_ix}: {rad} rad")
         ti.sync()
+
+        # Check for hits for each individual ray
         for xyz_sensor_ix in range(xyz_s, xyz_e):
             sum = 0.0
             for az_ix, el_ix in ti.ndrange(self.n_azimuths, self.n_elevations):
+                # For each ray, check if it's a hit
                 if ti.is_active(self.xyz_view_root, [xyz_sensor_ix, az_ix, el_ix]) == 1:
                     sum = sum + 1
-            print(f"Floor {xyz_sensor_ix}: {sum} rad")
+            print(f"Floor {xyz_sensor_ix}: {sum} hits")
 
     def get_sensor_hits_as_im(self, sensor_ix: int) -> ti.ScalarField:
         im = ti.field(float, shape=(2**self.depth, 2**self.depth))
