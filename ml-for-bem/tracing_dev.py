@@ -4,12 +4,11 @@ from os import PathLike
 from typing import List, Union
 
 import taichi as ti
-from taichi.algorithms._algorithms import PrefixSumExecutor
 import numpy as np
 import geopandas as gpd
 import pandas as pd
 
-from shapely import Polygon, LineString, MultiPoint, Point
+from shapely import Polygon
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)
