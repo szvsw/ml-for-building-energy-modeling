@@ -43,7 +43,7 @@ class Edge:
     normal: ti.math.vec2
     normal_theta: float
     az_start_angle: float
-    height: float  # TODO: This could be rounded to save memory, e.g. uint16, or a quantized datatype e.g. uint10
+    height: float  # TODO: This could be rounded to save memory, or stored with a parent building, e.g. uint16, or a quantized datatype e.g. uint10
     n_floors: ti.int8
 
     sensor_start_ix: int  # TODO: should these be forced to 64 bit?
@@ -113,12 +113,14 @@ class Tracer:
     gdf: gpd.GeoDataFrame
     height_col: str
     id_col: str
+    archetype_col: str
 
     def __init__(
         self,
         filepath: Union[str, bytes, PathLike],
         height_col: str,
         id_col: str,
+        archetype_col: str,
         node_width: float = 1,
         sensor_inset: float = 0.5,
         sensor_normal_offset: float = 1.5,
@@ -165,12 +167,16 @@ class Tracer:
             self.gdf = self.gdf.to_crs("EPSG:32633")
         self.height_col = height_col
         self.id_col = id_col
+        self.archetype_col = archetype_col
         assert (
             height_col in self.gdf.columns
         ), f"The supplied height column '{height_col}' was not found in the GDF's columns: {self.gdf.columns}"
         assert (
             id_col in self.gdf.columns
         ), f"The supplied unique ID column '{id_col}' was not found in the GDF's columns: {self.gdf.columns}"
+        assert (
+            archetype_col in self.gdf.columns
+        ), f"The supplied archetype column '{archetype_col}' was not found in the GDF's columns: {self.gdf.columns}"
 
         # compute number of floors
         self.gdf["N_FLOORS"] = np.ceil(self.gdf[height_col].values / self.f2f_height)
@@ -791,9 +797,7 @@ class Tracer:
             # determine how many hits need to be checked based off of xy sensors hit table
             # n_hits_to_check = self.hits[parent_sensor_id, az_ix].length()
             n_hits_to_check = self.xy_sensors[parent_sensor_id].hit_count
-            el_angle = self.elevations[
-                el_ix
-            ]  # TODO:  or store and use slopes?
+            el_angle = self.elevations[el_ix]  # TODO:  or store and use slopes?
 
             # Initiate an iterator so we can bail out early
             # via a while loop, rather than using automatic iteration
@@ -970,9 +974,7 @@ class Tracer:
             # get the xyz sensor's height
             xyz_sensor_height = self.xyz_sensors[sensor_ix].height
 
-            el_angle = self.elevations[
-                el_ix
-            ]  # TODO: or store and use slopes?
+            el_angle = self.elevations[el_ix]  # TODO: or store and use slopes?
 
             az_angle = (
                 self.azimuths[az_ix]
