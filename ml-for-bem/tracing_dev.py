@@ -19,6 +19,7 @@ logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
 logger.setLevel(logging.INFO)
 
+# TODO: better parallelization of edge extraction
 # TODO: deal with collinear edges which result in sensors inside neighboring building!
 # TODO: azimuth angles should be starting at absolute not relative angles
 # TODO: consider implementing computation skipping using lower sensors/elevation angles to infer upper values
@@ -33,8 +34,19 @@ class Node:
 
 
 @ti.dataclass
+class Building:
+    height: float
+    n_floors: float
+    archetype_ix: ti.i8
+
+    edge_start_ix: int
+    edge_end_ix: int
+    edge_ct: int
+
+
+@ti.dataclass
 class Edge:
-    building_id: ti.int16
+    building_id: int
 
     start: ti.math.vec2
     end: ti.math.vec2
@@ -103,7 +115,8 @@ class Tracer:
 
     depth: int  # quadtree level count
     levels: List[ti.SNode]  # pointers to each 2x2 level of the quadtree
-    nodes: ti.StructField  # stores the height of each populated node in the quadtree
+    nodes: ti.StructField  # spatially sparse data structure which discretizes the xy plane and which contains heights when an edge crosses through a node
+    buildings: ti.StructField  # stores the semantic representation of a building
     edges: ti.StructField  # stores the semantic edge objects in a flattened list
     xy_sensors: ti.StructField  # stores the semantic xy plane sensor objects in a flattened list
     syz_sensors: ti.StructField  # stores the semantic xyz plane sensor objects in a flattened list
@@ -249,6 +262,10 @@ class Tracer:
         self.nodes = Node.field()
         self.tree_leaves.place(self.nodes)
 
+        # Create a field which represents the buildings
+        logger.info("Initializing buildings...")
+        self.init_buildings()
+
         # Extract edges into Fields
         logger.info("Extracting edges...")
         self.extract_flat_edge_list()
@@ -258,9 +275,6 @@ class Tracer:
         self.add_edges_to_tree()
         ti.sync()
 
-        sensor_count = self.edge_sensor_parent_ix.shape[0]
-        logger.info(f"XY sensor count: {sensor_count}")
-
         # Precompute azimuths
         logger.info(f"Initializing azimuths...")
         self.n_azimuths = n_azimuths
@@ -269,9 +283,25 @@ class Tracer:
         azimuths = np.arange(self.n_azimuths) * self.azimuth_inc
         self.azimuths.from_numpy(azimuths)
 
-        # Build a dynamic list of hits per ray
+        # Building elevations
+        logger.info(f"Initializing elevations...")
+        self.n_elevations = n_elevations
+        self.elevations = ti.field(float, shape=self.n_elevations)
+        self.elevation_inc = 0.5 * np.pi / self.n_elevations
+        elevations = np.arange(self.n_elevations) * self.elevation_inc
+        self.elevations.from_numpy(elevations)
+
+        # Determine number of xy sensors needed
+        logger.info("Determining XY Sensor count...")
+        edge_count = self.edges.shape[0]
+        sens_per_edge = self.edges.sensor_ct.to_numpy().astype(int)
+        sensor_parent_ix = np.repeat(np.arange(edge_count), sens_per_edge)
+        xy_sensor_count = sensor_parent_ix.shape[0]
+        logger.info(f"XY sensor count: {xy_sensor_count}")
+
+        # Construct Sensor data structures
         logger.info("Building dynamic hit tracking data structure...")
-        self.sensor_root = ti.root.dense(ti.i, sensor_count)
+        self.sensor_root = ti.root.dense(ti.i, xy_sensor_count)
         self.ray_root = self.sensor_root.dense(ti.j, self.n_azimuths)
         self.hit_block = self.ray_root.dynamic(
             ti.k,
@@ -280,23 +310,16 @@ class Tracer:
         )  # TODO: using dynamic lists causes big performance hit on gpu
         self.hits = Hit.field()
         self.hit_block.place(self.hits)
-
-        # Init xy sensor locations
-        logger.info("Initializing xy-plane sensors...")
         self.xy_sensors = (
             XYSensor.field()
         )  # TODO: Why do I have to place hit_block first for compilation to work?
         self.sensor_root.place(self.xy_sensors)
+
+        # Assign each sensor a parent id and then init data
+        logger.info("Initializing xy-plane sensors...")
+        self.xy_sensors.parent_edge_id.from_numpy(sensor_parent_ix)
         self.init_xy_sensors()
         ti.sync()
-
-        # Building elevations
-        logger.info(f"Initializing elevations...")
-        self.n_elevations = n_elevations
-        self.elevations = ti.field(float, shape=self.n_elevations)
-        self.elevation_inc = 0.5 * np.pi / self.n_elevations
-        elevations = np.arange(self.n_elevations) * self.elevation_inc
-        self.elevations.from_numpy(elevations)
 
         # Determine how many xyz sensors are needed for data collection
         logger.info("Initializing xyz sensors...")
@@ -327,7 +350,7 @@ class Tracer:
         self.init_xyz_sensors()
         ti.sync()
 
-        logger.info(f"XY rays: {sensor_count * self.n_azimuths}")
+        logger.info(f"XY rays: {xy_sensor_count * self.n_azimuths}")
         xyz_ray_ct = xyz_sensor_count * self.n_azimuths * self.n_elevations
         assert (
             xyz_ray_ct < 2**32
@@ -403,6 +426,14 @@ class Tracer:
             self.canvas.scene(self.scene)
             self.window.show()
 
+    def init_buildings(self):
+        self.buildings = Building.field(shape=len(self.gdf))
+        self.gdf["ARCHETYPE_ID"] = self.gdf[self.archetype_col].astype("category")
+        archetype_ixs = self.gdf["ARCHETYPE_ID"].cat.codes.values
+        heights = self.gdf[self.height_col].values
+        self.buildings.archetype_ix.from_numpy(archetype_ixs)
+        self.buildings.height.from_numpy(heights)
+
     def extract_flat_edge_list(self):
         """
         Extracts all edges to a flattened list
@@ -421,13 +452,14 @@ class Tracer:
             for geom in _geom.geoms if type(_geom) != Polygon else [_geom]:
                 # Get the points from the boundary
                 # shapely poly linestrings are closed, so we don't need the repeated point
-                points = np.array(geom.boundary.coords)[:-1]
+                start_pts = np.array(geom.boundary.coords)[:-1]
 
+                # TODO: everything after this point could be done in parallel.
                 # Roll the points over
-                next_points = np.roll(points, shift=-1, axis=0)
+                end_pts = np.roll(start_pts, shift=-1, axis=0)
 
                 # compute the slope components and unitize
-                run_rise = next_points - points
+                run_rise = end_pts - start_pts
                 run_rise = run_rise / np.linalg.norm(run_rise, axis=1).reshape(-1, 1)
 
                 # compute the normals for each edge
@@ -453,14 +485,14 @@ class Tracer:
                 #         normal_fails = normal_fails + 1
 
                 # append computed properties
-                starts.append(points)
-                ends.append(next_points)
+                starts.append(start_pts)
+                ends.append(end_pts)
                 run_rises.append(run_rise)
                 heights.append(
-                    np.ones(points.shape[0]) * self.gdf[self.height_col][i]
+                    np.ones(start_pts.shape[0]) * self.gdf[self.height_col][i]
                 )  # TODO: these could be found via a building parent ref
-                n_floors.append(np.ones(points.shape[0]) * self.gdf["N_FLOORS"][i])
-                building_ids.append(np.ones(points.shape[0]) * i)
+                n_floors.append(np.ones(start_pts.shape[0]) * self.gdf["N_FLOORS"][i])
+                building_ids.append(np.ones(start_pts.shape[0]) * i)
                 normals.append(normal)
 
         # Create flattened list of all edge data (i.e. flattened over buildings axis)
@@ -494,16 +526,18 @@ class Tracer:
         self.edges.sensor_end_ix.from_numpy(sensor_ends)
         self.edges.sensor_ct.from_numpy(sensor_counts)
         ti.sync()
+
+        # Update some computed properties in parallel
         self.update_edge_properties()
         ti.sync()
 
-        # This array will allow non-divergent sensor construction
-        # It has one row per sensor which lets the sensor identify the parent edge
-        sensor_parent_ix = np.repeat(
-            np.arange(sensor_counts.shape[0]), sensor_counts.astype(int)
-        )
-        self.edge_sensor_parent_ix = ti.field(int, shape=sensor_parent_ix.shape)
-        self.edge_sensor_parent_ix.from_numpy(sensor_parent_ix)
+        # Update the building flat list lookup indices
+        edges_per_bldg = self.buildings.edge_ct.to_numpy()
+        edge_ends = np.cumsum(edges_per_bldg)
+        edge_starts = np.roll(edge_ends, shift=1)
+        edge_starts[0] = 0
+        self.buildings.edge_start_ix.from_numpy(edge_starts)
+        self.buildings.edge_end_ix.from_numpy(edge_ends)
 
     @ti.kernel
     def update_edge_properties(self):
@@ -530,6 +564,9 @@ class Tracer:
             self.edges[edge_ix].slope = slope
             self.edges[edge_ix].normal_theta = normal_theta
             self.edges[edge_ix].az_start_angle = az_start_angle
+
+            # Add it to the parent buildings edge count
+            self.buildings[self.edges[edge_ix].building_id].edge_ct += 1
 
     @ti.kernel
     def add_edges_to_tree(self):
@@ -596,7 +633,7 @@ class Tracer:
         """
         for sensor_ix in self.xy_sensors:
             # Locate the sensor in the original field and copy the parent id over
-            parent_id = self.edge_sensor_parent_ix[sensor_ix]
+            parent_id = self.xy_sensors[sensor_ix].parent_edge_id
             edge = self.edges[parent_id]
 
             # get the parent slope over
@@ -1157,12 +1194,21 @@ if __name__ == "__main__":
     fp = Path(os.path.abspath(os.path.dirname(__file__))) / "Braga_Baseline.zip"
     height_col = "height (m)"
     id_col = "id"
+    archetype_col = "Archetype"
 
     # fp = Path(os.path.abspath(os.path.dirname(__file__))) / "sandySprings_Footprints.zip"
     # height_col = "BuildingHe"
     # id_col = "OBJECTID"
+    # archetype_col = "Archetype"
 
-    tracer = Tracer(filepath=fp, height_col=height_col, id_col=id_col, node_width=1)
+    tracer = Tracer(
+        filepath=fp,
+        height_col=height_col,
+        id_col=id_col,
+        archetype_col=archetype_col,
+        node_width=1,
+    )
+
     ti.sync()
     tracer.print_column_stats(0)
     ti.sync()
