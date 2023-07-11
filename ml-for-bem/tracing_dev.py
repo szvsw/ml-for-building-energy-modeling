@@ -1,14 +1,17 @@
 import logging
 
 from os import PathLike
+from io import BytesIO
 from typing import List, Union
 
 import taichi as ti
 import numpy as np
 import geopandas as gpd
 import pandas as pd
+import pyradiance as pr
 
 from shapely import Polygon
+from ladybug.wea import Wea
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)
@@ -203,7 +206,7 @@ class Tracer:
         )
 
         base_gdf = self.gdf.copy()
-        tile_ct = 14
+        tile_ct = 0
         for i in range(tile_ct):
             for j in range(tile_ct):
                 new_gdf = base_gdf.copy()
@@ -1242,39 +1245,66 @@ class Tracer:
         return self.levels[0]
 
 
-if __name__ == "__main__":
-    import os
-    from pathlib import Path
+"""
+Some visualization helper functions/kernels
+"""
 
-    fp = Path(os.path.abspath(os.path.dirname(__file__))) / "Braga_Baseline.zip"
-    height_col = "height (m)"
-    id_col = "id"
-    archetype_col = "Archetype"
 
-    # fp = Path(os.path.abspath(os.path.dirname(__file__))) / "sandySprings_Footprints.zip"
-    # height_col = "BuildingHe"
-    # id_col = "OBJECTID"
-    # archetype_col = "Archetype"
+@ti.kernel
+def set_edge_verts_kernel(
+    edge_starts: ti.template(), edge_ends: ti.template(), edge_verts: ti.template()
+):
+    for i in range(edge_starts.shape[0]):
+        edge_verts[2 * i] = ti.Vector([edge_starts[i, 0], edge_starts[i, 1]])
+        edge_verts[2 * i + 1] = ti.Vector([edge_ends[i, 0], edge_ends[i, 1]])
 
-    tracer = Tracer(
-        filepath=fp,
-        height_col=height_col,
-        id_col=id_col,
-        archetype_col=archetype_col,
-        node_width=1,
+
+@ti.kernel
+def set_edge_colors_kernel(edge_starts: ti.template(), edge_colors: ti.template()):
+    for i in range(edge_starts.shape[0]):
+        edge_colors[2 * i] = ti.Vector([ti.random(), ti.random(), ti.random()]) * 0.5
+        edge_colors[2 * i + 1] = edge_colors[2 * i]
+
+
+@ti.kernel
+def zoom_pan_im_kernel(
+    source_im: ti.template(), target_im: ti.template(), x_offset: int, y_offset: int
+):
+    for i, j in target_im:
+        target_im[i, j] = source_im[i + x_offset, j + y_offset]
+
+
+# TODO: make a parent function which copies and zooms at the same time so the underlying points don't need to be reassembled.
+@ti.kernel
+def zoom_pan_pts_kernel(
+    source_pts: ti.template(),
+    zoom: float,
+    x_offset: int,
+    y_offset: int,
+    zoom_base: float,
+):
+    for i in source_pts:
+        source_pts[i] = (source_pts[i] - ti.Vector([x_offset, y_offset])) / (
+            zoom * zoom_base
+        )
+
+
+def zoom_pan_im(source_im, zoom: float, x_offset: int, y_offset: int):
+    target_im = ti.Vector.field(
+        3,
+        float,
+        shape=(int(source_im.shape[0] * zoom), int(source_im.shape[0] * zoom)),
     )
+    zoom_pan_im_kernel(
+        source_im=source_im,
+        target_im=target_im,
+        x_offset=x_offset,
+        y_offset=y_offset,
+    )
+    return target_im
 
-    ti.sync()
-    tracer.print_column_stats(0)
-    ti.sync()
 
-    tracer.assemble_results_df()
-    print(tracer.results_df)
-
-    tracer.init_gui()
-    tracer.render_scene()
-    exit()
-
+def old_debug_viz_loop(tracer):
     ############
     # debug viz
     window = ti.ui.Window("GIS", (1024, 1024), pos=(50, 50))
@@ -1282,57 +1312,6 @@ if __name__ == "__main__":
     ui = window.get_gui()
 
     # TODO: move edge points into class
-    @ti.kernel
-    def set_edge_verts_kernel(
-        edge_starts: ti.template(), edge_ends: ti.template(), edge_verts: ti.template()
-    ):
-        for i in range(edge_starts.shape[0]):
-            edge_verts[2 * i] = ti.Vector([edge_starts[i, 0], edge_starts[i, 1]])
-            edge_verts[2 * i + 1] = ti.Vector([edge_ends[i, 0], edge_ends[i, 1]])
-
-    @ti.kernel
-    def set_edge_colors_kernel(edge_starts: ti.template(), edge_colors: ti.template()):
-        for i in range(edge_starts.shape[0]):
-            edge_colors[2 * i] = (
-                ti.Vector([ti.random(), ti.random(), ti.random()]) * 0.5
-            )
-            edge_colors[2 * i + 1] = edge_colors[2 * i]
-
-    @ti.kernel
-    def zoom_pan_im_kernel(
-        source_im: ti.template(), target_im: ti.template(), x_offset: int, y_offset: int
-    ):
-        for i, j in target_im:
-            target_im[i, j] = source_im[i + x_offset, j + y_offset]
-
-    # TODO: make a parent function which copies and zooms at the same time so the underlying points don't need to be reassembled.
-    @ti.kernel
-    def zoom_pan_pts_kernel(
-        source_pts: ti.template(),
-        zoom: float,
-        x_offset: int,
-        y_offset: int,
-        zoom_base: float,
-    ):
-        for i in source_pts:
-            source_pts[i] = (source_pts[i] - ti.Vector([x_offset, y_offset])) / (
-                zoom * zoom_base
-            )
-
-    def zoom_pan_im(source_im, zoom: float, x_offset: int, y_offset: int):
-        target_im = ti.Vector.field(
-            3,
-            float,
-            shape=(int(source_im.shape[0] * zoom), int(source_im.shape[0] * zoom)),
-        )
-        zoom_pan_im_kernel(
-            source_im=source_im,
-            target_im=target_im,
-            x_offset=x_offset,
-            y_offset=y_offset,
-        )
-        return target_im
-
     edge_ct = tracer.edge_starts.shape[0]
     borderline_verts = ti.Vector.field(2, dtype=float, shape=(2 * edge_ct))
     # borderline_colors = ti.Vector.field(3, dtype=float, shape=(2 * edge_ct))
@@ -1430,3 +1409,105 @@ if __name__ == "__main__":
         canv.circles(circs, radius=0.002, color=(1, 0, 0))
 
         window.show()
+
+
+def epw_to_wea(epw_inpath, wea_outpath):
+    wea = Wea.from_epw_file(epw_inpath)
+    wea.write(str(wea_outpath))
+
+
+def parse_hourly_mtx(mtx_fp):
+    df = pd.read_csv(mtx_fp, skiprows=8, names=["R", "G", "B"], sep=" ")
+    values = df.to_numpy()
+
+    # sum rgb channels
+    values: np.ndarray = values.sum(axis=1)
+
+    # shape = n_skypatches x 8760
+    hour_shaped = values.reshape(-1, 8760)
+
+    # annual means
+    annual_means = np.mean(hour_shaped, axis=1)
+
+    # Reshape into (n_sky_patches x days x hours)
+    day_shaped = values.reshape(-1, 365, 24)
+
+    # roll so that equinoxs/solstices are approx in the middle after reshaping, i.e.
+    # june 21 is originally 172nd day in the year, it becomes 226, 226 % 91 = 44
+    day_shaped_shifted = np.roll(day_shaped, shift=54, axis=1)
+
+    # compute mean seasonal values
+    # split the year up into four parts
+    seasons = [day_shaped_shifted[:, (i * 91) : ((i + 1) * 91), :] for i in range(4)]
+
+    # flatten along the final two axes so that each array is (n_sky_patches x hours_in_season)
+    seasons = [
+        season.reshape(-1, (season.shape[-2] * season.shape[-1])) for season in seasons
+    ]
+
+    # compute the mean seasonal radiation per sky patch
+    seasons = [season.mean(axis=1).reshape(-1, 1) for season in seasons]
+
+    # combine seasons into a single mtx, shape=(n_sky_pathes x 4)
+    seasons = np.concatenate(seasons, axis=1)
+    return {
+        "annual_means": annual_means,
+        "seasonal_means": seasons,
+        "hourly": hour_shaped,
+    }
+
+
+if __name__ == "__main__":
+    import os
+    from pathlib import Path
+
+    fp = Path(os.path.abspath(os.path.dirname(__file__))) / "Braga_Baseline.zip"
+    height_col = "height (m)"
+    id_col = "id"
+    archetype_col = "Archetype"
+
+    epw_fp = (
+        Path(os.path.abspath(os.path.dirname(__file__)))
+        / "data"
+        / "epws"
+        / "city_epws_indexed"
+        / "cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.epw"
+    )
+    wea_fp = (
+        Path(os.path.abspath(os.path.dirname(__file__)))
+        / "data"
+        / "weas"
+        / "cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.wea"
+    )
+    mtx_fp = (
+        Path(os.path.abspath(os.path.dirname(__file__)))
+        / "data"
+        / "mtxs"
+        / "divd_cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.mtx"
+    )
+    epw_to_wea(epw_fp, wea_fp)
+    res = pr.gendaymtx(wea_fp, verbose=True, average=False, mfactor=2)
+    mtx = BytesIO(res)
+    results = parse_hourly_mtx(mtx)
+
+    # fp = Path(os.path.abspath(os.path.dirname(__file__))) / "sandySprings_Footprints.zip"
+    # height_col = "BuildingHe"
+    # id_col = "OBJECTID"
+    # archetype_col = "Archetype"
+
+    tracer = Tracer(
+        filepath=fp,
+        height_col=height_col,
+        id_col=id_col,
+        archetype_col=archetype_col,
+        node_width=1,
+    )
+
+    ti.sync()
+    tracer.print_column_stats(0)
+    ti.sync()
+
+    tracer.assemble_results_df()
+
+    tracer.init_gui()
+    tracer.render_scene()
