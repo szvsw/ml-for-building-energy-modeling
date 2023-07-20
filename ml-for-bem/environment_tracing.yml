@@ -14,4 +14,6 @@ dependencies:
   - geopandas
   - pip:
     - taichi
+    - ladybug-core
+    - pyradiance
   
