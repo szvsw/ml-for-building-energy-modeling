@@ -1,0 +1,31 @@
+name: ml-for-bem-geotracing
+
+channels:
+  - pytorch
+  - nvidia
+  - plotly
+  - conda-forge
+dependencies:
+  - pytorch 
+  - torchvision 
+  - torchaudio 
+  - pytorch-cuda=11.8 
+  - ipywidgets
+  - nbformat
+  - plotly
+  - numpy
+  - python=3.8
+  - requests
+  # - google-cloud-storage
+  # - h5py
+  - geopandas
+  # - trimesh
+  # - pyembree
+  - shapely
+  # - mapbox_earcut
+  # - igl
+  - pip
+  - pip:
+    - taichi
+    # - siren-pytorch
+    # - PyMCubes
