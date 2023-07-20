@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-from networks import EnergyCNN, MonthlyEnergyCNN
+from networks import EnergyCNN, MonthlyEnergyCNN, ConvNeXt1D, ConvNeXt1DStageConfig
 from schedules import mutate_timeseries
 from storage import download_from_bucket, upload_to_bucket
 from schema import Schema, OneHotParameter, WindowParameter
@@ -214,8 +214,18 @@ class Surrogate:
         logger.info(f"{self.output_resolution} timesteps in output.")
 
         logger.info("Initializing machine learning objects...")
-        self.timeseries_net = MonthlyEnergyCNN(
-            in_channels=self.timeseries_per_vector, out_channels=self.latent_size
+        # self.timeseries_net = MonthlyEnergyCNN(
+        #     in_channels=self.timeseries_per_vector, out_channels=self.latent_size
+        # ).to(device)
+        self.timeseries_net = ConvNeXt1D(
+            in_channels=self.timeseries_per_vector,
+            series_output_size=self.output_resolution,
+            stage_configs=[
+                ConvNeXt1DStageConfig(64, 256, num_layers=3),
+                ConvNeXt1DStageConfig(256, 512, num_layers=3),
+                ConvNeXt1DStageConfig(512, self.latent_size, num_layers=3),
+                # ConvNeXt1DStageConfig(256, self.latent_size, num_layers=3),
+            ]
         ).to(device)
         self.energy_net = EnergyCNN(
             in_channels=self.energy_cnn_in_size, out_channels=self.timeseries_per_output
@@ -530,6 +540,7 @@ class Surrogate:
         n_mini_epochs=3,
         mini_epoch_batch_size=50000,
         dataloader_batch_size=200,
+        unseen_eval_batch_size=20000,
         step_loss_frequency=50,
         lr_schedule=None,
     ):
@@ -545,7 +556,7 @@ class Surrogate:
         final_start_ix = train_test_split_ix - mini_epoch_batch_size
         unseen_testing_cities = self.make_dataloader(
             train_test_split_ix + 50000,
-            count=20000,
+            count=unseen_eval_batch_size,
             dataloader_batch_size=dataloader_batch_size,
         )
 
@@ -713,7 +724,7 @@ class Surrogate:
         filename = f"{run_name}_{timestamp}_{epoch_num:03d}_{batch_start:05d}.pt"
         path = checkpoints_dir / filename
         torch.save(checkpoint, path)
-        upload_to_bucket(f"models/{run_name}/{filename}", path)
+        # upload_to_bucket(f"models/{run_name}/{filename}", path)
 
     def evaluate_over_range(self, start_ix, count, segment="test"):
         true_loads = []
