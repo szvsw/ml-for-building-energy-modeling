@@ -1,6 +1,7 @@
 from typing import List, Optional
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class Permute(nn.Module):
@@ -20,6 +21,12 @@ class Permute(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return torch.permute(x, self.dims)
 
+class LayerNorm1D(nn.LayerNorm):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.permute(0,2,1)
+        F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+        x = x.permute(0,2,1)
+        return x
 
 class ConvNeXtBlock1D(nn.Module):
     def __init__(
@@ -44,7 +51,7 @@ class ConvNeXtBlock1D(nn.Module):
                 in_channels=dim,
                 out_channels=dim,
                 kernel_size=49,
-                padding=24,  # same
+                padding='same',  # 24
                 groups=dim,
                 bias=True,
             ),
@@ -66,8 +73,8 @@ class ConvNeXtBlock1D(nn.Module):
         # TODO: implement stochastic depth and layer_scale? https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        output = self.block(input)  # Block
-        output += input  # Skip
+        projected = self.block(input) # block
+        output = projected + input  # Skip
         return output
 
 
@@ -106,7 +113,7 @@ class ConvNeXtStage1D(nn.Module):
 
         if output_channels is not None:
             downscaler: List[nn.Module] = []
-            downscaler.append(nn.LayerNorm(input_channels, eps=1e-6))
+            downscaler.append(LayerNorm1D(input_channels, eps=1e-6))
             downscaler.append(
                 nn.Conv1d(
                     in_channels=input_channels,
@@ -120,7 +127,8 @@ class ConvNeXtStage1D(nn.Module):
         self.blocks = nn.Sequential(*modules)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        return self.blocks(input)
+        output = self.blocks(input)
+        return output
 
 
 class ConvNeXt1DStageConfig:
@@ -189,8 +197,8 @@ class ConvNeXt1DStageConfig:
 class ConvNeXt1D(nn.Module):
     def __init__(
         self,
-        n_timeseries_channels: int,
-        n_timesteps_in_output: int,
+        in_channels: int,
+        series_output_size: int,
         stage_configs: List[ConvNeXt1DStageConfig],
     ):
         """
@@ -209,6 +217,22 @@ class ConvNeXt1D(nn.Module):
         # end at N x C2 x T / ?
         # C1 = n_timeseries_channels
         # C2 = channel dimension of each block of in the first stage
+        first_convblock_in_channels = stage_configs[0].input_channels
+        self.stem = nn.Sequential(
+            nn.Conv1d(
+                in_channels=in_channels,
+                out_channels=first_convblock_in_channels,
+                kernel_size=2,
+                stride=2,
+                padding=0,
+                groups=1,
+                bias=True,
+            ),
+            LayerNorm1D(
+                first_convblock_in_channels,
+                eps=1e-6
+            ),
+        )
 
         total_stage_blocks = sum(conf.num_layers for conf in stage_configs)
         stages: List[nn.Module] = []
@@ -220,13 +244,14 @@ class ConvNeXt1D(nn.Module):
             )
             stages.append(stage)
         self.features = nn.Sequential(*stages)
-        self.avgpool = nn.AdaptiveAvgPool1d(n_timesteps_in_output)
+        self.avgpool = nn.AdaptiveAvgPool1d(series_output_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO: implement initial channel matcher stem cell
+        x = self.stem(x)
         x = self.features(x)
         x = self.avgpool(x)
-        # TODO: finish implementing
+        # TODO: finish implementing regressor
+        return x 
 
 
 class EnergyTimeseriesCNNBlockA(nn.Module):
