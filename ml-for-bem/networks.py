@@ -268,7 +268,7 @@ class EnergyTimeseriesCNNBlockA(nn.Module):
             nn.Conv1d(
                 in_channels=in_channels,
                 out_channels=n_feature_maps,
-                kernel_size=8,
+                kernel_size=49,
                 stride=1,
                 padding="same",
             ),
@@ -279,7 +279,7 @@ class EnergyTimeseriesCNNBlockA(nn.Module):
             nn.Conv1d(
                 in_channels=n_feature_maps,
                 out_channels=n_feature_maps,
-                kernel_size=5,
+                kernel_size=25,
                 stride=1,
                 padding="same",
             ),
@@ -290,7 +290,7 @@ class EnergyTimeseriesCNNBlockA(nn.Module):
             nn.Conv1d(
                 in_channels=n_feature_maps,
                 out_channels=n_feature_maps,
-                kernel_size=3,
+                kernel_size=9,
                 stride=1,
                 padding="same",
             ),
@@ -338,7 +338,7 @@ class EnergyTimeseriesCNNBlockB(nn.Module):
             nn.Conv1d(
                 in_channels=in_channels,
                 out_channels=n_feature_maps,
-                kernel_size=8,
+                kernel_size=49,
                 stride=1,
                 padding="same",
             ),
@@ -349,7 +349,7 @@ class EnergyTimeseriesCNNBlockB(nn.Module):
             nn.Conv1d(
                 in_channels=n_feature_maps,
                 out_channels=n_feature_maps,
-                kernel_size=5,
+                kernel_size=25,
                 stride=1,
                 padding="same",
             ),
@@ -360,7 +360,7 @@ class EnergyTimeseriesCNNBlockB(nn.Module):
             nn.Conv1d(
                 in_channels=n_feature_maps,
                 out_channels=n_feature_maps,
-                kernel_size=3,
+                kernel_size=9,
                 stride=1,
                 padding="same",
             ),
@@ -497,6 +497,6 @@ class EnergyCNN(torch.nn.Module):
         x = self.in_convolutional_layer(sample)
         x = nn.functional.leaky_relu(x)
         x = self.out_convolutional_layer(x)
-        x = nn.functional.leaky_relu(x)
+        x = nn.functional.relu(x)
 
         return x

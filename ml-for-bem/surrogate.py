@@ -214,19 +214,19 @@ class Surrogate:
         logger.info(f"{self.output_resolution} timesteps in output.")
 
         logger.info("Initializing machine learning objects...")
-        # self.timeseries_net = MonthlyEnergyCNN(
-        #     in_channels=self.timeseries_per_vector, out_channels=self.latent_size
-        # ).to(device)
-        self.timeseries_net = ConvNeXt1D(
-            in_channels=self.timeseries_per_vector,
-            series_output_size=self.output_resolution,
-            stage_configs=[
-                ConvNeXt1DStageConfig(64, 256, num_layers=3),
-                ConvNeXt1DStageConfig(256, 512, num_layers=3),
-                ConvNeXt1DStageConfig(512, self.latent_size, num_layers=3),
-                # ConvNeXt1DStageConfig(256, self.latent_size, num_layers=3),
-            ]
+        self.timeseries_net = MonthlyEnergyCNN(
+            in_channels=self.timeseries_per_vector, n_feature_maps=64, out_channels=self.latent_size
         ).to(device)
+        # self.timeseries_net = ConvNeXt1D(
+        #     in_channels=self.timeseries_per_vector,
+        #     series_output_size=self.output_resolution,
+        #     stage_configs=[
+        #         ConvNeXt1DStageConfig(64, 256, num_layers=3),
+        #         ConvNeXt1DStageConfig(256, 512, num_layers=3),
+        #         ConvNeXt1DStageConfig(512, self.latent_size, num_layers=3),
+        #         # ConvNeXt1DStageConfig(256, self.latent_size, num_layers=3),
+        #     ]
+        # ).to(device)
         self.energy_net = EnergyCNN(
             in_channels=self.energy_cnn_in_size, out_channels=self.timeseries_per_output
         ).to(device)
@@ -402,6 +402,7 @@ class Surrogate:
         self.timeseries_per_output = results.shape[1]
         self.output_resolution = results.shape[-1]
         self.latent_size = self.building_params_per_vector
+        self.latent_size = self.building_params_per_vector*4
         self.energy_cnn_in_size = self.latent_size + self.building_params_per_vector
         logger.setLevel(level)
 
@@ -724,7 +725,7 @@ class Surrogate:
         filename = f"{run_name}_{timestamp}_{epoch_num:03d}_{batch_start:05d}.pt"
         path = checkpoints_dir / filename
         torch.save(checkpoint, path)
-        # upload_to_bucket(f"models/{run_name}/{filename}", path)
+        upload_to_bucket(f"models/{run_name}/{filename}", path)
 
     def evaluate_over_range(self, start_ix, count, segment="test"):
         true_loads = []
