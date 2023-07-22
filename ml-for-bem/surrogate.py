@@ -11,7 +11,14 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-from networks import EnergyCNN, MonthlyEnergyCNN, ConvNeXt1D, ConvNeXt1DStageConfig
+from networks import (
+    EnergyCNN,
+    MonthlyEnergyCNN,
+    ConvNeXt1D,
+    ConvNeXt1DStageConfig,
+    ConvNet,
+    Conv1DStageConfig,
+)
 from schedules import mutate_timeseries
 from storage import download_from_bucket, upload_to_bucket
 from schema import Schema, OneHotParameter, WindowParameter
@@ -214,9 +221,18 @@ class Surrogate:
         logger.info(f"{self.output_resolution} timesteps in output.")
 
         logger.info("Initializing machine learning objects...")
-        self.timeseries_net = MonthlyEnergyCNN(
-            in_channels=self.timeseries_per_vector, n_feature_maps=64, out_channels=self.latent_size
+
+        # self.timeseries_net = MonthlyEnergyCNN(
+        #     in_channels=self.timeseries_per_vector, n_feature_maps=64, out_channels=self.latent_size
+        # ).to(device)
+
+        conf = Conv1DStageConfig.Base(self.timeseries_per_vector)
+        self.timeseries_net = ConvNet(
+            stage_configs=conf,
+            latent_channels=self.latent_size,
+            latent_length=self.output_resolution,
         ).to(device)
+
         # self.timeseries_net = ConvNeXt1D(
         #     in_channels=self.timeseries_per_vector,
         #     series_output_size=self.output_resolution,
@@ -227,6 +243,7 @@ class Surrogate:
         #         # ConvNeXt1DStageConfig(256, self.latent_size, num_layers=3),
         #     ]
         # ).to(device)
+
         self.energy_net = EnergyCNN(
             in_channels=self.energy_cnn_in_size, out_channels=self.timeseries_per_output
         ).to(device)
@@ -402,7 +419,7 @@ class Surrogate:
         self.timeseries_per_output = results.shape[1]
         self.output_resolution = results.shape[-1]
         self.latent_size = self.building_params_per_vector
-        self.latent_size = self.building_params_per_vector*4
+        self.latent_size = self.building_params_per_vector * 4
         self.energy_cnn_in_size = self.latent_size + self.building_params_per_vector
         logger.setLevel(level)
 

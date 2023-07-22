@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,12 +21,14 @@ class Permute(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return torch.permute(x, self.dims)
 
+
 class LayerNorm1D(nn.LayerNorm):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x.permute(0,2,1)
+        x = x.permute(0, 2, 1)
         F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
-        x = x.permute(0,2,1)
+        x = x.permute(0, 2, 1)
         return x
+
 
 class ConvNeXtBlock1D(nn.Module):
     def __init__(
@@ -51,7 +53,7 @@ class ConvNeXtBlock1D(nn.Module):
                 in_channels=dim,
                 out_channels=dim,
                 kernel_size=49,
-                padding='same',  # 24
+                padding="same",  # 24
                 groups=dim,
                 bias=True,
             ),
@@ -73,7 +75,7 @@ class ConvNeXtBlock1D(nn.Module):
         # TODO: implement stochastic depth and layer_scale? https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        projected = self.block(input) # block
+        projected = self.block(input)  # block
         output = projected + input  # Skip
         return output
 
@@ -183,7 +185,6 @@ class ConvNeXt1DStageConfig:
             cls(1024, None, 3),
         ]
 
-
     @classmethod
     def Large(cls):
         return [
@@ -228,10 +229,7 @@ class ConvNeXt1D(nn.Module):
                 groups=1,
                 bias=True,
             ),
-            LayerNorm1D(
-                first_convblock_in_channels,
-                eps=1e-6
-            ),
+            LayerNorm1D(first_convblock_in_channels, eps=1e-6),
         )
 
         total_stage_blocks = sum(conf.num_layers for conf in stage_configs)
@@ -251,7 +249,188 @@ class ConvNeXt1D(nn.Module):
         x = self.features(x)
         x = self.avgpool(x)
         # TODO: finish implementing regressor
-        return x 
+        return x
+
+
+class Conv1DBlock(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        stride: int = 1,
+        padding: Union[int, str] = "same",
+        activation: nn.Module = nn.ReLU,
+    ):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.Conv1d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=stride,
+                padding=padding,
+            ),
+            nn.BatchNorm1d(out_channels),
+            activation(),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.block(x)
+
+
+class Conv1DStage(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_sizes, activation=nn.ReLU):
+        super().__init__()
+        layers: List[nn.Module] = []
+        for i, kernel_size in enumerate(kernel_sizes):
+            layers.append(
+                Conv1DBlock(
+                    in_channels=in_channels if i == 0 else out_channels,
+                    out_channels=out_channels,
+                    kernel_size=kernel_size,
+                )
+            )
+        self.layers = nn.Sequential(*layers)
+
+        self.skip_layer = nn.Sequential(
+            nn.Conv1d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0,
+            )
+            if out_channels != in_channels
+            else nn.Identity(),
+            nn.BatchNorm1d(out_channels),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_skip = self.skip_layer(x)
+        x_out = self.layers(x)
+        x_out = x_out + x_skip
+
+        return nn.functional.relu(x_out)
+
+
+class Conv1DStageConfig:
+    def __init__(self, in_channels: int, out_channels: int, kernel_sizes: List[int]):
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_sizes = kernel_sizes
+
+    def __repr__(self) -> str:
+        s = self.__class__.__name__ + "("
+        s += "input_channels={in_channels}"
+        s += ", out_channels={out_channels}"
+        s += ", kernel_sizes={kernel_sizes}"
+        s += ")"
+        return s.format(**self.__dict__)
+
+    @classmethod
+    def Base(cls, in_channels):
+        return [
+            cls(in_channels, 64, [49, 25, 9]),
+            cls(64, 128, [49, 25, 9]),
+            cls(128, 128, [49, 25, 9]),
+        ]
+
+
+class ConvNet(nn.Module):
+    def __init__(
+        self,
+        stage_configs: List[Conv1DStageConfig],
+        latent_channels: int,
+        latent_length: int,
+    ):
+        super().__init__()
+        self.stage_configs = stage_configs
+        stages: List[nn.Module] = []
+        for stage_conf in self.stage_configs:
+            stages.append(
+                Conv1DStage(
+                    in_channels=stage_conf.in_channels,
+                    out_channels=stage_conf.out_channels,
+                    kernel_sizes=stage_conf.kernel_sizes,
+                )
+            )
+        self.stages = nn.Sequential(*stages)
+        pooling = nn.AdaptiveAvgPool1d(latent_length)
+
+        # self.final = nn.Sequential(
+        #     pooling,
+        #     Conv1DBlock(
+        #         in_channels=self.stage_configs[-1].out_channels,
+        #         out_channels=latent_channels,
+        #         kernel_size=latent_length,
+        #         stride=1,
+        #         padding='same'
+        #     )
+        # )
+
+        # self.final = nn.Sequential(
+        #     pooling,
+        #     Permute([0,2,1]),
+        #     nn.Linear(
+        #         in_features=self.stage_configs[-1].out_channels,
+        #         out_features=latent_channels,
+        #     ),
+        #     Permute([0,2,1]),
+        #     nn.BatchNorm1d(latent_channels),
+        #     nn.ReLU(),
+        # )
+
+        # self.final = nn.Sequential(
+        #     pooling,
+        #     Conv1DBlock(
+        #         in_channels=self.stage_configs[-1].out_channels,
+        #         out_channels=latent_channels,
+        #         kernel_size=1,
+        #         stride=1,
+        #         padding='same'
+        #     )
+        # )
+
+        # self.final = Conv1DBlock(
+        #     in_channels=self.stage_configs[-1].out_channels,
+        #     out_channels=latent_channels,
+        #     kernel_size=int(8760/latent_length),
+        #     stride=int(8760/latent_length),
+        #     padding=0
+        # )
+
+        self.final = nn.Sequential(
+            Permute([0, 2, 1]),
+            nn.Linear(
+                in_features=self.stage_configs[-1].out_channels,
+                out_features=latent_channels,
+            ),
+            Permute([0, 2, 1]),
+            Conv1DBlock(
+                in_channels=latent_channels,
+                out_channels=latent_channels,
+                kernel_size=int(8760 / latent_length),
+                stride=int(8760 / latent_length),
+                padding=0,
+            ),
+        )
+
+        # self.final = nn.Sequential(
+        #     nn.AdaptiveAvgPool1d(360),
+        #     Conv1DBlock(
+        #         in_channels=self.stage_configs[-1].out_channels,
+        #         out_channels=latent_channels,
+        #         kernel_size=30,
+        #         stride=30,
+        #         padding=0,
+        #     )
+        # )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        features = self.stages(x)
+        out = self.final(features)
+        return out
 
 
 class EnergyTimeseriesCNNBlockA(nn.Module):
