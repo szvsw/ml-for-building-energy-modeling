@@ -11,6 +11,8 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
+from sklearn.metrics import r2_score
+
 from networks import (
     EnergyCNN,
     MonthlyEnergyCNN,
@@ -816,6 +818,11 @@ class Surrogate:
         pred_loads = pred_loads / maxes
         true_loads = true_loads.cpu()
         pred_loads = pred_loads.cpu()
+        r2_scores = []
+        for i, zone_name in enumerate(("Perimeter Heating", "Perimeter Cooling", "Core Heating", "Core Cooling")):
+            r2 = r2_score(true_loads[:, i], pred_loads[:, i])
+            print(zone_name, r2)
+            r2_scores.append(r2)
         fig, axs = plt.subplots(2, 2, figsize=(12, 12))
         identity = np.linspace(0, 1, 10)
         plt.suptitle("Annual Model Fits")
