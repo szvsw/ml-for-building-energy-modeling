@@ -252,6 +252,42 @@ class ConvNeXt1D(nn.Module):
         return x
 
 
+class Conv1DDepthwiseBlock(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        stride: int = 1,
+        padding: Union[int, str] = "same",
+        activation: nn.Module = nn.LeakyReLU,
+    ):
+        super().__init__()
+        intermediate_dim = 1 * in_channels
+        self.block = nn.Sequential(
+            nn.Conv1d(
+                in_channels=in_channels,
+                out_channels=intermediate_dim,
+                kernel_size=kernel_size,
+                stride=stride,
+                padding=padding,
+                groups=in_channels,
+            ),
+            nn.Conv1d(
+                in_channels=intermediate_dim,
+                out_channels=out_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0,
+            ),
+            nn.BatchNorm1d(out_channels),
+            activation(),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.block(x)
+
+
 class Conv1DBlock(nn.Module):
     def __init__(
         self,
@@ -260,7 +296,7 @@ class Conv1DBlock(nn.Module):
         kernel_size: int,
         stride: int = 1,
         padding: Union[int, str] = "same",
-        activation: nn.Module = nn.ReLU,
+        activation: nn.Module = nn.LeakyReLU,
     ):
         super().__init__()
         self.block = nn.Sequential(
@@ -280,7 +316,13 @@ class Conv1DBlock(nn.Module):
 
 
 class Conv1DStage(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_sizes, activation=nn.ReLU):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_sizes,
+        activation=nn.LeakyReLU,
+    ):
         super().__init__()
         layers: List[nn.Module] = []
         for i, kernel_size in enumerate(kernel_sizes):
@@ -289,7 +331,7 @@ class Conv1DStage(nn.Module):
                     in_channels=in_channels if i == 0 else out_channels,
                     out_channels=out_channels,
                     kernel_size=kernel_size,
-                    activation=activation
+                    activation=activation,
                 )
             )
         self.layers = nn.Sequential(*layers)
@@ -674,6 +716,41 @@ class MonthlyEnergyCNN(nn.Module):
         x = self.pooling(x)
         x = self.month_convolutional_layer(x)
         return nn.functional.relu(x)
+
+
+class EnergyCNN2(nn.Module):
+    def __init__(self, in_channels=30, n_feature_maps=128, n_layers=3, out_channels=4):
+        super().__init__()
+
+        self.blocks = nn.Sequential(
+            Conv1DStage(
+                in_channels=in_channels,
+                out_channels=n_feature_maps,
+                kernel_sizes=[1] * n_layers,
+                activation=nn.LeakyReLU,
+            ),
+            Conv1DStage(
+                in_channels=n_feature_maps,
+                out_channels=out_channels,
+                kernel_sizes=[1],
+                activation=nn.ReLU,
+            ),
+            # Conv1DStage(
+            #     in_channels=n_feature_maps,
+            #     out_channels=out_channels,
+            #     kernel_sizes=[1]*n_layers,
+            #     activation=nn.LeakyReLU
+            # ),
+            # Conv1DBlock(
+            #     in_channels=out_channels,
+            #     out_channels=out_channels,
+            #     kernel_size=1,
+            #     activation=nn.ReLU
+            # )
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.blocks(x)
 
 
 class EnergyCNN(torch.nn.Module):

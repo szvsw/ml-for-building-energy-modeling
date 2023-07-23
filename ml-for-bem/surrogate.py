@@ -15,6 +15,7 @@ from sklearn.metrics import r2_score
 
 from networks import (
     EnergyCNN,
+    EnergyCNN2,
     MonthlyEnergyCNN,
     ConvNeXt1D,
     ConvNeXt1DStageConfig,
@@ -246,8 +247,11 @@ class Surrogate:
         #     ]
         # ).to(device)
 
-        self.energy_net = EnergyCNN(
-            in_channels=self.energy_cnn_in_size, out_channels=self.timeseries_per_output
+        self.energy_net = EnergyCNN2(
+            in_channels=self.energy_cnn_in_size,
+            out_channels=self.timeseries_per_output,
+            n_feature_maps=128,
+            n_layers=3,
         ).to(device)
         self.loss_fn = nn.MSELoss()
         self.learning_rate = learning_rate
@@ -513,7 +517,7 @@ class Surrogate:
             start_ix, count
         )
         torch.cuda.empty_cache()
-
+        # building_vector = np.dstack([building_vector]*self.output_resolution)
         logger.info("Building dataloaders...")
         dataset = {}
         for i in range(building_vector.shape[0]):
@@ -819,7 +823,9 @@ class Surrogate:
         true_loads = true_loads.cpu()
         pred_loads = pred_loads.cpu()
         r2_scores = []
-        for i, zone_name in enumerate(("Perimeter Heating", "Perimeter Cooling", "Core Heating", "Core Cooling")):
+        for i, zone_name in enumerate(
+            ("Perimeter Heating", "Perimeter Cooling", "Core Heating", "Core Cooling")
+        ):
             r2 = r2_score(true_loads[:, i], pred_loads[:, i])
             print(zone_name, r2)
             r2_scores.append(r2)
