@@ -358,6 +358,8 @@ class ConvNet(nn.Module):
         self.stages = nn.Sequential(*stages)
         pooling = nn.AdaptiveAvgPool1d(latent_length)
 
+        # Step 1: average pooling down to latent length
+        # Step 2: Learnable channel size change which is similar to original setup
         # self.final = nn.Sequential(
         #     pooling,
         #     Conv1DBlock(
@@ -369,6 +371,9 @@ class ConvNet(nn.Module):
         #     )
         # )
 
+        # Step 1: average pooling to latent length
+        # Step 2: Learnable channel size change depthwise weighted average
+        # Should be equivalent to the one below
         # self.final = nn.Sequential(
         #     pooling,
         #     Permute([0,2,1]),
@@ -381,6 +386,8 @@ class ConvNet(nn.Module):
         #     nn.ReLU(),
         # )
 
+        # Step 1: average pooling to latent length
+        # Step 2: Learnable channel size change depthwise weighted average
         # self.final = nn.Sequential(
         #     pooling,
         #     Conv1DBlock(
@@ -392,6 +399,7 @@ class ConvNet(nn.Module):
         #     )
         # )
 
+        # Combines learnable downsampling and channel size change, expensive.
         # self.final = Conv1DBlock(
         #     in_channels=self.stage_configs[-1].out_channels,
         #     out_channels=latent_channels,
@@ -400,6 +408,28 @@ class ConvNet(nn.Module):
         #     padding=0
         # )
 
+        # Step 1: learnable channel size change which is a depthwise weighted average
+        # Step 2: learnable downsampling
+        # Should be identical to the next example
+        # self.final = nn.Sequential(
+        #     nn.Conv1d(
+        #         in_channels=self.stage_configs[-1].out_channels,
+        #         out_channels=latent_channels,
+        #         kernel_size=1,
+        #         stride=1,
+        #         padding=0,
+        #     ),
+        #     Conv1DBlock(
+        #         in_channels=latent_channels,
+        #         out_channels=latent_channels,
+        #         kernel_size=int(8760 / latent_length),
+        #         stride=int(8760 / latent_length),
+        #         padding=0,
+        #     ),
+        # )
+
+        # Step 1: learnable channel size change which is a depthwise weighted average
+        # Step 2: learnable downsampling
         self.final = nn.Sequential(
             Permute([0, 2, 1]),
             nn.Linear(
@@ -416,6 +446,8 @@ class ConvNet(nn.Module):
             ),
         )
 
+        # Step 1: Adaptive pool to "days" length
+        # Step 2: learnable downsampling combined with channel size change
         # self.final = nn.Sequential(
         #     nn.AdaptiveAvgPool1d(360),
         #     Conv1DBlock(
