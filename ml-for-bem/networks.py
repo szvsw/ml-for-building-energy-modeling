@@ -289,6 +289,7 @@ class Conv1DStage(nn.Module):
                     in_channels=in_channels if i == 0 else out_channels,
                     out_channels=out_channels,
                     kernel_size=kernel_size,
+                    activation=activation
                 )
             )
         self.layers = nn.Sequential(*layers)
