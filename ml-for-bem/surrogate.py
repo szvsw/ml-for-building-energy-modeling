@@ -187,6 +187,7 @@ class Surrogate:
         "validation_loss_history",
         "withheld_loss_history",
         "latentvect_history",
+        "train_test_split_idx",
     )
 
     folder = DATA_PATH / "model_data_manager"
@@ -199,6 +200,7 @@ class Surrogate:
         self,
         schema: Schema,
         learning_rate=1e-3,
+        train_test_split_idx=400000,
         checkpoint=None,
         load_training_data=True,
         cpu=False,
@@ -208,8 +210,9 @@ class Surrogate:
             device = "cpu"
         logger.info(f"Using {device} for surrogate model.")
         self.schema = schema
+        self.train_test_split_idx = train_test_split_idx
         if load_training_data:
-            self.load_all_training_data()
+            self.load_all_training_data(permute=True)
         self.config_network_dims(
             dim_source="checkpoint" if checkpoint is not None else "training",
             checkpoint=checkpoint,
@@ -266,7 +269,7 @@ class Surrogate:
         if checkpoint is not None:
             self.load_checkpoint(checkpoint)
 
-    def load_all_training_data(self):
+    def load_all_training_data(self, permute=False):
         if not os.path.exists(Surrogate.full_results_path):
             os.makedirs(DATA_PATH, exist_ok=True)
             logger.info(
@@ -392,6 +395,8 @@ class Surrogate:
         logger.info("Loading climate data...")
         self.climate_data = ClimateData()
         logger.info("Finished loading climate data.")
+        if permute:
+            self.permute_dataset(shuffle_testing=True, seed=0)
 
     def config_network_dims(
         self,
@@ -437,11 +442,14 @@ class Surrogate:
         data = torch.load(checkpoint_path)
         timeseries_net_dict = data["timeseries_net_state_dict"]
         energy_net_dict = data["energy_net_state_dict"]
+        optimizer_state_dict = data["optimizer_state_dict"]
+        self.optimizer.load_state_dict(optimizer_state_dict)
         self.energy_net.load_state_dict(energy_net_dict)
         self.timeseries_net.load_state_dict(timeseries_net_dict)
         self.training_loss_history = data["training_loss_history"]
         self.withheld_loss_history = data["withheld_loss_history"]
         self.validation_loss_history = data["validation_loss_history"]
+        self.train_test_split_idx = data.get("train_test_split_idx", 400000)
 
     def get_batch_climate_timeseries(self, batch):
         # TODO: figure out why this takes so long
@@ -557,7 +565,6 @@ class Surrogate:
     def train(
         self,
         run_name,
-        train_test_split_ix=400000,
         n_full_epochs=3,
         n_mini_epochs=3,
         mini_epoch_batch_size=50000,
@@ -568,25 +575,26 @@ class Surrogate:
     ):
         # TODO: implement annual regularizer / possibly adaptive loss fns
         assert (
-            train_test_split_ix % mini_epoch_batch_size == 0
+            self.train_test_split_idx % mini_epoch_batch_size == 0
         ), "The train/test split ix must be divisible by the mini epoch batch size."
         assert (
             mini_epoch_batch_size % dataloader_batch_size == 0
         ), "The dataloader batch size must be a factor of the minibatch size"
         self.energy_net.train()
         self.timeseries_net.train()
-        final_start_ix = train_test_split_ix - mini_epoch_batch_size
+        final_start_ix = self.train_test_split_idx - mini_epoch_batch_size
         unseen_testing_cities = self.make_dataloader(
-            train_test_split_ix + 50000,
+            self.train_test_split_idx + 50000,
             count=unseen_eval_batch_size,
             dataloader_batch_size=dataloader_batch_size,
         )
 
         for full_epoch_num in range(n_full_epochs):
+            logger.info(f"\n\n\n {'-'*20} MAJOR Epoch {full_epoch_num} {'-'*20}")
+            self.permute_dataset(shuffle_testing=False, seed=full_epoch_num + 1)
             if lr_schedule is not None:
                 for group in self.optimizer.param_groups:
                     group["lr"] = lr_schedule[full_epoch_num]
-            logger.info(f"\n\n\n {'-'*20} MAJOR Epoch {full_epoch_num} {'-'*20}")
             for start_idx in range(0, final_start_ix + 1, mini_epoch_batch_size):
                 logger.info(
                     f"{'-'*15} BATCH {start_idx:05d}:{(start_idx+mini_epoch_batch_size):05d}{'-'*15}"
@@ -666,7 +674,6 @@ class Surrogate:
                     run_name,
                     epoch_num=full_epoch_num,
                     batch_start=start_idx,
-                    train_test_split_idx=400000,
                     n_full_epochs=n_full_epochs,
                     n_mini_epochs=n_mini_epochs,
                     mini_epoch_batch_size=mini_epoch_batch_size,
@@ -702,7 +709,6 @@ class Surrogate:
         run_name,
         epoch_num,
         batch_start,
-        train_test_split_idx,
         n_full_epochs,
         n_mini_epochs,
         mini_epoch_batch_size,
@@ -736,7 +742,7 @@ class Surrogate:
             "validation_loss_history": self.validation_loss_history,
             "withheld_loss_history": self.withheld_loss_history,
             "learning_rate": self.learning_rate,
-            "train_test_split_idx": train_test_split_idx,
+            "train_test_split_idx": self.train_test_split_idx,
             "n_full_epochs": n_full_epochs,
             "n_mini_epochs": n_mini_epochs,
             "mini_epoch_batch_size": mini_epoch_batch_size,
@@ -968,3 +974,25 @@ class Surrogate:
             plt.boxplot(boxplot_params)
 
         plt.xticks(ticks=list(range(1, len(names) + 1)), labels=names, rotation=90)
+
+    def permute_dataset(self, shuffle_testing=False, seed=0):
+        logger.info("Permuting dataset...")
+        batch = self.full_storage_batch
+        training_indices = np.arange(self.train_test_split_idx)
+        testing_indices = (
+            np.arange(self.full_storage_batch.shape[0] - self.train_test_split_idx)
+            + self.train_test_split_idx
+        )
+        np.random.seed(seed)
+        np.random.shuffle(training_indices)
+        if shuffle_testing:
+            np.random.shuffle(testing_indices)
+        training_batch = batch[training_indices]
+        testing_batch = batch[testing_indices]
+        batch = np.concatenate((training_batch, testing_batch), axis=0)
+        for key, result in self.results.items():
+            training_result = result[training_indices]
+            testing_result = result[testing_indices]
+            result = np.concatenate((training_result, testing_result), axis=0)
+            self.results[key] = result
+        logger.info("Dataset permuted.")
