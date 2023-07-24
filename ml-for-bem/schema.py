@@ -717,8 +717,8 @@ class NumericParameter(SchemaParameter):
 class OneHotParameter(SchemaParameter):
     __slots__ = "count"
 
-    def __init__(self, count, **kwargs):
-        super().__init__(dtype="onehot", shape_ml=(count,), **kwargs)
+    def __init__(self, count, shape_ml=None, **kwargs):
+        super().__init__(dtype="onehot", shape_ml=(count,) if shape_ml == None else shape_ml, **kwargs)
         self.count = count
 
 
@@ -1129,6 +1129,7 @@ class Schema:
                     name="program_type",
                     count=19,
                     info="Indicator of program type",
+                    shape_ml=(0,),
                 ),
                 NumericParameter(
                     name="vintage",
@@ -1137,11 +1138,13 @@ class Schema:
                     max=2020,
                     mean=1980,
                     std=20,
+                    shape_ml=(0,),
                 ),
                 OneHotParameter(
                     name="climate_zone",
                     count=17,
                     info="Lookup index of template library to use.",
+                    shape_ml=(0,),
                 ),
                 SchemaParameter(
                     name="base_epw",
@@ -1285,7 +1288,7 @@ class Schema:
                     name="PeopleDensity",
                     path="Loads.PeopleDensity",
                     min=0,
-                    max=2,
+                    max=0.5,
                     mean=0.1,
                     std=0.1,
                     source="ComStock",

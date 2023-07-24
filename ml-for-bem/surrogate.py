@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List
+from typing import List, Literal
 from datetime import datetime
 from pathlib import Path
 
@@ -11,7 +11,17 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-from networks import EnergyCNN, MonthlyEnergyCNN
+from sklearn.metrics import r2_score
+
+from networks import (
+    EnergyCNN,
+    EnergyCNN2,
+    MonthlyEnergyCNN,
+    ConvNeXt1D,
+    ConvNeXt1DStageConfig,
+    ConvNet,
+    Conv1DStageConfig,
+)
 from schedules import mutate_timeseries
 from storage import download_from_bucket, upload_to_bucket
 from schema import Schema, OneHotParameter, WindowParameter
@@ -27,7 +37,6 @@ root_dir = Path(os.path.abspath(os.path.dirname(__file__)))
 checkpoints_dir = root_dir / "checkpoints"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-logger.info(f"Using {device} for surrogate model.")
 DATA_PATH = root_dir / "data"
 
 HOURS_IN_YEAR = 8760
@@ -40,18 +49,46 @@ def normalize(data, maxv, minv):
 class ClimateData:
     # Weather data
     config = {
-        "dbt": {"max": 50, "min": -35, "description": "Dry Bulb Temperature"},  # 50.5
-        "rh": {"max": 100, "min": 0.0, "description": "Relative Humidity"},  # 2.0
-        "atm": {"max": 105800.0, "min": 75600.0, "description": "Atmospheric Pressure"},
+        "dbt": {
+            "max": 50,
+            "min": -35,
+            "description": "Dry Bulb Temperature",
+        },  # 50.5
+        "rh": {
+            "max": 100,
+            "min": 0.0,
+            "description": "Relative Humidity",
+        },  # 2.0
+        "atm": {
+            "max": 105800.0,
+            "min": 75600.0,
+            "description": "Atmospheric Pressure",
+        },
         "ghrad": {
             "max": 1200,  # 1154
             "min": 0.0,
             "description": "Global Horizontal Radiation",
         },
-        "dnrad": {"max": 1097, "min": 0.0, "description": "Direct Normal Radiation"},
-        "dhrad": {"max": 689, "min": 0, "description": "Direct Horizontal Radiation"},
-        "skyt": {"max": 32.3, "min": -58.3, "description": "Sky Temperature"},
-        "tsol": {"max": 60, "min": -40, "description": "T-SolAir"},
+        "dnrad": {
+            "max": 1097,
+            "min": 0.0,
+            "description": "Direct Normal Radiation",
+        },
+        "dhrad": {
+            "max": 689,
+            "min": 0,
+            "description": "Direct Horizontal Radiation",
+        },
+        "skyt": {
+            "max": 32.3,
+            "min": -58.3,
+            "description": "Sky Temperature",
+        },
+        "tsol": {
+            "max": 60,
+            "min": -40,
+            "description": "T-SolAir",
+        },
     }
 
     series_ix = {key: ix for ix, key in enumerate(config.keys())}
@@ -61,7 +98,12 @@ class ClimateData:
     tsol_path = DATA_PATH / "epws" / "tsol.npy"
     climate_arr_path = DATA_PATH / "epws" / "climate_array.npy"
 
-    __slots__ = ("tsol_arr", "climate_arr", "tsol_arr_norm", "climate_arr_norm")
+    __slots__ = (
+        "tsol_arr",
+        "climate_arr",
+        "tsol_arr_norm",
+        "climate_arr_norm",
+    )
 
     def __init__(self) -> None:
         try:
@@ -118,10 +160,20 @@ class Surrogate:
         "results",
         "full_storage_batch",
         "default_schedules",
-        "eui_max",
-        "eui_min",
+        "eui_perim_heating_max",
+        "eui_perim_heating_min",
+        "eui_perim_cooling_max",
+        "eui_perim_cooling_min",
+        "eui_core_heating_max",
+        "eui_core_heating_min",
+        "eui_core_cooling_max",
+        "eui_core_cooling_min",
         "area_max",
         "area_min",
+        "area_core_max",
+        "area_core_min",
+        "area_perim_max",
+        "area_perim_min",
         "building_params_per_vector",
         "timeseries_per_vector",
         "timeseries_per_output",
@@ -150,8 +202,73 @@ class Surrogate:
         schema: Schema,
         learning_rate=1e-3,
         checkpoint=None,
+        load_training_data=True,
+        cpu=False,
     ) -> None:
+        global device
+        if cpu:
+            device = "cpu"
+        logger.info(f"Using {device} for surrogate model.")
         self.schema = schema
+        if load_training_data:
+            self.load_all_training_data()
+        self.config_network_dims(
+            dim_source="checkpoint" if checkpoint is not None else "training",
+            checkpoint=checkpoint,
+        )
+        logger.info(
+            f"{self.building_params_per_vector} building parameters per input vector"
+        )
+        logger.info(f"{self.timeseries_per_vector} timeseries per input vector")
+        logger.info(f"{self.timeseries_per_output} timeseries per output vector")
+        logger.info(f"{self.output_resolution} timesteps in output.")
+
+        logger.info("Initializing machine learning objects...")
+
+        # self.timeseries_net = MonthlyEnergyCNN(
+        #     in_channels=self.timeseries_per_vector, n_feature_maps=64, out_channels=self.latent_size
+        # ).to(device)
+
+        conf = Conv1DStageConfig.Base(self.timeseries_per_vector)
+        self.timeseries_net = ConvNet(
+            stage_configs=conf,
+            latent_channels=self.latent_size,
+            latent_length=self.output_resolution,
+        ).to(device)
+
+        # self.timeseries_net = ConvNeXt1D(
+        #     in_channels=self.timeseries_per_vector,
+        #     series_output_size=self.output_resolution,
+        #     stage_configs=[
+        #         ConvNeXt1DStageConfig(64, 256, num_layers=3),
+        #         ConvNeXt1DStageConfig(256, 512, num_layers=3),
+        #         ConvNeXt1DStageConfig(512, self.latent_size, num_layers=3),
+        #         # ConvNeXt1DStageConfig(256, self.latent_size, num_layers=3),
+        #     ]
+        # ).to(device)
+
+        self.energy_net = EnergyCNN2(
+            in_channels=self.energy_cnn_in_size,
+            out_channels=self.timeseries_per_output,
+            n_feature_maps=128,
+            n_layers=3,
+        ).to(device)
+        self.loss_fn = nn.MSELoss()
+        self.learning_rate = learning_rate
+        self.optimizer = torch.optim.Adam(
+            list(self.timeseries_net.parameters()) + list(self.energy_net.parameters()),
+            lr=self.learning_rate,
+        )
+        self.training_loss_history = []
+        self.validation_loss_history = []
+        self.withheld_loss_history = []
+        self.latentvect_history = []
+        logger.info("ML objects initialized.")
+
+        if checkpoint is not None:
+            self.load_checkpoint(checkpoint)
+
+    def load_all_training_data(self):
         if not os.path.exists(Surrogate.full_results_path):
             os.makedirs(DATA_PATH, exist_ok=True)
             logger.info(
@@ -193,14 +310,80 @@ class Surrogate:
             self.results["monthly"] = f["monthly"][
                 ...
             ]  # this loads the whole batch into memory!
-            self.results["eui"] = (
-                2.7777e-7
-                * self.results["monthly"]
-                / self.results["area"].reshape(-1, 1, 1)
-            )  # kwh/m2
             self.full_storage_batch = f["storage_batch"][...]
-        self.eui_max = np.max(self.results["eui"])
-        self.eui_min = np.min(self.results["eui"])
+            self.results["area_core"] = self.results["area"] * (
+                1
+                - self.schema["perim_2_footprint"].extract_storage_values_batch(
+                    self.full_storage_batch
+                )
+            )
+            self.results["area_perim"] = self.results["area"] * self.schema[
+                "perim_2_footprint"
+            ].extract_storage_values_batch(self.full_storage_batch)
+            perim_heating_eui = (
+                self.results["monthly"][:, 0] * 2.7777e-7 / self.results["area_perim"]
+            )
+            perim_cooling_eui = (
+                self.results["monthly"][:, 1] * 2.7777e-7 / self.results["area_perim"]
+            )
+            core_heating_eui = (
+                self.results["monthly"][:, 2] * 2.7777e-7 / self.results["area_core"]
+            )
+            core_cooling_eui = (
+                self.results["monthly"][:, 3] * 2.7777e-7 / self.results["area_core"]
+            )
+            eui_unnorm = np.stack(
+                [
+                    perim_heating_eui,
+                    perim_cooling_eui,
+                    core_heating_eui,
+                    core_cooling_eui,
+                ],
+                axis=1,
+            )
+            perim_heating_eui_max = np.max(perim_heating_eui)
+            perim_heating_eui_min = np.min(perim_heating_eui)
+            perim_cooling_eui_max = np.max(perim_cooling_eui)
+            perim_cooling_eui_min = np.min(perim_cooling_eui)
+            core_heating_eui_max = np.max(core_heating_eui)
+            core_heating_eui_min = np.min(core_heating_eui)
+            core_cooling_eui_max = np.max(core_cooling_eui)
+            core_cooling_eui_min = np.min(core_cooling_eui)
+            self.eui_perim_heating_max = perim_heating_eui_max
+            self.eui_perim_heating_min = perim_heating_eui_min
+            self.eui_perim_cooling_max = perim_cooling_eui_max
+            self.eui_perim_cooling_min = perim_cooling_eui_min
+            self.eui_core_heating_max = core_heating_eui_max
+            self.eui_core_heating_min = core_heating_eui_min
+            self.eui_core_cooling_max = core_cooling_eui_max
+            self.eui_core_cooling_min = core_cooling_eui_min
+            perim_heating_eui_norm = normalize(
+                perim_heating_eui, perim_heating_eui_max, perim_heating_eui_min
+            )
+            perim_cooling_eui_norm = normalize(
+                perim_cooling_eui, perim_cooling_eui_max, perim_cooling_eui_min
+            )
+            core_heating_eui_norm = normalize(
+                core_heating_eui, core_heating_eui_max, core_heating_eui_min
+            )
+            core_cooling_eui_norm = normalize(
+                core_cooling_eui, core_cooling_eui_max, core_cooling_eui_min
+            )
+            eui_norm = np.stack(
+                [
+                    perim_heating_eui_norm,
+                    perim_cooling_eui_norm,
+                    core_heating_eui_norm,
+                    core_cooling_eui_norm,
+                ],
+                axis=1,
+            )
+            self.results["eui_unnormalized"] = eui_unnorm
+            self.results["eui_normalized"] = eui_norm
+        self.area_core_max = np.max(self.results["area_core"])
+        self.area_core_min = np.min(self.results["area_core"])
+        self.area_perim_max = np.max(self.results["area_perim"])
+        self.area_perim_min = np.min(self.results["area_perim"])
         self.area_max = np.max(self.results["area"])
         self.area_min = np.min(self.results["area"])
 
@@ -212,6 +395,27 @@ class Surrogate:
         self.climate_data = ClimateData()
         logger.info("Finished loading climate data.")
 
+    def config_network_dims(
+        self,
+        dim_source: Literal["training", "checkpoint"] = "training",
+        checkpoint=None,
+    ):
+        if dim_source == "training":
+            self.configure_network_dims_from_training_data()
+        elif dim_source == "checkpoint":
+            checkpoint_path = checkpoints_dir / checkpoint
+            if not os.path.exists(checkpoint_path):
+                os.makedirs(checkpoints_dir / checkpoint.split("/")[0], exist_ok=True)
+                download_from_bucket("models/" + checkpoint, checkpoint_path)
+            data = torch.load(checkpoint_path)
+            self.building_params_per_vector = data["building_params_per_vector"]
+            self.timeseries_per_vector = data["timeseries_per_vector"]
+            self.timeseries_per_output = data["timeseries_per_output"]
+            self.output_resolution = data["output_resolution"]
+            self.latent_size = data["latent_size"]
+            self.energy_cnn_in_size = data["energy_cnn_in_size"]
+
+    def configure_network_dims_from_training_data(self):
         logger.info("Checking model dimensions...")
         level = logger.level
         logger.setLevel(logging.ERROR)
@@ -221,104 +425,9 @@ class Surrogate:
         self.timeseries_per_output = results.shape[1]
         self.output_resolution = results.shape[-1]
         self.latent_size = self.building_params_per_vector
+        self.latent_size = self.building_params_per_vector * 4
         self.energy_cnn_in_size = self.latent_size + self.building_params_per_vector
         logger.setLevel(level)
-        logger.info(
-            f"{self.building_params_per_vector} building parameters per input vector"
-        )
-        logger.info(f"{self.timeseries_per_vector} timeseries per input vector")
-        logger.info(f"{self.timeseries_per_output} timeseries per output vector")
-        logger.info(f"{self.output_resolution} timesteps in output.")
-
-        logger.info("Initializing machine learning objects...")
-        self.timeseries_net = MonthlyEnergyCNN(
-            in_channels=self.timeseries_per_vector, out_channels=self.latent_size
-        ).to(device)
-        self.energy_net = EnergyCNN(
-            in_channels=self.energy_cnn_in_size, out_channels=self.timeseries_per_output
-        ).to(device)
-        self.loss_fn = nn.MSELoss()
-        self.learning_rate = learning_rate
-        self.optimizer = torch.optim.Adam(
-            list(self.timeseries_net.parameters()) + list(self.energy_net.parameters()),
-            lr=self.learning_rate,
-        )
-        self.training_loss_history = []
-        self.validation_loss_history = []
-        self.withheld_loss_history = []
-        self.latentvect_history = []
-        logger.info("ML objects initialized.")
-
-        if checkpoint is not None:
-            self.load_checkpoint(checkpoint)
-
-    @classmethod
-    def init_for_umi(
-        cls,
-        schedules,
-        bv_shape,
-        tv_shape,
-        results_shape,
-        schema: Schema,
-        learning_rate=1e-3,
-        checkpoint=None,
-    ):
-        cls.schema = schema
-        if not os.path.exists(Surrogate.full_results_path):
-            os.makedirs(DATA_PATH, exist_ok=True)
-
-        cls.default_schedules = schedules
-        # Schedules were stored as Res_Occ, Res_Light Res_Equip, but schema expects order to be Equip, Lights, Occ
-        logging.info(f"Loaded Schedules Array.  Shape={cls.default_schedules.shape}")
-
-        # TODO
-        cls.eui_max = 2000
-        cls.eui_min = 0
-        cls.area_max = 2000
-        cls.area_min = 0.1
-
-        # logger.info("Loading climate data...")
-        # cls.climate_data = ClimateData()
-        # logger.info("Finished loading climate data.")
-
-        logger.info("Checking model dimensions...")
-
-        cls.building_params_per_vector = bv_shape[1]
-        cls.timeseries_per_vector = tv_shape[1]
-        cls.timeseries_per_output = results_shape[1]
-        cls.output_resolution = results_shape[-1]
-        cls.latent_size = cls.building_params_per_vector
-        cls.energy_cnn_in_size = cls.latent_size + cls.building_params_per_vector
-        logger.info(
-            f"{cls.building_params_per_vector} building parameters per input vector"
-        )
-        logger.info(f"{cls.timeseries_per_vector} timeseries per input vector")
-        logger.info(f"{cls.timeseries_per_output} timeseries per output vector")
-        logger.info(f"{cls.output_resolution} timesteps in output.")
-
-        logger.info("Initializing machine learning objects...")
-        cls.timeseries_net = MonthlyEnergyCNN(
-            in_channels=cls.timeseries_per_vector, out_channels=cls.latent_size
-        ).to(device)
-        cls.energy_net = EnergyCNN(
-            in_channels=cls.energy_cnn_in_size, out_channels=cls.timeseries_per_output
-        ).to(device)
-        cls.loss_fn = nn.MSELoss()
-        cls.learning_rate = learning_rate
-        cls.optimizer = torch.optim.Adam(
-            list(cls.timeseries_net.parameters()) + list(cls.energy_net.parameters()),
-            lr=cls.learning_rate,
-        )
-        cls.training_loss_history = []
-        cls.validation_loss_history = []
-        cls.withheld_loss_history = []
-        cls.latentvect_history = []
-        logger.info("ML objects initialized.")
-
-        if checkpoint is not None:
-            cls.load_checkpoint(checkpoint)
-            
-        return cls
 
     def load_checkpoint(self, checkpoint):
         # TODO: implement full surrogate config from checkpoint
@@ -379,17 +488,26 @@ class Surrogate:
         logger.info("Constructing dataset...")
         areas = self.results["area"][start_ix : start_ix + count]
         areas_normalized = normalize(areas, self.area_max, self.area_min)
+        perim_areas = self.results["area_perim"][start_ix : start_ix + count]
+        core_areas = self.results["area_core"][start_ix : start_ix + count]
+        perim_areas_norm = normalize(
+            perim_areas, self.area_perim_max, self.area_perim_min
+        )
+        core_areas_norm = normalize(core_areas, self.area_core_max, self.area_core_min)
 
         batch = self.full_storage_batch[start_ix : start_ix + count]
         bldg_params = self.get_batch_building_vector(batch)
-        building_vector = np.concatenate([bldg_params, areas_normalized], axis=1)
+        building_vector = np.concatenate(
+            [bldg_params, areas_normalized, perim_areas_norm, core_areas_norm], axis=1
+        )
 
         climate_timeseries = self.get_batch_climate_timeseries(batch)
         schedules = self.get_batch_schedules(batch)
         timeseries_vector = np.concatenate([climate_timeseries, schedules], axis=1)
 
-        loads = self.results["eui"][start_ix : start_ix + count]
-        loads_normalized = normalize(loads, self.eui_max, self.eui_min)
+        # loads = self.results["eui"][start_ix:start_ix+count]
+        # loads_normalized = normalize(loads, self.eui_max, self.eui_min)
+        loads_normalized = self.results["eui_normalized"][start_ix : start_ix + count]
 
         logger.info("Dataset constructed.")
         return building_vector, timeseries_vector, loads_normalized
@@ -399,7 +517,7 @@ class Surrogate:
             start_ix, count
         )
         torch.cuda.empty_cache()
-
+        # building_vector = np.dstack([building_vector]*self.output_resolution)
         logger.info("Building dataloaders...")
         dataset = {}
         for i in range(building_vector.shape[0]):
@@ -446,7 +564,9 @@ class Surrogate:
         n_mini_epochs=3,
         mini_epoch_batch_size=50000,
         dataloader_batch_size=200,
+        unseen_eval_batch_size=20000,
         step_loss_frequency=50,
+        lr_schedule=None,
     ):
         # TODO: implement annual regularizer / possibly adaptive loss fns
         assert (
@@ -460,11 +580,14 @@ class Surrogate:
         final_start_ix = train_test_split_ix - mini_epoch_batch_size
         unseen_testing_cities = self.make_dataloader(
             train_test_split_ix + 50000,
-            count=20000,
+            count=unseen_eval_batch_size,
             dataloader_batch_size=dataloader_batch_size,
         )
 
         for full_epoch_num in range(n_full_epochs):
+            if lr_schedule is not None:
+                for group in self.optimizer.param_groups:
+                    group["lr"] = lr_schedule[full_epoch_num]
             logger.info(f"\n\n\n {'-'*20} MAJOR Epoch {full_epoch_num} {'-'*20}")
             for start_idx in range(0, final_start_ix + 1, mini_epoch_batch_size):
                 logger.info(
@@ -482,24 +605,29 @@ class Surrogate:
 
                 for epoch_num in range(n_mini_epochs):
                     logger.info(f"{'-'*20} MiniBatch Epoch number {epoch_num} {'-'*20}")
+                    self.timeseries_net.train()
+                    self.energy_net.train()
                     for j, sample in enumerate(training_dataloader):
                         self.optimizer.zero_grad()
-                        _, _, loss, timeseries_latvect = self.project_dataloader_sample(
-                            sample
-                        )
+                        projection_results = self.project_dataloader_sample(sample)
+                        loss = projection_results["loss"]
+                        latvect = projection_results["timeseries_latvect"]
                         if j % step_loss_frequency == 0:
                             logger.info(f"Step {j} loss: {loss.item()}")
-                            self.latentvect_history.append(timeseries_latvect.detach())
+                            self.latentvect_history.append(latvect.detach())
                         self.training_loss_history.append(
                             [len(self.training_loss_history), loss.item()]
                         )
                         loss.backward()
                         self.optimizer.step()
 
+                    self.timeseries_net.eval()
+                    self.energy_net.eval()
                     with torch.no_grad():
                         epoch_validation_loss = []
                         for sample in validation_dataloader:
-                            _, _, loss, _ = self.project_dataloader_sample(sample)
+                            projection_results = self.project_dataloader_sample(sample)
+                            loss = projection_results["loss"]
                             epoch_validation_loss.append(loss.item())
                         mean_validation_loss = np.mean(epoch_validation_loss)
                         logger.info(
@@ -513,11 +641,14 @@ class Surrogate:
                 # Finished repeating training on MiniBatch, check loss on fully unseen cities
                 logger.info("Computing loss on withheld climate zone data...")
                 epoch_validation_loss = []
+                self.timeseries_net.eval()
+                self.energy_net.eval()
                 with torch.no_grad():
                     for sample in unseen_testing_cities["dataloaders"][
                         "train"
                     ]:  # using train is fine since this data is never seen
-                        _, _, loss, _ = self.project_dataloader_sample(sample)
+                        projection_results = self.project_dataloader_sample(sample)
+                        loss = projection_results["loss"]
                         epoch_validation_loss.append(loss.item())
                     mean_validation_loss = np.mean(epoch_validation_loss)
                     logger.info(
@@ -548,19 +679,25 @@ class Surrogate:
         # Get the data
         timeseries_val = sample["timeseries_vector"].to(device).float()
         bldg_vect_val = sample["building_vector"].to(device).float()
-        loads = None
-        if compute_loss:
-            loads = sample["results_vector"].to(device).float()
+        loads = sample["results_vector"].to(device).float() if compute_loss else None
         # Project timeseries to latent space
         timeseries_latvect_val = self.timeseries_net(timeseries_val)
         # Concatenate latent vector with building vector
         x_val = torch.cat([timeseries_latvect_val, bldg_vect_val], axis=1).squeeze(1)
         # Predict and compute loss
         predicted_loads = self.energy_net(x_val)
-        loss = None
-        if compute_loss:
-            loss = self.loss_fn(loads, predicted_loads)
-        return loads, predicted_loads, loss, timeseries_latvect_val
+        # annual_pred = torch.sum(predicted_loads, axis=2)
+        # annual_true = torch.sum(loads, axis=2)
+        # TODO: implement adaptive weighting?
+        loss = (
+            self.loss_fn(predicted_loads, loads) if compute_loss else None
+        )  # + 0.1*self.loss_fn(annual_pred, annual_true)
+        return {
+            "timeseries_latvect": timeseries_latvect_val,
+            "predicted_loads": predicted_loads,
+            "loads": loads,
+            "loss": loss,
+        }
 
     def save_checkpoint(
         self,
@@ -581,8 +718,14 @@ class Surrogate:
             "timeseries_net_state_dict": timeseries_dict,
             "energy_net_state_dict": energy_dict,
             "optimizer_state_dict": optim_dict,
-            "eui_max": self.eui_max,
-            "eui_min": self.eui_min,
+            "eui_perim_heating_max": self.eui_perim_heating_max,
+            "eui_perim_heating_min": self.eui_perim_heating_min,
+            "eui_perim_cooling_max": self.eui_perim_cooling_max,
+            "eui_perim_cooling_min": self.eui_perim_cooling_min,
+            "eui_core_heating_max": self.eui_core_heating_max,
+            "eui_core_heating_min": self.eui_core_heating_min,
+            "eui_core_cooling_max": self.eui_core_cooling_max,
+            "eui_core_cooling_min": self.eui_core_cooling_min,
             "area_max": self.area_max,
             "area_min": self.area_min,
             "building_params_per_vector": self.building_params_per_vector,
@@ -625,12 +768,10 @@ class Surrogate:
             test_dataloader = data_to_plot["dataloaders"][segment]
             with torch.no_grad():
                 for test_samples in test_dataloader:
-                    loads, predicted_loads, loss, _ = self.project_dataloader_sample(
-                        test_samples
-                    )
-                    true_loads.append(loads)
-                    pred_loads.append(predicted_loads)
-                    all_losses.append(loss)
+                    projection_results = self.project_dataloader_sample(test_samples)
+                    true_loads.append(projection_results["loads"])
+                    pred_loads.append(projection_results["predicted_loads"])
+                    all_losses.append(projection_results["loss"])
 
         true_loads = torch.vstack(true_loads)
         pred_loads = torch.vstack(pred_loads)
@@ -676,11 +817,18 @@ class Surrogate:
         )
         true_loads = torch.sum(true_loads, axis=2)
         pred_loads = torch.sum(pred_loads, axis=2)
-        maxes = torch.max(pred_loads, dim=0)[0].reshape(1, 4)
+        maxes = torch.max(true_loads, dim=0)[0].reshape(1, 4)
         true_loads = true_loads / maxes
         pred_loads = pred_loads / maxes
         true_loads = true_loads.cpu()
         pred_loads = pred_loads.cpu()
+        r2_scores = []
+        for i, zone_name in enumerate(
+            ("Perimeter Heating", "Perimeter Cooling", "Core Heating", "Core Cooling")
+        ):
+            r2 = r2_score(true_loads[:, i], pred_loads[:, i])
+            print(zone_name, r2)
+            r2_scores.append(r2)
         fig, axs = plt.subplots(2, 2, figsize=(12, 12))
         identity = np.linspace(0, 1, 10)
         plt.suptitle("Annual Model Fits")
@@ -700,7 +848,7 @@ class Surrogate:
         fig.tight_layout()
         logger.setLevel(level)
 
-    def plot_loss_histories(self):
+    def plot_loss_histories(self, y_max=0.001):
         training_loss_history_array = np.array(self.training_loss_history)
         validation_loss_history_array = np.array(self.validation_loss_history)
         withheld_loss_history_array = np.array(self.withheld_loss_history)
@@ -724,14 +872,13 @@ class Surrogate:
             label="Validation Loss (out-of-sample EPWs)",
         )
         # TODO: figure out better scaling for these plots
-        plt.ylim([0, 0.001])
+        plt.ylim([0, y_max])
         plt.legend()
         plt.show()
 
     def plot_true_results(self, start_ix, count, ylim):
-        results = normalize(
-            self.results["eui"][start_ix : start_ix + count], self.eui_max, self.eui_min
-        )
+        # results = normalize(self.results["eui"][start_ix:start_ix+count], self.eui_max, self.eui_min)
+        results = self.results["eui_normalized"][start_ix : start_ix + count]
         fig, axs = plt.subplots(2, 2, figsize=(10, 10))
         plt.suptitle("Simulation Results (shoebox area normalized)")
         for i in range(count):
@@ -765,11 +912,17 @@ class Surrogate:
 
     def plot_params(self, start_ix, count, include_whiskers=True, title=None):
         batch = self.full_storage_batch[start_ix : start_ix + count]
-        areas = normalize(
+        areas_norm = normalize(
             self.results["area"][start_ix : start_ix + count],
             self.area_max,
             self.area_min,
         )
+        perim_areas = self.results["area_perim"][start_ix : start_ix + count]
+        core_areas = self.results["area_core"][start_ix : start_ix + count]
+        perim_areas_norm = normalize(
+            perim_areas, self.area_perim_max, self.area_perim_min
+        )
+        core_areas_norm = normalize(core_areas, self.area_core_max, self.area_core_min)
         bldg_params = self.get_batch_building_vector(batch)
         names = []
 
@@ -799,8 +952,12 @@ class Surrogate:
                     names.append("SHGC")
                     names.append("VLT")
 
-        boxplot_params.append(areas.reshape(-1, 1))
+        boxplot_params.append(areas_norm.reshape(-1, 1))
+        boxplot_params.append(perim_areas_norm.reshape(-1, 1))
+        boxplot_params.append(core_areas_norm.reshape(-1, 1))
         names.append("Area")
+        names.append("Area:Perim")
+        names.append("Area:Core")
 
         offset = 1
         for i, vals in enumerate(boxplot_params):
