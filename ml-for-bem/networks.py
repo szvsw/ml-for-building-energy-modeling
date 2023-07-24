@@ -505,18 +505,6 @@ class EnergyCNN2(nn.Module):
                 kernel_sizes=[1],
                 activation=nn.ReLU,
             ),
-            # Conv1DStage(
-            #     in_channels=n_feature_maps,
-            #     out_channels=out_channels,
-            #     kernel_sizes=[1]*n_layers,
-            #     activation=nn.LeakyReLU
-            # ),
-            # Conv1DBlock(
-            #     in_channels=out_channels,
-            #     out_channels=out_channels,
-            #     kernel_size=1,
-            #     activation=nn.ReLU
-            # )
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
