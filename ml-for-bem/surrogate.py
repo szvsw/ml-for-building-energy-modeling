@@ -989,7 +989,7 @@ class Surrogate:
             np.random.shuffle(testing_indices)
         training_batch = batch[training_indices]
         testing_batch = batch[testing_indices]
-        batch = np.concatenate((training_batch, testing_batch), axis=0)
+        self.full_storage_batch = np.concatenate((training_batch, testing_batch), axis=0)
         for key, result in self.results.items():
             training_result = result[training_indices]
             testing_result = result[testing_indices]
