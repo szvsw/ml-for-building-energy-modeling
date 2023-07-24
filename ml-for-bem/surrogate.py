@@ -9,6 +9,7 @@ import h5py
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 
 from sklearn.metrics import r2_score
@@ -264,6 +265,7 @@ class Surrogate:
         self.validation_loss_history = []
         self.withheld_loss_history = []
         self.latentvect_history = []
+        self.writer = SummaryWriter()
         logger.info("ML objects initialized.")
 
         if checkpoint is not None:
@@ -573,6 +575,7 @@ class Surrogate:
         step_loss_frequency=50,
         lr_schedule=None,
     ):
+        self.writer = SummaryWriter(DATA_PATH / "runs" / run_name)
         # TODO: implement annual regularizer / possibly adaptive loss fns
         assert (
             self.train_test_split_idx % mini_epoch_batch_size == 0
@@ -591,7 +594,6 @@ class Surrogate:
 
         for full_epoch_num in range(n_full_epochs):
             logger.info(f"\n\n\n {'-'*20} MAJOR Epoch {full_epoch_num} {'-'*20}")
-            self.permute_dataset(shuffle_testing=False, seed=full_epoch_num + 1)
             if lr_schedule is not None:
                 for group in self.optimizer.param_groups:
                     group["lr"] = lr_schedule[full_epoch_num]
@@ -626,6 +628,11 @@ class Surrogate:
                         )
                         loss.backward()
                         self.optimizer.step()
+                        self.writer.add_scalar(
+                            "step loss",
+                            loss.item(),
+                            len(self.training_loss_history) - 1,
+                        )
 
                     self.timeseries_net.eval()
                     self.energy_net.eval()
@@ -643,25 +650,55 @@ class Surrogate:
                         self.validation_loss_history.append(
                             [len(self.training_loss_history), mean_validation_loss]
                         )
+                        self.writer.add_scalar(
+                            "Batch Validation Loss",
+                            mean_validation_loss,
+                            len(self.training_loss_history) - 1,
+                        )
 
                 # Finished repeating training on MiniBatch, check loss on fully unseen cities
                 logger.info("Computing loss on withheld climate zone data...")
                 epoch_validation_loss = []
                 self.timeseries_net.eval()
                 self.energy_net.eval()
+                true_loads = []
+                pred_loads = []
                 with torch.no_grad():
                     for sample in unseen_testing_cities["dataloaders"][
                         "train"
                     ]:  # using train is fine since this data is never seen
                         projection_results = self.project_dataloader_sample(sample)
                         loss = projection_results["loss"]
+                        true_loads.append(projection_results["true_loads"])
+                        pred_loads.append(projection_results["predicted_loads"])
                         epoch_validation_loss.append(loss.item())
                     mean_validation_loss = np.mean(epoch_validation_loss)
+                    true_loads = torch.vstack(true_loads).cpu()
+                    pred_loads = torch.vstack(pred_loads).cpu()
+
+                    for i, zone_name in enumerate(
+                        (
+                            "Perimeter Heating",
+                            "Perimeter Cooling",
+                            "Core Heating",
+                            "Core Cooling",
+                        )
+                    ):
+                        r2 = r2_score(true_loads[:, i], pred_loads[:, i])
+                        self.writer.add_scalar(
+                            f"{zone_name} R2", r2, len(self.training_loss_history) - 1
+                        )
+
                     logger.info(
                         f"Mean validation loss for withheld climate zone data: {mean_validation_loss}"
                     )
                     self.withheld_loss_history.append(
                         [len(self.training_loss_history), mean_validation_loss]
+                    )
+                    self.writer.add_scalar(
+                        "Unseen EPW Loss",
+                        mean_validation_loss,
+                        len(self.training_loss_history) - 1,
                     )
 
                 self.plot_loss_histories()
@@ -989,7 +1026,9 @@ class Surrogate:
             np.random.shuffle(testing_indices)
         training_batch = batch[training_indices]
         testing_batch = batch[testing_indices]
-        self.full_storage_batch = np.concatenate((training_batch, testing_batch), axis=0)
+        self.full_storage_batch = np.concatenate(
+            (training_batch, testing_batch), axis=0
+        )
         for key, result in self.results.items():
             training_result = result[training_indices]
             testing_result = result[testing_indices]
