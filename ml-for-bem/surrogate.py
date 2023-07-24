@@ -17,8 +17,6 @@ from networks import (
     EnergyCNN,
     EnergyCNN2,
     MonthlyEnergyCNN,
-    ConvNeXt1D,
-    ConvNeXt1DStageConfig,
     ConvNet,
     Conv1DStageConfig,
 )
