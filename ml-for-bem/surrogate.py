@@ -676,6 +676,8 @@ class Surrogate:
                     mean_validation_loss = np.mean(epoch_validation_loss)
                     true_loads = torch.vstack(true_loads).cpu()
                     pred_loads = torch.vstack(pred_loads).cpu()
+                    true_loads = torch.sum(true_loads, axis=2)
+                    pred_loads = torch.sum(pred_loads, axis=2)
 
                     for i, zone_name in enumerate(
                         (
