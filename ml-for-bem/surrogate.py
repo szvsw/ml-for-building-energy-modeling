@@ -189,6 +189,7 @@ class Surrogate:
         "withheld_loss_history",
         "latentvect_history",
         "train_test_split_idx",
+        "writer"
     )
 
     folder = DATA_PATH / "model_data_manager"
@@ -265,7 +266,6 @@ class Surrogate:
         self.validation_loss_history = []
         self.withheld_loss_history = []
         self.latentvect_history = []
-        self.writer = SummaryWriter()
         logger.info("ML objects initialized.")
 
         if checkpoint is not None:
@@ -592,6 +592,7 @@ class Surrogate:
             dataloader_batch_size=dataloader_batch_size,
         )
 
+        it = len(self.training_loss_history)
         for full_epoch_num in range(n_full_epochs):
             logger.info(f"\n\n\n {'-'*20} MAJOR Epoch {full_epoch_num} {'-'*20}")
             if lr_schedule is not None:
@@ -628,11 +629,13 @@ class Surrogate:
                         )
                         loss.backward()
                         self.optimizer.step()
-                        self.writer.add_scalar(
-                            "step loss",
-                            loss.item(),
-                            len(self.training_loss_history) - 1,
-                        )
+                        if it > 599:
+                            self.writer.add_scalars(
+                                "losses",
+                                {"Step Loss": loss.item()},
+                                it,
+                            )
+                        it = it + 1
 
                     self.timeseries_net.eval()
                     self.energy_net.eval()
@@ -650,12 +653,13 @@ class Surrogate:
                         self.validation_loss_history.append(
                             [len(self.training_loss_history), mean_validation_loss]
                         )
-                        self.writer.add_scalar(
-                            "Batch Validation Loss",
-                            mean_validation_loss,
-                            len(self.training_loss_history) - 1,
-                        )
-                        self.writer.flush()
+                        if it > 599:
+                            self.writer.add_scalars(
+                                "losses",
+                                {"Batch Validation Loss": mean_validation_loss},
+                                it,
+                            )
+                            self.writer.flush()
 
                 # Finished repeating training on MiniBatch, check loss on fully unseen cities
                 logger.info("Computing loss on withheld climate zone data...")
@@ -670,7 +674,7 @@ class Surrogate:
                     ]:  # using train is fine since this data is never seen
                         projection_results = self.project_dataloader_sample(sample)
                         loss = projection_results["loss"]
-                        true_loads.append(projection_results["true_loads"])
+                        true_loads.append(projection_results["loads"])
                         pred_loads.append(projection_results["predicted_loads"])
                         epoch_validation_loss.append(loss.item())
                     mean_validation_loss = np.mean(epoch_validation_loss)
@@ -679,6 +683,7 @@ class Surrogate:
                     true_loads = torch.sum(true_loads, axis=2)
                     pred_loads = torch.sum(pred_loads, axis=2)
 
+                    r2_scores = {}
                     for i, zone_name in enumerate(
                         (
                             "Perimeter Heating",
@@ -688,9 +693,11 @@ class Surrogate:
                         )
                     ):
                         r2 = r2_score(true_loads[:, i], pred_loads[:, i])
-                        self.writer.add_scalar(
-                            f"{zone_name} R2", r2, len(self.training_loss_history) - 1
+                        r2_scores[zone_name] = r2
+                        logger.info(
+                            f"{zone_name} R2: {r2:04f}"
                         )
+                    self.writer.add_scalars("R2", r2_scores, it)
 
                     logger.info(
                         f"Mean validation loss for withheld climate zone data: {mean_validation_loss}"
@@ -698,14 +705,14 @@ class Surrogate:
                     self.withheld_loss_history.append(
                         [len(self.training_loss_history), mean_validation_loss]
                     )
-                    self.writer.add_scalar(
-                        "Unseen EPW Loss",
-                        mean_validation_loss,
-                        len(self.training_loss_history) - 1,
+                    self.writer.add_scalars(
+                        "losses",
+                        {"Unseen EPW Loss": mean_validation_loss},
+                        it,
                     )
                     self.writer.flush()
 
-                self.plot_loss_histories()
+                # self.plot_loss_histories()
 
                 del training_dataloader
                 del validation_dataloader
