@@ -189,7 +189,7 @@ class Surrogate:
         "withheld_loss_history",
         "latentvect_history",
         "train_test_split_idx",
-        "writer"
+        "writer",
     )
 
     folder = DATA_PATH / "model_data_manager"
@@ -694,9 +694,7 @@ class Surrogate:
                     ):
                         r2 = r2_score(true_loads[:, i], pred_loads[:, i])
                         r2_scores[zone_name] = r2
-                        logger.info(
-                            f"{zone_name} R2: {r2:04f}"
-                        )
+                        logger.info(f"{zone_name} R2: {r2:04f}")
                     self.writer.add_scalars("R2", r2_scores, it)
 
                     logger.info(
@@ -803,6 +801,20 @@ class Surrogate:
         path = checkpoints_dir / filename
         torch.save(checkpoint, path)
         upload_to_bucket(f"models/{run_name}/{filename}", path)
+
+    def make_model_graphs(self, run_name):
+        self.writer = SummaryWriter(DATA_PATH / "runs" / f"{run_name}_timeseries")
+        self.writer.add_graph(
+            self.timeseries_net,
+            torch.randn(2, self.timeseries_per_vector, HOURS_IN_YEAR).float().to(device),
+        )
+        self.writer.close()
+        self.writer = SummaryWriter(DATA_PATH / "runs" / f"{run_name}_energy")
+        self.writer.add_graph(
+            self.energy_net,
+            torch.randn(2, self.energy_cnn_in_size, self.output_resolution).float().to(device),
+        )
+        self.writer.close()
 
     def evaluate_over_range(self, start_ix, count, segment="test"):
         true_loads = []
