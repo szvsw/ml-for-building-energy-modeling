@@ -655,6 +655,7 @@ class Surrogate:
                             mean_validation_loss,
                             len(self.training_loss_history) - 1,
                         )
+                        self.writer.flush()
 
                 # Finished repeating training on MiniBatch, check loss on fully unseen cities
                 logger.info("Computing loss on withheld climate zone data...")
@@ -700,6 +701,7 @@ class Surrogate:
                         mean_validation_loss,
                         len(self.training_loss_history) - 1,
                     )
+                    self.writer.flush()
 
                 self.plot_loss_histories()
 
@@ -716,6 +718,8 @@ class Surrogate:
                     mini_epoch_batch_size=mini_epoch_batch_size,
                     dataloader_batch_size=dataloader_batch_size,
                 )
+
+        self.writer.close()
 
     def project_dataloader_sample(self, sample, compute_loss=True):
         # Get the data
