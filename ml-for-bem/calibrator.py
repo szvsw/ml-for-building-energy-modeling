@@ -130,9 +130,10 @@ class Calibrator(nn.Module):
 if __name__ == "__main__":
     device='cuda'
     schema = Schema()
+    # TODO: load in checkpoint and climate vector
     surrogate = Surrogate(schema=schema)
     cal = Calibrator(
-        ensemble_size=20,
+        ensemble_size=4,
         n_timeseries_input_channels=3,
         timeseries_input_period=24 * 7,
         timeseries_input_length=8760,
@@ -150,13 +151,14 @@ if __name__ == "__main__":
     for param in surrogate.timeseries_net.parameters():
         param.requires_grad = False
 
-    optim = torch.optim.Adam(cal.parameters(), lr=0.001)
+    optim = torch.optim.Adam(cal.parameters(), lr=0.1)
 
     for i in range(1000):
         optim.zero_grad()
         res = cal()
         res.backward()
         optim.step()
-        print(res)
-        
+        if res.item() < 0.1:
+            break
+    
 
