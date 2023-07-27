@@ -606,17 +606,27 @@ class SchemaParameter:
             )
         else:
             if isinstance(self, OneHotParameter):
-                counts = self.extract_storage_values_batch(storage_batch) if value == None else value
+                counts = (
+                    self.extract_storage_values_batch(storage_batch)
+                    if value is None
+                    else value
+                )
                 onehots = np.zeros((counts.shape[0], self.count))
                 onehots[np.arange(counts.shape[0]), counts[:, 0].astype(int)] = 1
                 return onehots
             elif isinstance(self, SchedulesParameters):
-                return self.extract_storage_values_batch(storage_batch) if value is None else value
+                return (
+                    self.extract_storage_values_batch(storage_batch)
+                    if value is None
+                    else value
+                )
             else:
                 vals = self.normalize(
                     self.extract_storage_values_batch(storage_batch).reshape(
                         -1, *self.shape_ml
-                    ) if value == None else value
+                    )
+                    if value == None
+                    else value
                 )
                 return vals
 
@@ -718,7 +728,11 @@ class OneHotParameter(SchemaParameter):
     __slots__ = "count"
 
     def __init__(self, count, shape_ml=None, **kwargs):
-        super().__init__(dtype="onehot", shape_ml=(count,) if shape_ml == None else shape_ml, **kwargs)
+        super().__init__(
+            dtype="onehot",
+            shape_ml=(count,) if shape_ml == None else shape_ml,
+            **kwargs,
+        )
         self.count = count
 
 
@@ -990,13 +1004,22 @@ class WindowParameter(NumericParameter):
             whitebox_sim: WhiteboxSimulation
             building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
         """
-        return self.to_ml(value=np.array(
+        # return self.to_ml(
+        #     value=np.array(
+        #         [
+        #             building_template.Windows.Construction.u_value,
+        #             0.5,  # TODO SHGC
+        #             building_template.Windows.Construction.visible_transmittance,
+        #         ]
+        #     )
+        # )
+        return np.array(
             [
                 building_template.Windows.Construction.u_value,
                 0.5,  # TODO SHGC
                 building_template.Windows.Construction.visible_transmittance,
             ]
-        ))
+        )
 
 
 class SchedulesParameters(SchemaParameter):
@@ -1062,10 +1085,9 @@ class SchedulesParameters(SchemaParameter):
             whitebox_sim: WhiteboxSimulation
             building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
         """
-        schedules = get_schedules(
-            building_template, zones=["Core"], paths=self.paths
-        )
+        schedules = get_schedules(building_template, zones=["Core"], paths=self.paths)
         return self.to_ml(value=schedules)
+
 
 class TimeSeriesOutput:
     __slots__ = (
@@ -1541,11 +1563,11 @@ class Schema:
                     ml_vector_components.append(vector_components)
         ml_vectors = np.hstack(ml_vector_components)
         return ml_vectors, timeseries_ops
-    
+
     def extract_from_template(self, building_template):
         # storage_vector = self.generate_empty_storage_vector()
         template_vect = []
-        schedules_vect =[]
+        schedules_vect = []
         parameters = self.parameters
         for parameter in parameters:
             if parameter.in_ml:
@@ -1553,16 +1575,24 @@ class Schema:
                 if isinstance(parameter, SchedulesParameters):
                     schedules_vect = parameter.extract_from_template(building_template)
                     # print(f"Got schedules of {type(schedules_vect)} with shape {schedules_vect.shape}")
-                elif isinstance(parameter, BuildingTemplateParameter): # TODO: check
-                    val = parameter.extract_from_template(building_template) 
+                elif (
+                    isinstance(parameter, BuildingTemplateParameter)
+                    or isinstance(parameter, TMassParameter)
+                    or isinstance(parameter, RValueParameter)
+                ):  # TODO: check
+                    val = parameter.extract_from_template(building_template)
                     # append to template vector
                     template_vect.append(val)
-            
+                elif isinstance(parameter, WindowParameter):
+                    val = parameter.extract_from_template(building_template)
+                    template_vect.extend(val)
+
         # return values which will be used for a building parameter vector and/or timeseries vector (schedules)
         return dict(
-            template_vect = np.array(template_vect),
-            schedules_vect = schedules_vect,
+            template_vect=np.array(template_vect),
+            schedules_vect=schedules_vect,
         )
+
 
 if __name__ == "__main__":
     schema = Schema()
