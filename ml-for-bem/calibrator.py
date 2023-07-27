@@ -14,7 +14,6 @@ class Calibrator(nn.Module):
         timeseries_input_length: int,
         n_static_input_parameters: int,
         weather_timeseries: torch.Tensor,
-        aspect_ratio: float,
         surrogate: Surrogate
     ):
         super().__init__()
@@ -26,11 +25,10 @@ class Calibrator(nn.Module):
 
         # Fixed shared weather vector
         self.weather_timeseries = weather_timeseries
-        self.aspect_ratio = aspect_ratio
 
         # TODO: Use initializer constraints from feature engineering
-        self.timeseries = nn.Parameter(
-            torch.rand(
+        self._timeseries = nn.Parameter(
+            torch.randn(
                 ensemble_size,
                 self.n_timeseries_input_channels,
                 self.timeseries_input_period,
@@ -49,21 +47,37 @@ class Calibrator(nn.Module):
 
         # Should these be separate for the four directions? identical?  fixed?
         
-        self.geo_ratios = nn.Parameter(
-            torch.rand(self.ensemble_size, 4)
+        self._geo_ratios = nn.Parameter(
+            torch.randn(self.ensemble_size, 4)
         ) # all four sides have the same adiabatic roof/ground ratios and core/perim split and depth
-        self.wwr = nn.Parameter(
-            torch.rand(4*ensemble_size,1)
+        self._wwr = nn.Parameter(
+            torch.randn(4*ensemble_size,1)
         ) # unique for the four sides
 
         # Create four orientations
         orientations = torch.arange(4).reshape(-1, 1).tile((self.ensemble_size, 1)).to(device)
         self.orientations = nn.functional.one_hot(orientations).squeeze()
 
-        self.statics = nn.Parameter(
-            torch.rand(ensemble_size, self.n_static_input_parameters),
+        self._statics = nn.Parameter(
+            torch.randn(ensemble_size, self.n_static_input_parameters),
         )
         self.surrogate = surrogate
+
+    @property
+    def timeseries(self):
+        return torch.sigmoid(self._timeseries)
+    
+    @property
+    def geo_ratios(self):
+        return torch.sigmoid(self._geo_ratios)
+
+    @property
+    def wwr(self):
+        return torch.sigmoid(self._wwr)
+
+    @property
+    def statics(self):
+        return torch.sigmoid(self._statics)
 
     def forward(self):
         # ---------------------
@@ -73,11 +87,35 @@ class Calibrator(nn.Module):
         # repeat once per orientation
         widths = self.width * torch.ones(4*self.ensemble_size,1).to(device)
         heights = self.height * torch.ones(4*self.ensemble_size,1).to(device)
-        geo_ratios = self.geo_ratios.repeat_interleave(4,axis=0)
+        
+        _f2f = self.surrogate.schema["facade_2_footprint"].unnormalize(self.geo_ratios[:,0:1])
+        _p2f = self.surrogate.schema["perim_2_footprint"].unnormalize(self.geo_ratios[:,1:2])
+        _height = surrogate.schema["height"].unnormalize(self.height) 
+        _width = surrogate.schema["width"].unnormalize(self.width) 
+        _depths = _height / _f2f
+        _areas = _width * _depths
+        _perims = _areas * _p2f
+        _cores = _areas * (1-_p2f)
+        _perims = _areas * _p2f
+        areas_norm = (_areas - self.surrogate.area_min) / ( self.surrogate.area_max - self.surrogate.area_min)
+        perim_areas_norm = (_perims - self.surrogate.area_perim_min) / ( self.surrogate.area_perim_max - self.surrogate.area_perim_min)
+        core_areas_norm = (_cores - self.surrogate.area_core_min) / ( self.surrogate.area_core_max - self.surrogate.area_core_min)
+
+        areas_norm = areas_norm.repeat_interleave(4, axis=0)
+        perim_areas_norm = perim_areas_norm.repeat_interleave(4, axis=0)
+        core_areas_norm = core_areas_norm.repeat_interleave(4, axis=0)
+
+        # depths = geo_ratios[]
+        geo_ratios = self.geo_ratios.repeat_interleave(4,axis=0) # constrain to 0-1
         statics = self.statics.repeat_interleave(4, axis=0)
+        statics[:,0] = schema["HeatingSetpoint"].normalize(19)
+        statics[:,1] = schema["CoolingSetpoint"].normalize(23)
+        statics[:,12] = (0.5 - 0.1) / (0.99 - 0.05) # force shgc to be 0.5
+        statics[:,13] = (0.7 - 0.1) / (0.99 - 0.05) # force shgc to be 0.5
+
 
         # <insert orientations and wwrs>
-        building_vector = torch.concatenate((widths,heights, geo_ratios, self.wwr, self.orientations,statics), axis=1)
+        building_vector = torch.concatenate((widths,heights, geo_ratios, self.wwr, self.orientations, statics, areas_norm, perim_areas_norm, core_areas_norm), axis=1)
 
         # <update any orientation responsive parameters>
 
@@ -124,22 +162,31 @@ class Calibrator(nn.Module):
         # weight factors
 
         # ---------------------
-        return result.sum()
+        return result, result.sum()
 
 
 if __name__ == "__main__":
     device='cuda'
+    import json
+    with open("./data/city_map.json","r") as f:
+        city_map = json.load(f)
     schema = Schema()
     # TODO: load in checkpoint and climate vector
-    surrogate = Surrogate(schema=schema)
+    surrogate = Surrogate(schema=schema, checkpoint="batch_permute_lower_lr/batch_permute_lower_lr_202307250612_002_350000.pt")
+
+
+
+    empty_batch = schema.generate_empty_storage_batch(n=2)
+    schema.update_storage_batch(storage_batch=empty_batch,parameter="base_epw", value=city_map["NY, New York"]["idx"])
+    ts = surrogate.get_batch_climate_timeseries(empty_batch)
+    print(surrogate.building_params_per_vector, surrogate.latent_size)
     cal = Calibrator(
-        ensemble_size=4,
+        ensemble_size=10,
         n_timeseries_input_channels=3,
         timeseries_input_period=24 * 7,
         timeseries_input_length=8760,
-        n_static_input_parameters=17,
-        weather_timeseries=torch.rand(8, 8760).to(device),
-        aspect_ratio=2,
+        n_static_input_parameters=14,
+        weather_timeseries=torch.Tensor(ts[0]).to(device),
         surrogate=surrogate
     ).to(device)
 
@@ -151,14 +198,68 @@ if __name__ == "__main__":
     for param in surrogate.timeseries_net.parameters():
         param.requires_grad = False
 
+
+
     optim = torch.optim.Adam(cal.parameters(), lr=0.1)
 
+    res = None
     for i in range(1000):
         optim.zero_grad()
-        res = cal()
-        res.backward()
+        res, sum = cal()
+        sum.backward()
         optim.step()
-        if res.item() < 0.1:
+        print(sum.item())
+        if sum.item() < 0.1:
             break
     
+
+    for i in range(10):
+        print("-"*10 + str(i) + "-"*10)
+        ratios = cal.geo_ratios[i].detach().cpu().numpy()
+        f2f = ratios[0]
+        p2f = ratios[1]
+        r2f = ratios[2]
+        f2g = ratios[3]
+
+        wwr = cal.wwr.detach().cpu().numpy()[i*4:i*4+4].flatten()
+
+        statics = cal.statics.detach().cpu().numpy()
+        heatset = statics[i, 0]
+        coolset = statics[i, 1]
+        lpd = statics[i, 2]
+        epd = statics[i, 3]
+        pd = statics[i, 4]
+        inf = statics[i, 5]
+        facademass = statics[i, 6]
+        roofmass = statics[i, 7]
+        facader = statics[i, 8]
+        roofr = statics[i, 9]
+        slabr = statics[i, 10]
+        winu = statics[i, 11]
+        
+        print("f2f",schema["facade_2_footprint"].unnormalize(f2f))
+        print("p2f",schema["perim_2_footprint"].unnormalize(p2f))
+        print("r2f",schema["roof_2_footprint"].unnormalize(r2f))
+        print("f2g",schema["footprint_2_ground"].unnormalize(f2g))
+        print("wwr",schema["wwr"].unnormalize(wwr))
+        print("hsp", schema["HeatingSetpoint"].unnormalize(heatset))
+        print("csp", schema["CoolingSetpoint"].unnormalize(coolset))
+        print("lpd", schema["LightingPowerDensity"].unnormalize(lpd))
+        print("epd", schema["EquipmentPowerDensity"].unnormalize(epd))
+        print("pd", schema["PeopleDensity"].unnormalize(pd))
+        print("inf", schema["Infiltration"].unnormalize(inf))
+        print("facademass", schema["FacadeMass"].unnormalize(facademass))
+        print("roofmass", schema["RoofMass"].unnormalize(roofmass))
+        print("facader", schema["FacadeRValue"].unnormalize(facader))
+        print("roofr", schema["RoofRValue"].unnormalize(roofr))
+        print("slabr", schema["SlabRValue"].unnormalize(slabr))
+        print("winu", winu*(schema["WindowSettings"].max[0] -schema["WindowSettings"].min[0])+schema["WindowSettings"].min[0])
+
+        print("\n")
+        print(res[i].detach().cpu().numpy())
+        if i == 9:
+            scheds = cal.timeseries[i].detach().cpu().numpy()
+            print(scheds.shape)
+        print("\n")
+
 
