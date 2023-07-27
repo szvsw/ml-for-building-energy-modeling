@@ -1,0 +1,25 @@
+name: ml-for-bem-sampling
+
+channels:
+  - conda-forge
+dependencies:
+  - ipywidgets
+  - nbformat
+  - fiona
+  - numpy
+  - python=3.8
+  - requests
+  - google-cloud-storage
+  - h5py
+  - pytables
+  - geopandas<0.13
+  - pandas<2
+  - shapely<2
+  - pip
+  - pip:
+    - -r ../../pyumi/requirements.txt
+    - ladybug-core
+    - -e ../../pyumi 
+    - -e ../../archetypal
+    - geomeppy==0.11.8
+  
