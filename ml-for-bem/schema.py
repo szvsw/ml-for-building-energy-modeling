@@ -283,15 +283,31 @@ class WhiteboxSimulation:
     def simulate(self):
         self.shoebox.simulate(verbose=False, prep_outputs=False, readvars=False)
         sql = Sql(self.shoebox.sql_file)
-        series_to_retrieve = []
+        series_to_retrieve_hourly = []
+        series_to_retrieve_monthly = []
         for timeseries in self.schema.timeseries_outputs:
             if timeseries.store_output:
-                series_to_retrieve.append(timeseries.var_name)
+                if timeseries.freq.upper() == "MONTHLY":
+                    series_to_retrieve_monthly.append(
+                        timeseries.var_name
+                        if timeseries.key_name is None
+                        else timeseries.key_name
+                    )
+                if timeseries.freq.upper() == "HOURLY":
+                    series_to_retrieve_hourly.append(
+                        timeseries.var_name
+                        if timeseries.key_name is None
+                        else timeseries.key_name
+                    )
         ep_df_hourly = pd.DataFrame(
-            sql.timeseries_by_name(series_to_retrieve, reporting_frequency="Hourly")
+            sql.timeseries_by_name(
+                series_to_retrieve_hourly, reporting_frequency="Hourly"
+            )
         )
         ep_df_monthly = pd.DataFrame(
-            sql.timeseries_by_name(series_to_retrieve, reporting_frequency="Monthly")
+            sql.timeseries_by_name(
+                series_to_retrieve_monthly, reporting_frequency="Monthly"
+            )
         )
         self.hourly = ep_df_hourly
         self.monthly = ep_df_monthly
@@ -620,6 +636,15 @@ class SchemaParameter:
                     if value is None
                     else value
                 )
+            # elif isinstance(self, WindowParameter):
+            #     vals = self.normalize(
+            #         self.extract_storage_values_batch(storage_batch).reshape(
+            #             -1, *self.shape_ml
+            #         )
+            #         if value == None
+            #         else value
+            #     )
+            #     return vals
             else:
                 vals = self.normalize(
                     self.extract_storage_values_batch(storage_batch).reshape(
@@ -1013,13 +1038,27 @@ class WindowParameter(NumericParameter):
         #         ]
         #     )
         # )
-        return np.array(
+        window_array = np.array(
             [
                 building_template.Windows.Construction.u_value,
                 0.5,  # TODO SHGC
                 building_template.Windows.Construction.visible_transmittance,
             ]
         )
+        # return self.normalize(value=window_array)
+        # window_array = np.reshape(window_array,)
+        return self.to_ml(value=window_array)
+
+    # def normalize(self, window_array):
+    #     # TODO: discuss this - normalizing only the u_value
+    #     print("NORMALIZING WINDOW ARRAY")
+    #     norm_window_array = window_array.copy()
+    #     print(f"Min {self.min[0]}, max {self.max[0]}, range{self.range[0]}")
+    #     norm_val = (window_array[0] - self.min[0]) / self.range[0]
+    #     print(norm_val)
+    #     norm_window_array[0] = norm_val
+    #     print(window_array, norm_window_array)
+    #     return norm_window_array
 
 
 class SchedulesParameters(SchemaParameter):
@@ -1093,26 +1132,38 @@ class TimeSeriesOutput:
     __slots__ = (
         "name",
         "var_name",
+        "key_name",
         "freq",
         "key",
         "store_output",
     )
 
     def __init__(
-        self, name, var_name, store_output, freq="hourly", key="OUTPUT:VARIABLE"
+        self,
+        name,
+        var_name=None,
+        key_name=None,
+        store_output=True,
+        freq="hourly",
+        key="OUTPUT:VARIABLE",
     ):
         self.name = name
         self.var_name = var_name
+        self.key_name = key_name
         self.freq = freq
         self.key = key
         self.store_output = store_output
 
     def to_output_dict(self):
-        return dict(
+        ep_dict = dict(
             key=self.key,
-            Variable_Name=self.var_name,
             Reporting_Frequency=self.freq,
         )
+        if self.var_name:
+            ep_dict["Variable_Name"] = self.var_name
+        if self.key_name:
+            ep_dict["Key_Name"] = self.key_name
+        return ep_dict
 
 
 class Schema:
@@ -1396,8 +1447,6 @@ class Schema:
                 ),
             ]
 
-        if timeseries_outputs != None:
-            self.timeseries_outputs = timeseries_outputs
         self.timeseries_outputs = [
             TimeSeriesOutput(
                 name="Heating",
@@ -1428,6 +1477,8 @@ class Schema:
                 store_output=False,
             ),
         ]
+        if timeseries_outputs != None:
+            self.timeseries_outputs.extend(timeseries_outputs)
         # multiply len by 2 because perim/core
         self.sim_output_shape = (
             len([series for series in self.timeseries_outputs if series.store_output])
