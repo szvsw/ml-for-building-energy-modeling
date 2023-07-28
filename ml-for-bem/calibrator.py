@@ -155,12 +155,11 @@ class ShoeboxCalibrator(nn.Module):
 
         # ---------------------
         # insert any constant parameters which are not allowed to change, e.g. geometry.
-        self.statics[:,12] = (0.5 - 0.1) / (0.99 - 0.05) # force shgc to be 0.5
-        self.statics[:,13] = (0.7 - 0.1) / (0.99 - 0.05) # force vlt to be 0.7
-
+        shgc = torch.ones(cal.ensemble_size,1).to(device)*(0.5 - 0.1) / (0.99 - 0.05) # force shgc to be 0.5
+        vlt = torch.ones(cal.ensemble_size,1).to(device)*(0.7 - 0.1) / (0.99 - 0.05) # force vlt to be 0.7
 
         # <insert orientations and wwrs>
-        building_vector = torch.concatenate((widths,heights, f2f,self.perim_2_footprint, r2f, f2g, self.wwr, orientations, self.statics, areas, perim_areas, core_areas), axis=1)
+        building_vector = torch.concatenate((widths,heights, f2f,self.perim_2_footprint, r2f, f2g, self.wwr, orientations, self.statics, shgc, vlt, areas, perim_areas, core_areas), axis=1)
 
         # ---------------------
         # concatenate climate vectors and timeseries
@@ -202,15 +201,18 @@ class ShoeboxCalibrator(nn.Module):
 if __name__ == "__main__":
     device='cuda'
     import json
+    import numpy as np
+    import matplotlib.pyplot as plt
     with open("./data/city_map.json","r") as f:
         city_map = json.load(f)
     schema = Schema()
     # TODO: load in checkpoint and climate vector
     surrogate = Surrogate(schema=schema, checkpoint="batch_permute_lower_lr/batch_permute_lower_lr_202307250612_002_350000.pt")
 
-    result_idx = 500000
+    result_idx = 500000 #200000
     target = surrogate.results["eui_normalized"][result_idx]
     vector = surrogate.full_storage_batch[result_idx]
+    scheds = surrogate.get_batch_schedules(np.array([vector, vector]))[0]
     orientation = schema["orientation"].extract_storage_values(vector).astype(int)
     epw_idx = schema["base_epw"].extract_storage_values(vector).astype(int)
     width = schema["width"].extract_storage_values(vector)
@@ -218,16 +220,28 @@ if __name__ == "__main__":
     f2f = schema["facade_2_footprint"].extract_storage_values(vector)
     r2f = schema["roof_2_footprint"].extract_storage_values(vector)
     f2g = schema["footprint_2_ground"].extract_storage_values(vector)
+
+    ml_vector = schema.to_ml(np.array([vector]))[0][0]
+
     depth = height/f2f
 
+    fig, axs = plt.subplots(1,3)
+    for i in range(3):
+        axs[i].plot(scheds[i][:24])
+    plt.show()
 
+
+    epd = schema["EquipmentPowerDensity"].extract_storage_values(vector)
+    epd = schema["EquipmentPowerDensity"].normalize(epd)
+    lpd = schema["LightingPowerDensity"].extract_storage_values(vector)
+    lpd = schema["LightingPowerDensity"].normalize(epd)
 
     cal = ShoeboxCalibrator(
-        ensemble_size=25,
+        ensemble_size=50,
         n_timeseries_input_channels=3,
         timeseries_input_period=24 * 14,
         timeseries_input_length=8760,
-        n_static_input_parameters=14,
+        n_static_input_parameters=12,
         surrogate=surrogate,
         width=width,
         height=height,
@@ -263,7 +277,6 @@ if __name__ == "__main__":
     
 
     result = cal()
-    import matplotlib.pyplot as plt
     fig, axs = plt.subplots(1,4)
     for i in range(cal.ensemble_size):
         for j in range(4):
@@ -333,6 +346,18 @@ if __name__ == "__main__":
             tar = tar*(surrogate.eui_core_cooling_max - surrogate.eui_core_cooling_min) + surrogate.eui_core_cooling_min
         axs[i].plot(tar.detach().cpu().numpy(),"o",markersize=1, linestyle="dashed", lw=1.5, alpha=0.5)
     fig.tight_layout()
+
+    fig = plt.figure()
+    for i in range(cal.ensemble_size):
+        plt.plot(cal.statics[i].detach().cpu().numpy(), "o", markersize=1, lw=0.5)
+    
+    plt.plot(ml_vector[schema["HeatingSetpoint"].start_ml:-2], linestyle="dashed", lw=1.5, alpha=1)
+    
+    
+    fig, axs = plt.subplots(1,3)
+    for i in range(3):
+        axs[i].plot(cal.timeseries[:,i].T.detach().cpu().numpy()[:24])
+
     plt.show()
 
 
