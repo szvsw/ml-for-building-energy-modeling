@@ -194,12 +194,13 @@ class minimumTemplate(UmiTemplateLibrary):
 
     def make_window_constructions(self):
         airLayer = GasLayer(self.GasMaterials[0], Thickness=0.006)
+        glassClearSingle = MaterialLayer(self.GlazingMaterials[1], Thickness=0.003)
         glassClear = MaterialLayer(self.GlazingMaterials[0], Thickness=0.003)
-        glassLowE = MaterialLayer(self.GlazingMaterials[2], Thickness=0.003)
+        glassLowE = MaterialLayer(self.GlazingMaterials[3], Thickness=0.003)
 
         singleClear = WindowConstruction(
             Name="single_clr",
-            Layers=[glassClear],
+            Layers=[glassClearSingle],
             Category="Single",
         )
         dblClear = WindowConstruction(
@@ -776,13 +777,14 @@ def test_template(lib, epw_path, outdir, energy_df, csv_name):
 
 
 if __name__ == "__main__":
-    overwrite = False
-    sim = True
+    overwrite = True
+    sim = False
 
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
-    buildings_df_path = "D:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    # buildings_df_path = "D:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
     cz_templatelist = os.listdir(buildings_df_path)
     cz_templatelist = [x for x in cz_templatelist if "residentialtemplates" in x]
     cz_templatelist = [x for x in cz_templatelist if ".csv" in x]

@@ -122,6 +122,35 @@
       "Name": "Glass_Clear_Metal"
     },
     {
+      "$id": "66",
+      "DirtFactor": 1.0,
+      "IREmissivityBack": 0.84,
+      "IREmissivityFront": 0.84,
+      "IRTransmittance": 0.01,
+      "SolarReflectanceBack": 0.07,
+      "SolarReflectanceFront": 0.07,
+      "SolarTransmittance": 0.83,
+      "VisibleReflectanceBack": 0.08,
+      "VisibleReflectanceFront": 0.08,
+      "VisibleTransmittance": 0.89,
+      "Conductivity": 0.9,
+      "Cost": 0.0,
+      "Density": 2500.0,
+      "EmbodiedCarbon": 5.06,
+      "EmbodiedEnergy": 96.1,
+      "SubstitutionRatePattern": [
+        0.2
+      ],
+      "SubstitutionTimestep": 50.0,
+      "TransportCarbon": 0.067,
+      "TransportDistance": 500.0,
+      "TransportEnergy": 0.94,
+      "Category": "Uncategorized",
+      "Comments": null,
+      "DataSource": "default",
+      "Name": "Glass_Clear_Metal_Single"
+    },
+    {
       "$id": "7",
       "DirtFactor": 1.0,
       "IREmissivityBack": 0.84,
@@ -706,9 +735,9 @@
       "Layers": [
         {
           "Material": {
-            "$ref": "6"
+            "$ref": "66"
           },
-          "Thickness": 0.004
+          "Thickness": 0.006
         }
       ],
       "AssemblyCarbon": 0.0,
