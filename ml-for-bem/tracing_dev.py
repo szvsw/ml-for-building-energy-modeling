@@ -1416,15 +1416,29 @@ def epw_to_wea(epw_inpath, wea_outpath):
     wea.write(str(wea_outpath))
 
 
-def parse_hourly_mtx(mtx_fp):
+def parse_hourly_mtx(mtx_fp, mfactor=1):
     df = pd.read_csv(mtx_fp, skiprows=8, names=["R", "G", "B"], sep=" ")
+    print("made df...")
     values = df.to_numpy()
+    print("converted to numpy...")
 
     # sum rgb channels
     values: np.ndarray = values.sum(axis=1)
 
+    # Standard tregenza sky division row sizes below.  gendaymtx's first "skypatch"  is the ground and the last is the zenith.
+    row_counts = np.array([30,30,24,24,18,12,6], dtype=np.int64).repeat(mfactor)*mfactor
+    angular_sizes = 360 / row_counts
+    elevation_angle = 84 / (row_counts.shape[0])
+    print("row counts", row_counts)
+    print("elev angle", elevation_angle)
+    print("angular sizes", angular_sizes)
     # shape = n_skypatches x 8760
     hour_shaped = values.reshape(-1, 8760)
+    import matplotlib.pyplot as plt
+    plt.figure()
+    # plt.plot( hour_shaped[])
+    assert np.sum(row_counts) == hour_shaped.shape[0] - 2
+
 
     # annual means
     annual_means = np.mean(hour_shaped, axis=1)
@@ -1486,9 +1500,15 @@ if __name__ == "__main__":
         / "divd_cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.mtx"
     )
     epw_to_wea(epw_fp, wea_fp)
-    res = pr.gendaymtx(wea_fp, verbose=True, average=False, mfactor=2)
+    print("Starting gendaymtx...")
+    mfactor = 4
+    res = pr.gendaymtx(wea_fp, verbose=True, average=False, mfactor=mfactor)
     mtx = BytesIO(res)
-    results = parse_hourly_mtx(mtx)
+    print("parsing results...")
+    results = parse_hourly_mtx(mtx, mfactor=mfactor)
+    print(list(results.keys()))
+    print(results["hourly"].shape)
+    exit()
 
     # fp = Path(os.path.abspath(os.path.dirname(__file__))) / "sandySprings_Footprints.zip"
     # height_col = "BuildingHe"
