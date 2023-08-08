@@ -636,15 +636,15 @@ class SchemaParameter:
                     if value is None
                     else value
                 )
-            # elif isinstance(self, WindowParameter):
-            #     vals = self.normalize(
-            #         self.extract_storage_values_batch(storage_batch).reshape(
-            #             -1, *self.shape_ml
-            #         )
-            #         if value == None
-            #         else value
-            #     )
-            #     return vals
+            elif isinstance(self, WindowParameter):
+                vals = self.normalize(
+                    self.extract_storage_values_batch(storage_batch).reshape(
+                        -1, *self.shape_ml
+                    )
+                    if value is None
+                    else value
+                )
+                return vals
             else:
                 vals = self.normalize(
                     self.extract_storage_values_batch(storage_batch).reshape(
@@ -1048,6 +1048,7 @@ class WindowParameter(NumericParameter):
         # return self.normalize(value=window_array)
         # window_array = np.reshape(window_array,)
         return self.to_ml(value=window_array)
+        # return window_array
 
     # def normalize(self, window_array):
     #     # TODO: discuss this - normalizing only the u_value
@@ -1271,7 +1272,7 @@ class Schema:
                     info="Roof to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="footprint_2_ground",
+                    name="footprint_2_ground",  # TODO: change this to ground_2_footprint for cohesiveness
                     min=0.05,
                     max=0.95,
                     mean=0.5,
