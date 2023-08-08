@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List
 
 import numpy as np
+import math
 
 import matplotlib.pyplot as plt
 import logging
@@ -279,6 +280,78 @@ class WhiteboxSimulation:
         sb.outputs.add_custom(outputs)
         sb.outputs.apply()
         self.shoebox = sb
+
+    def build_shading(self, heights, radius=10, override=True):
+        """
+        Adds shading objects to a shoebox idf according to a list of heights (m)
+        of equal width divided between 180 degrees at a given radius (m).
+        Using geomeppy def add_shading_block(*args, **kwargs)
+        """
+        if override:
+            self.remove_shading_surfaces()
+
+        # base point is at central bottom of shoebox - just in case shoebox is not centered at 0,0
+        zones = self.shoebox.idfobjects["ZONE"]
+        for zone in zones:
+            for surface in zone.zonesurfaces:
+                if (
+                    surface.Surface_Type == "wall"
+                    and surface.Outside_Boundary_Condition == "outdoors"
+                ):
+                    coords = surface.coords
+                    facade_base_coords = []
+                    for coord in coords:
+                        if coord[2] == 0:
+                            facade_base_coords.append(coord[:2])
+        facade_base_coords = np.array(facade_base_coords)
+        if len(facade_base_coords) > 2:
+            raise TypeError("Multiple exterior walls found!")
+        center_pt = np.mean(facade_base_coords, axis=0)
+
+        # Get first point of shading
+        vect = np.min(facade_base_coords, axis=0) - center_pt
+        v_norm = vect / np.linalg.norm(vect)
+        p_0 = v_norm * radius
+
+        # make radial array
+        count = len(heights)
+        theta = math.pi / count
+
+        rot_matrix = [
+            [math.cos(theta), -math.sin(theta)],
+            [math.sin(theta), math.cos(theta)],
+        ]
+
+        shading_coords = np.array([p_0])
+        pt = np.reshape(p_0, (2, 1))
+        for h in heights:
+            pt = np.matmul(rot_matrix, pt)
+            shading_coords = np.append(shading_coords, np.reshape(pt, (1, 2)), axis=0)
+        shading_coords[:, 0] += center_pt[0]
+        shading_coords[:, 1] += center_pt[1]
+
+        for i, h in enumerate(heights):
+            name = f"SHADER_{i}"
+            base_coords = shading_coords[i : i + 2, :]
+            coords = []
+            coords.append((base_coords[0, 0], base_coords[0, 1], h))
+            coords.append((base_coords[0, 0], base_coords[0, 1], 0.0))
+            coords.append((base_coords[1, 0], base_coords[1, 1], 0.0))
+            coords.append((base_coords[1, 0], base_coords[1, 1], h))
+            shading_epbunch = self.shoebox.newidfobject(
+                key="Shading:Building:Detailed".upper(),
+                Name=name,
+                Number_of_Vertices=4,
+            )
+            for j in coords:
+                shading_epbunch.fieldvalues.extend(map(str, j))
+
+    def remove_shading_surfaces(self):
+        """
+        Used to override existing shading surfces
+        """
+        for surface in self.shoebox.getshadingsurfaces():
+            self.shoebox.removeidfobject(surface)
 
     def simulate(self):
         self.shoebox.simulate(verbose=False, prep_outputs=False, readvars=False)
