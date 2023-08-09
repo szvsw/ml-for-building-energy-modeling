@@ -21,6 +21,7 @@ logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
 logger.setLevel(logging.INFO)
 
+# TODO: link n_azimuths between sky patch and tracer
 # TODO: better parallelization of edge extraction
 # TODO: deal with collinear edges which result in sensors inside neighboring building!
 # TODO: azimuth angles should be starting at absolute not relative angles
@@ -1416,32 +1417,139 @@ def epw_to_wea(epw_inpath, wea_outpath):
     wea.write(str(wea_outpath))
 
 
-def parse_hourly_mtx(mtx_fp, mfactor=1):
+def parse_hourly_mtx(mtx_fp, mfactor=1, n_azimuths=96):
     df = pd.read_csv(mtx_fp, skiprows=8, names=["R", "G", "B"], sep=" ")
     print("made df...")
     values = df.to_numpy()
     print("converted to numpy...")
 
     # sum rgb channels
+    # TODO: track separately
+    print("values before summing", values.shape)
     values: np.ndarray = values.sum(axis=1)
 
-    # Standard tregenza sky division row sizes below.  gendaymtx's first "skypatch"  is the ground and the last is the zenith.
-    row_counts = np.array([30,30,24,24,18,12,6], dtype=np.int64).repeat(mfactor)*mfactor
-    angular_sizes = 360 / row_counts
-    elevation_angle = 84 / (row_counts.shape[0])
-    print("row counts", row_counts)
-    print("elev angle", elevation_angle)
-    print("angular sizes", angular_sizes)
+    # Standard tregenza sky division row sizes below.  gendaymtx's first "skypatch"
+    # is the ground and the last is the zenith.
+    base_patches_per_band = np.array([30,30,24,24,18,12,6], dtype=np.int64)
+    # subdivision adds parallels and meridians
+    # Row counts is the # of patches per parallel band
+    patches_per_band = base_patches_per_band.repeat(mfactor)*mfactor
+    n_bands = patches_per_band.shape[0]
+
+    band_end_ixs = np.cumsum(patches_per_band)
+    band_start_ixs = np.roll(band_end_ixs, shift=1)
+    band_start_ixs[0] = 0
+
     # shape = n_skypatches x 8760
-    hour_shaped = values.reshape(-1, 8760)
-    import matplotlib.pyplot as plt
-    plt.figure()
-    # plt.plot( hour_shaped[])
-    assert np.sum(row_counts) == hour_shaped.shape[0] - 2
+    sky_patch_timeseries = values.reshape(-1, 8760)
+    assert np.sum(patches_per_band) == sky_patch_timeseries.shape[0] - 2
+    sky_patch_timeseries = sky_patch_timeseries[1:-1] # remove the ground and the zenith
+    
+    # Convert reinhart sky to meridinal/parallel subdivision
+    sky_patch_radiances = []
+    for i in range(n_bands):
+        band_start = band_start_ixs[i]
+        band_end = band_end_ixs[i]
+        band_patches = sky_patch_timeseries[band_start:band_end]
+        patches_in_band = band_patches.shape[0]
+        lcm = np.lcm(patches_in_band,n_azimuths)
+        div_factor = int(lcm / patches_in_band)
+        grouping_factor = int(lcm /n_azimuths)
+        # radiance doesn't change when subdividing assuming uniform skypatch
+        subdivided_patches = band_patches.repeat(div_factor, axis=0)
+        # group the subdivided patches up so that the resulting outer dimension is the 
+        # number of target patches
+        grouped_patches = subdivided_patches.reshape(n_azimuths, grouping_factor, 8760)
+        # Combine patches by taking their mean, since they are all the same size
+        # no solid angle weighting necessary
+        resulting_patches = grouped_patches.mean(axis=1)
+        sky_patch_radiances.append(resulting_patches)
+    # Bands is now (n_elevations x n_azimuths x timesteps)
+    sky_patch_radiances = np.stack(sky_patch_radiances)
+    # zenith stays the same even after subdivision, so to find the distance
+    # between elevational bands, we remove the zenith and then divide by the number of bands
+    elevational_aperture = np.radians(90-6) / (n_bands)
+    elevation_starts_per_band = np.arange(n_bands).astype(float)*elevational_aperture
+    azimuthal_aperture = np.radians(360) / n_azimuths
+    solid_angles_per_band = compute_quad_solid_angle(azimuthal_aperture=azimuthal_aperture, elevational_aperture=elevational_aperture, elevation_start=elevation_starts_per_band)
+    sky_patch_normal_flux = sky_patch_radiances*solid_angles_per_band.reshape(-1,1,1)
+
+    print(sky_patch_radiances.shape)
+    print(solid_angles_per_band.shape)
+
+    flux_field = ti.field(dtype=float, shape=sky_patch_normal_flux.shape)
+    flux_field.from_numpy(sky_patch_normal_flux)
+    window = ti.ui.Window("UMI RayTrace", (1024, 1024), pos=(100, 100))
+    gui =window.get_gui()
+    canvas =window.get_canvas()
+    scene = ti.ui.Scene()
+    camera = ti.ui.Camera()
+    camera.up(0, 1, 0)
+    camera.position(0, 10, 0)
+    camera.lookat(1, 10, 1)
+    sky_patch_centroid_pts = ti.Vector.field(3, dtype=ti.f32, shape=(n_azimuths*n_bands))
+    color_source = sky_patch_radiances / 500
+    rgb_colors =color_source .reshape(*color_source.shape,1).repeat(3,axis=-1)
+    colors = ti.field(dtype=ti.f32, shape=rgb_colors.shape)
+    colors.from_numpy(rgb_colors)
+    sky_patch_colors = ti.Vector.field(3, dtype=ti.f32, shape=(n_azimuths*n_bands))
+    @ti.kernel
+    def init_pts():
+        r = 100.0
+        for el_ix,az_ix in ti.ndrange(n_bands,n_azimuths):
+            pt_ix = el_ix * n_azimuths + az_ix
+            # Centroid of sky patch's elevation
+            el_angle =  elevational_aperture * el_ix + elevational_aperture /2
+            az_angle = azimuthal_aperture * az_ix  + azimuthal_aperture /2
+            pt_z = r*ti.sin(el_angle)
+            r_proj = r * ti.cos(el_angle)
+            pt_x = r_proj * ti.cos(az_angle)
+            pt_y = r_proj * ti.sin(az_angle)
+            sky_patch_centroid_pts[pt_ix].x = pt_x
+            sky_patch_centroid_pts[pt_ix].y = pt_z # y axis is up in rendering
+            sky_patch_centroid_pts[pt_ix].z = pt_y
+    init_pts()
+    ti.sync()
+    
+    @ti.kernel
+    def load_timestep_colors(t: int):
+        for el_ix,az_ix in ti.ndrange(n_bands,n_azimuths):
+            pt_ix = el_ix * n_azimuths + az_ix
+            r = colors[el_ix,az_ix, t, 0]
+            g = colors[el_ix,az_ix, t, 1]
+            b = colors[el_ix,az_ix, t, 2]
+            sky_patch_colors[pt_ix].r = r
+            sky_patch_colors[pt_ix].g = g
+            sky_patch_colors[pt_ix].b = b
+
+    load_timestep_colors(12)
+    it = 0
+    hr = 3000
+    while window.running:
+        if it % 12 == 0:
+            load_timestep_colors(hr % 8760)
+            ti.sync()
+            hr = hr + 1
+        camera.track_user_inputs(window, hold_key=ti.ui.RMB)
+        scene.ambient_light((1, 1, 1))
+        scene.particles(
+            sky_patch_centroid_pts,
+            radius=1,
+            # color=(1,1,1)
+            per_vertex_color=sky_patch_colors,
+        )
+        scene.set_camera(camera)
+        canvas.scene(scene)
+        it = it + 1
+        window.show()
+
+    exit()
+    
+
 
 
     # annual means
-    annual_means = np.mean(hour_shaped, axis=1)
+    annual_means = np.mean(sky_patch_timeseries, axis=1)
 
     # Reshape into (n_sky_patches x days x hours)
     day_shaped = values.reshape(-1, 365, 24)
@@ -1467,8 +1575,44 @@ def parse_hourly_mtx(mtx_fp, mfactor=1):
     return {
         "annual_means": annual_means,
         "seasonal_means": seasons,
-        "hourly": hour_shaped,
+        "hourly": sky_patch_timeseries,
     }
+
+def compute_quad_solid_angle(azimuthal_aperture, elevational_aperture, elevation_start):
+    """
+    Compute the size of a sky patch in steradians
+
+    Args:
+        azimuthal (radians): angle between meridians/longitudinal lines
+        elevational (radians): angle between parallels/latitude lines
+        elevation (radians): elevation of lower parallel
+    """
+
+    # Compute the upper parallel's location
+    elevation_top = elevation_start + elevational_aperture
+
+    # regardless of where a lune starts or stops
+    # any arc on a parallel/latitudnal line perp to the lune
+    # is proportional to the azimuthal aperture of the lune
+    lune_frac = azimuthal_aperture / (2 * np.pi)
+
+    # the height of the zone is given by the difference in heights
+    zone_height = np.sin(elevation_top) - np.sin(elevation_start)
+    # zone area comes from integrals, and total surface area
+    # of sphere is 4*pi
+    # comes from i
+    # zone_area = 2 * pi * zone_height
+    zone_frac = zone_height / 2
+
+    # The quadrilateral is just the product of these fractions
+    # As it is an intersection of two independent events
+    # quad frac is proportional area of a sphere
+    quad_frac = lune_frac * zone_frac
+
+    # 4*pi steradians in a sphere
+    omega = quad_frac * 4*np.pi
+
+    return omega
 
 
 if __name__ == "__main__":
