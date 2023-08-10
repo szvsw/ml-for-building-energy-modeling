@@ -16,7 +16,7 @@ from ladybug.wea import Wea
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)
-ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True)
+ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 
 logging.basicConfig()
 logger = logging.getLogger("Radiation Analysis")
@@ -58,7 +58,7 @@ class Edge:
     slope: float
     normal: ti.math.vec2
     normal_theta: float
-    az_start_angle: float
+    az_start_angle: float  # represents the AZIMUTHAL angle of incidence of the first ray
     orientation: ti.int8  # this ought to be ti.int2
     height: float  # TODO: This could be rounded to save memory, or stored with a parent building, e.g. uint16, or a quantized datatype e.g. uint10
     n_floors: ti.int8
@@ -115,6 +115,7 @@ class Tracer:
     steps_per_unroll_loop: int  # when performing gpu xyplane tracing to find all hits, this allows for non divergence
     n_azimuths: int  # number of azimuthal angles to use per sensor (from 0 to 180)
     n_elevations: int  # number of elevation angles to use (counting zero, excluding zenith)
+    sky: "Sky"  # the sky to use for accumulating radiation in sensors
 
     n_ray_steps: int  # computed, max_ray_length / ray_step_size
 
@@ -124,9 +125,11 @@ class Tracer:
     buildings: ti.StructField  # stores the semantic representation of a building
     edges: ti.StructField  # stores the semantic edge objects in a flattened list
     xy_sensors: ti.StructField  # stores the semantic xy plane sensor objects in a flattened list
-    syz_sensors: ti.StructField  # stores the semantic xyz plane sensor objects in a flattened list
-    azimuths: ti.ScalarField  # stores precomputed aziuths
-    elevations: ti.ScalarField  # stores precomputed elevations
+    xyz_sensors: ti.StructField  # stores the semantic xyz plane sensor objects in a flattened list
+    azimuths: ti.ScalarField  # stores precomputed azimuth OFFSETS - NB: these represent how far to rotate the edge's first ray in the xy-plane (that ray's azimuth is defined by az_start_angle for the edge)
+    elevations: ti.ScalarField  # stores precomputed elevations - NB: these are
+    xyz_sensor_views: ti.Field  # BitPacked Field which stores hits
+    xyz_sensor_timesteps: ti.ScalarField  # n_sensors x 8760, stores accumulated irradiance for each time step
 
     gdf: gpd.GeoDataFrame
     height_col: str
@@ -135,6 +138,7 @@ class Tracer:
 
     def __init__(
         self,
+        sky: "Sky",
         filepath: Union[str, bytes, PathLike],
         height_col: str,
         id_col: str,
@@ -146,11 +150,10 @@ class Tracer:
         f2f_height: float = 3,
         max_ray_length: float = 400.0,
         ray_step_size: float = 1.0,
-        n_azimuths: int = 48,
-        n_elevations: int = 16,
         steps_per_unroll_loop: int = 100,
         convert_crs=False,
     ):
+        self.sky = sky
         # TODO: add meter conversion, better crs validation/conversion
         # store the bin size in meters
         global N_LOOPS_TO_UNROLL
@@ -267,6 +270,23 @@ class Tracer:
         self.nodes = Node.field()
         self.tree_leaves.place(self.nodes)
 
+        # Precompute azimuths
+        logger.info(f"Initializing azimuths from provided sky...")
+        assert self.sky.n_azimuths / 2 == int(self.sky.n_azimuths / 2)
+        self.n_azimuths = int(self.sky.n_azimuths / 2)
+        self.azimuths = ti.field(float, shape=self.n_azimuths)
+        self.azimuth_inc = self.sky.azimuthal_aperture
+        assert self.azimuth_inc == 2 * np.pi / (2 * self.n_azimuths)
+        azimuths = np.arange(self.n_azimuths) * self.azimuth_inc
+        self.azimuths.from_numpy(azimuths)
+
+        # Building elevations
+        logger.info(f"Initializing elevations from provided Sky...")
+        self.n_elevations = self.sky.n_elevations
+        self.elevations = ti.field(float, shape=self.n_elevations)
+        self.elevation_inc = self.sky.elevational_aperture
+        self.elevations.from_numpy(self.sky.elevation_centers)
+
         # Create a field which represents the buildings
         logger.info("Initializing buildings...")
         self.init_buildings()
@@ -279,22 +299,6 @@ class Tracer:
         logger.info("Populating tree...")
         self.add_edges_to_tree()
         ti.sync()
-
-        # Precompute azimuths
-        logger.info(f"Initializing azimuths...")
-        self.n_azimuths = n_azimuths
-        self.azimuths = ti.field(float, shape=self.n_azimuths)
-        self.azimuth_inc = 2 * np.pi / (self.n_azimuths * 2)
-        azimuths = np.arange(self.n_azimuths) * self.azimuth_inc
-        self.azimuths.from_numpy(azimuths)
-
-        # Building elevations
-        logger.info(f"Initializing elevations...")
-        self.n_elevations = n_elevations
-        self.elevations = ti.field(float, shape=self.n_elevations)
-        self.elevation_inc = 0.5 * np.pi / self.n_elevations
-        elevations = np.arange(self.n_elevations) * self.elevation_inc
-        self.elevations.from_numpy(elevations)
 
         # Determine number of xy sensors needed
         logger.info("Determining XY Sensor count...")
@@ -362,6 +366,7 @@ class Tracer:
         ), f"This scene requires {xyz_ray_ct} rays which is greater than the currently supported max of 2^32 ~= 4e9."
         logger.info(f"XYZ rays: {xyz_ray_ct}")
 
+        # OPTION 1: xy_trace then xyz_trace
         # # Ray trace in xy plane
         # logger.info("XY tracing...")
         # # self.xy_trace_divergent()
@@ -375,11 +380,21 @@ class Tracer:
         # ti.sync()
         # logger.info("XYZ tracing complete.")
 
+        # OPTION 2: xyz_trace all at once
         # Ray trace using xyz data
         logger.info("XYZ tracing...")
         self.xyz_trace_unified()
         ti.sync()
         logger.info("XYZ tracing complete.")
+
+        # Timestep Accumulation
+        # TODO: 8760 should be configurable resolution based on time-resolution
+        # of sky's radiance results
+        logger.info("Begin sky timestepping...")
+        self.xyz_sensor_timesteps = ti.field(
+            dtype=float, shape=(xyz_sensor_count, 8760)
+        )
+        self.timestep_sky()
 
         logger.info("Assemble results...")
         self.assemble_results_df()
@@ -390,7 +405,7 @@ class Tracer:
         self.sensor_3d_rays = ti.Vector.field(
             3, dtype=float, shape=2 * (self.n_azimuths * self.n_elevations)
         )
-        self.load_3d_points()
+        self.load_3d_points(timestep=0)
         self.load_3d_sensor_rays(0)
 
         ti.profiler.print_kernel_profiler_info()
@@ -405,13 +420,18 @@ class Tracer:
         self.camera.position(0, 10, 0)
         self.camera.lookat(1, 10, 1)
 
-    def render_scene(self, sky=None):
-        sensor_ix = 0
-        controls_changed = True
+    def render_scene(self, sky=False):
         it = 0
+        sensor_ix = 0
+        use_auto_timestepper = True
         hr = 0
+
+        sensor_ix_changed = True
+        use_auto_timestepper_changed = True
+        hr_changed = True
         while self.window.running:
             with self.gui.sub_window("Sensor selector", 0.1, 0.1, 0.8, 0.15):
+                # Controls for sensor ix to display rays from
                 old_ix = sensor_ix
                 sensor_ix = self.gui.slider_int(
                     text="Sensor Index",
@@ -419,12 +439,40 @@ class Tracer:
                     minimum=0,
                     maximum=self.xyz_sensors.shape[0],
                 )
-                if old_ix != sensor_ix:
-                    controls_changed = True
 
-                if controls_changed:
+                # Control for disabling/enabling clock
+                old_use_auto_timestepper = use_auto_timestepper
+                use_auto_timestepper = self.gui.checkbox(
+                    text="Use Automatic Timestepping",
+                    old_value=use_auto_timestepper,
+                )
+                # Control for modifying current timestep
+                old_hr = hr
+                hr = self.gui.slider_int(
+                    text="Current Timestep",
+                    old_value=hr,
+                    minimum=0,
+                    maximum=8760 - 1,
+                )
+
+                if old_ix != sensor_ix:
+                    sensor_ix_changed = True
+
+                if sensor_ix_changed:
                     self.load_3d_sensor_rays(sensor_ix)
-                    controls_changed = False
+                    sensor_ix_changed = False
+
+                if old_use_auto_timestepper != use_auto_timestepper:
+                    use_auto_timestepper_changed = True
+                if old_hr != hr:
+                    hr_changed = True
+
+                if use_auto_timestepper_changed or hr_changed:
+                    self.load_3d_points(timestep=(hr % 8760))
+                    self.sky.set_sky_colors(timestep=(hr % 8760))
+                    use_auto_timestepper_changed = False
+                    hr_changed = False
+
             self.camera.track_user_inputs(self.window, hold_key=ti.ui.RMB)
             self.scene.ambient_light((1, 1, 1))
             self.scene.particles(
@@ -433,10 +481,12 @@ class Tracer:
                 per_vertex_color=self.sensor_3d_colors,
             )
             if sky:
-                if it % 12 == 0:
-                    sky.set_sky_colors(timestep=(hr % 8760))
-                    hr = hr + 1
-                sky.add_dome_to_scene(self.scene)
+                if use_auto_timestepper:
+                    if it % 18 == 0:
+                        self.load_3d_points(timestep=(hr % 8760))
+                        self.sky.set_sky_colors(timestep=(hr % 8760))
+                        hr = hr + 1
+                self.sky.add_dome_to_scene(self.scene)
             self.scene.lines(self.sensor_3d_rays, width=1, color=(1, 1, 1))
             self.scene.set_camera(self.camera)
             self.canvas.scene(self.scene)
@@ -628,8 +678,10 @@ class Tracer:
             self.edges[edge_ix].orientation = orientation
 
             # Compute the azimuth start angle for any sensor placed on this edge
-            # TODO: this should be quantized to az_inc
-            az_start_angle = normal_theta - np.pi * 0.5
+            # nb: this is offset by azimuth_inc/2 because the first ray should not be parallel
+            # to the edge, i.e. this represents the azimuthal angle of incidence of the
+            # first ray
+            az_start_angle = normal_theta - np.pi * 0.5 + self.azimuth_inc / 2
 
             # Update the edge object
             self.edges[edge_ix].slope = slope
@@ -971,7 +1023,11 @@ class Tracer:
 
             # If no obstructions found, then add the result in
             if distance < 0:
-                self.xyz_sensors[sensor_ix].rad += 1  # TODO: look up sky matrix
+                self.xyz_sensors[
+                    sensor_ix
+                ].rad += (
+                    1  # TODO: look up sky matrix # Decide if we even want to keep this.
+                )
                 # Store a hit mask
                 self.xyz_views[sensor_ix, az_ix, el_ix] = 1
                 # TODO: track hit location
@@ -1048,22 +1104,56 @@ class Tracer:
         return distance
 
     @ti.kernel
-    def load_3d_points(self):
+    def timestep_sky(self):
+        """
+        Responsible timestepping each ray hit and accumulating the results into the sensors
+        # TODO: this is pretty slow, 11s much slower than tracing,
+        # but I think it should be faster.
+        """
+        for sensor_ix, az_ix, el_ix in self.xyz_views:
+            xyz_sensor = self.xyz_sensors[sensor_ix]
+            parent_xy_sen = self.xy_sensors[xyz_sensor.parent_sensor_id]
+            parent_edge = self.edges[parent_xy_sen.parent_edge_id]
+            az_angle = (
+                self.azimuths[az_ix] + parent_edge.az_start_angle
+            )  # the angle the ray was emitted at
+
+            # convert elevation angle to quantized index
+            # TODO: this could be replaced with the edge storing an offset which just gets added to az_ix to save avoid division op
+            sky_patch_az_ix = (
+                ti.cast(ti.floor(az_angle / self.azimuth_inc), dtype=int)
+                % self.sky.n_azimuths
+            )
+
+            # Compute incidence factor
+            incidence_factor = ti.cos(
+                ti.abs(az_angle - parent_edge.normal_theta)
+            ) * ti.cos(self.elevations[el_ix])
+            for timestep in range(8760):
+                # Get the irradiance of a normal surface for the given sky patch
+                E = self.sky.normal_irradiance_field[el_ix, sky_patch_az_ix, timestep]
+                # Add the irradiance in for that timestep after adjusting for the angle of incidence.
+                self.xyz_sensor_timesteps[sensor_ix, timestep] += E * incidence_factor
+
+    @ti.kernel
+    def load_3d_points(self, timestep: int):
         for sensor_ix in self.xyz_sensors:
             xyz_sensor = self.xyz_sensors[sensor_ix]
             parent_xy_sen = self.xy_sensors[
                 self.xyz_sensors[sensor_ix].parent_sensor_id
             ]
+            timestep_result = self.xyz_sensor_timesteps[sensor_ix, timestep]
             self.sensor_3d_points[sensor_ix].x = parent_xy_sen.loc.x
             self.sensor_3d_points[sensor_ix].y = xyz_sensor.height
             self.sensor_3d_points[sensor_ix].z = parent_xy_sen.loc.y
             self.sensor_3d_colors[sensor_ix].x = 0.5
             self.sensor_3d_colors[sensor_ix].y = ti.min(
-                ti.max(
-                    (xyz_sensor.rad - 650.0)
-                    / (self.n_azimuths * self.n_elevations - 650),
-                    0.0,
-                ),
+                timestep_result / 3000.0,
+                # ti.max(
+                #     (xyz_sensor.rad - 650.0)
+                #     / (self.n_azimuths * self.n_elevations - 650),
+                #     0.0,
+                # ),
                 1.0,
             )
             self.sensor_3d_colors[sensor_ix].z = 0.5
@@ -1448,6 +1538,7 @@ class Sky:
         n_azimuths: int,
         dome_radius: float,
     ):
+        logger.info("Beginning sky matrix extraction...")
         self.epw_fp = epw_fp
         self.mfactor = mfactor
         self.n_azimuths = n_azimuths
@@ -1457,9 +1548,15 @@ class Sky:
             / "mtxs"
             / f"{self.epw_fp.stem}.wea"
         )
+        logger.info("Converting EPW to WEA...")
         epw_to_wea(self.epw_fp, self.wea_fp)
-        res = pr.gendaymtx(self.wea_fp, verbose=True, average=False, mfactor=mfactor)
+        logger.info("Converting WEA to MTX...")
+        res = pr.gendaymtx(
+            self.wea_fp, verbose=True, average=False, mfactor=mfactor, rotate=270
+        )
         mtx = BytesIO(res)
+        logger.info("Converting Reinhart to meridinal/parallel...")
+        logger.info("Completed sky matrix extraction.")
         self.reinhart_to_meridinal_parallel_sky(mtx)
         del mtx
 
@@ -1563,6 +1660,17 @@ class Sky:
         # azimuthal aperture is trivial
         self.azimuthal_aperture = np.radians(360) / self.n_azimuths
 
+        # Compute the elevation of the center for each parallel band (i.e. spherical zone)
+        self.elevation_centers = (
+            self.elevational_aperture * np.arange(self.n_elevations)
+            + self.elevational_aperture / 2
+        )
+        # Compute the azimuth of the center for each meridinal band (i.e. a spherical lune)
+        self.azimuth_centers = (
+            self.azimuthal_aperture * np.arange(self.n_azimuths)
+            + self.azimuthal_aperture / 2
+        )
+
         # compute the solid angle of each sky patch - nb: every patch within a sky band has the same
         # solid angle as the other patches within the same band
         self.solid_angles = compute_quad_solid_angle(
@@ -1581,7 +1689,7 @@ class Sky:
 
     def init_rendering_fields(
         self,
-        display_source: Literal["radiance", "normal flux"] = "radiance",
+        display_source: Literal["radiance", "normal irradiance"] = "radiance",
     ):
         if display_source == "radiance":
             color_source = self.radiance / 500
@@ -1600,10 +1708,10 @@ class Sky:
             dtype=ti.f32,
             shape=(self.n_elevations * self.n_azimuths),
         )
-        self.init_pts()
+        self.init_pts(125.0, 125.0)
 
     @ti.kernel
-    def init_pts(self):
+    def init_pts(self, x_offset: float, y_offset: float):
         for el_ix, az_ix in ti.ndrange(self.n_elevations, self.n_azimuths):
             pt_ix = el_ix * self.n_azimuths + az_ix
             # Centroid of sky patch's elevation
@@ -1613,9 +1721,9 @@ class Sky:
             r_proj = self.dome_radius * ti.cos(el_angle)
             pt_x = r_proj * ti.cos(az_angle)
             pt_y = r_proj * ti.sin(az_angle)
-            self.sky_pts[pt_ix].x = pt_x
+            self.sky_pts[pt_ix].x = pt_x + x_offset
             self.sky_pts[pt_ix].y = pt_z  # y axis is up in rendering
-            self.sky_pts[pt_ix].z = pt_y
+            self.sky_pts[pt_ix].z = pt_y + y_offset
 
     @ti.kernel
     def set_sky_colors(self, timestep: int):
@@ -1717,7 +1825,7 @@ if __name__ == "__main__":
         / "city_epws_indexed"
         / "cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.epw"
     )
-    sky = Sky(epw_fp=epw_fp, mfactor=4, n_azimuths=48, dome_radius=100.0)
+    sky = Sky(epw_fp=epw_fp, mfactor=4, n_azimuths=96, dome_radius=200)
     # sky.render()
     sky.init_rendering_fields()
 
@@ -1727,6 +1835,7 @@ if __name__ == "__main__":
         id_col=id_col,
         archetype_col=archetype_col,
         node_width=1,
+        sky=sky,
     )
 
     ti.sync()
@@ -1736,4 +1845,4 @@ if __name__ == "__main__":
     tracer.assemble_results_df()
 
     tracer.init_gui()
-    tracer.render_scene(sky)
+    tracer.render_scene(sky=True)
