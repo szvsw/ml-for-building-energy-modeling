@@ -1111,17 +1111,71 @@ class WindowParameter(NumericParameter):
         #         ]
         #     )
         # )
+        window = building_template.Windows.Construction
+        uval = window.u_value
+        if window.glazing_count == 2:
+            shgc = window.shgc()
+        elif window.glazing_count == 1:
+            # Calculate shgc from t_sol of construction
+            tsol = window.Layers[0].Material.SolarTransmittance
+            shgc = self.single_pane_shgc_estimation(tsol, uval)
+        else:
+            # if window is not 2 layers
+            logging.info(
+                f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
+            )
+            shgc = 0.6
+
         window_array = np.array(
             [
-                building_template.Windows.Construction.u_value,
-                0.5,  # TODO SHGC
-                building_template.Windows.Construction.visible_transmittance,
+                uval,
+                shgc,  # TODO SHGC
+                window.visible_transmittance,
             ]
         )
         # return self.normalize(value=window_array)
         # window_array = np.reshape(window_array,)
         return self.to_ml(value=window_array)
         # return window_array
+
+    def single_pane_shgc_estimation(self, tsol, uval):
+        """
+        Calculate shgc for single pane window - from Archetypal tsol calulation based on u-val and shgc
+        """
+
+        def shgc_intermediate(tsol, uval):
+            # if u_factor >= 4.5 and shgc < 0.7206:
+            #     return 0.939998 * shgc ** 2 + 0.20332 * shgc
+            if uval >= 4.5 and tsol < 0.6346:
+                return 10 / 469999 * (math.sqrt(2349995000 * tsol + 25836889) - 5083)
+            # if u_factor >= 4.5 and shgc >= 0.7206:
+            #     return 1.30415 * shgc - 0.30515
+            if uval >= 4.5 and tsol >= 0.6346:
+                return (20000 * tsol + 6103) / 26083
+            # if u_factor <= 3.4 and shgc <= 0.15:
+            #     return 0.41040 * shgc
+            if uval <= 3.4 and tsol <= 0.06156:
+                return tsol / 0.41040
+            # if u_factor <= 3.4 and shgc > 0.15:
+            #     return 0.085775 * shgc ** 2 + 0.963954 * shgc - 0.084958
+            if uval <= 3.4 and tsol > 0.06156:
+                return (
+                    -1 * 481977 + math.sqrt(239589100979 + 85775000000 * tsol)
+                ) / 85775
+            else:
+                logger.info(
+                    "WARNING: could not calculate shgc - review window parameters. Defaulting to 0.6."
+                )
+                return 0.6
+
+        if 3.4 <= uval <= 4.5:
+            return np.interp(
+                uval,
+                [3.4, 4.5],
+                [shgc_intermediate(tsol, 3.4), shgc_intermediate(tsol, 4.5)],
+            )
+        else:
+            return shgc_intermediate(tsol, uval)
 
     # def normalize(self, window_array):
     #     # TODO: discuss this - normalizing only the u_value
