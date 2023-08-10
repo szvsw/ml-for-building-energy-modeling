@@ -1,8 +1,9 @@
 import logging
 
 from os import PathLike
+from pathlib import Path
 from io import BytesIO
-from typing import List, Union
+from typing import List, Union, Literal
 
 import taichi as ti
 import numpy as np
@@ -404,9 +405,11 @@ class Tracer:
         self.camera.position(0, 10, 0)
         self.camera.lookat(1, 10, 1)
 
-    def render_scene(self):
+    def render_scene(self, sky=None):
         sensor_ix = 0
         controls_changed = True
+        it = 0
+        hr = 0
         while self.window.running:
             with self.gui.sub_window("Sensor selector", 0.1, 0.1, 0.8, 0.15):
                 old_ix = sensor_ix
@@ -429,9 +432,15 @@ class Tracer:
                 radius=0.2,
                 per_vertex_color=self.sensor_3d_colors,
             )
+            if sky:
+                if it % 12 == 0:
+                    sky.set_sky_colors(timestep=(hr % 8760))
+                    hr = hr + 1
+                sky.add_dome_to_scene(self.scene)
             self.scene.lines(self.sensor_3d_rays, width=1, color=(1, 1, 1))
             self.scene.set_camera(self.camera)
             self.canvas.scene(self.scene)
+            it = it + 1
             self.window.show()
 
     def assemble_results_df(self):
@@ -1417,166 +1426,243 @@ def epw_to_wea(epw_inpath, wea_outpath):
     wea.write(str(wea_outpath))
 
 
-def parse_hourly_mtx(mtx_fp, mfactor=1, n_azimuths=96):
-    df = pd.read_csv(mtx_fp, skiprows=8, names=["R", "G", "B"], sep=" ")
-    print("made df...")
-    values = df.to_numpy()
-    print("converted to numpy...")
+@ti.data_oriented
+class Sky:
+    """
+    The Sky class is used for managing the radiance and normal irradiance for a sky derived from
+    a provided weather file.
 
-    # sum rgb channels
-    # TODO: track separately
-    print("values before summing", values.shape)
-    values: np.ndarray = values.sum(axis=1)
+    The class handles converting a Tregenza/Reinhart sky to a parallel/meridian (i.e. lat/lon lines)
+    subdivision.
 
-    # Standard tregenza sky division row sizes below.  gendaymtx's first "skypatch"
-    # is the ground and the last is the zenith.
-    base_patches_per_band = np.array([30,30,24,24,18,12,6], dtype=np.int64)
-    # subdivision adds parallels and meridians
-    # Row counts is the # of patches per parallel band
-    patches_per_band = base_patches_per_band.repeat(mfactor)*mfactor
-    n_bands = patches_per_band.shape[0]
+    A desired number of azimuths are specified; the the number of elevations will be derived from the
+    sky subdivision factor.
 
-    band_end_ixs = np.cumsum(patches_per_band)
-    band_start_ixs = np.roll(band_end_ixs, shift=1)
-    band_start_ixs[0] = 0
+    The dome radius factor is used exclusively for rendering in a 3D scene.
+    """
 
-    # shape = n_skypatches x 8760
-    sky_patch_timeseries = values.reshape(-1, 8760)
-    assert np.sum(patches_per_band) == sky_patch_timeseries.shape[0] - 2
-    sky_patch_timeseries = sky_patch_timeseries[1:-1] # remove the ground and the zenith
-    
-    # Convert reinhart sky to meridinal/parallel subdivision
-    sky_patch_radiances = []
-    for i in range(n_bands):
-        band_start = band_start_ixs[i]
-        band_end = band_end_ixs[i]
-        band_patches = sky_patch_timeseries[band_start:band_end]
-        patches_in_band = band_patches.shape[0]
-        lcm = np.lcm(patches_in_band,n_azimuths)
-        div_factor = int(lcm / patches_in_band)
-        grouping_factor = int(lcm /n_azimuths)
-        # radiance doesn't change when subdividing assuming uniform skypatch
-        subdivided_patches = band_patches.repeat(div_factor, axis=0)
-        # group the subdivided patches up so that the resulting outer dimension is the 
-        # number of target patches
-        grouped_patches = subdivided_patches.reshape(n_azimuths, grouping_factor, 8760)
-        # Combine patches by taking their mean, since they are all the same size
-        # no solid angle weighting necessary
-        resulting_patches = grouped_patches.mean(axis=1)
-        sky_patch_radiances.append(resulting_patches)
-    # Bands is now (n_elevations x n_azimuths x timesteps)
-    sky_patch_radiances = np.stack(sky_patch_radiances)
-    # zenith stays the same even after subdivision, so to find the distance
-    # between elevational bands, we remove the zenith and then divide by the number of bands
-    elevational_aperture = np.radians(90-6) / (n_bands)
-    elevation_starts_per_band = np.arange(n_bands).astype(float)*elevational_aperture
-    azimuthal_aperture = np.radians(360) / n_azimuths
-    solid_angles_per_band = compute_quad_solid_angle(azimuthal_aperture=azimuthal_aperture, elevational_aperture=elevational_aperture, elevation_start=elevation_starts_per_band)
-    sky_patch_normal_flux = sky_patch_radiances*solid_angles_per_band.reshape(-1,1,1)
+    def __init__(
+        self,
+        epw_fp: Path,
+        mfactor: int,
+        n_azimuths: int,
+        dome_radius: float,
+    ):
+        self.epw_fp = epw_fp
+        self.mfactor = mfactor
+        self.n_azimuths = n_azimuths
+        self.wea_fp = (
+            Path(os.path.abspath(os.path.dirname(__file__)))
+            / "data"
+            / "mtxs"
+            / f"{self.epw_fp.stem}.wea"
+        )
+        epw_to_wea(self.epw_fp, self.wea_fp)
+        res = pr.gendaymtx(self.wea_fp, verbose=True, average=False, mfactor=mfactor)
+        mtx = BytesIO(res)
+        self.reinhart_to_meridinal_parallel_sky(mtx)
+        del mtx
 
-    print(sky_patch_radiances.shape)
-    print(solid_angles_per_band.shape)
+        self.dome_radius = dome_radius
+        # self.render()
 
-    flux_field = ti.field(dtype=float, shape=sky_patch_normal_flux.shape)
-    flux_field.from_numpy(sky_patch_normal_flux)
-    window = ti.ui.Window("UMI RayTrace", (1024, 1024), pos=(100, 100))
-    gui =window.get_gui()
-    canvas =window.get_canvas()
-    scene = ti.ui.Scene()
-    camera = ti.ui.Camera()
-    camera.up(0, 1, 0)
-    camera.position(0, 10, 0)
-    camera.lookat(1, 10, 1)
-    sky_patch_centroid_pts = ti.Vector.field(3, dtype=ti.f32, shape=(n_azimuths*n_bands))
-    color_source = sky_patch_radiances / 500
-    rgb_colors =color_source .reshape(*color_source.shape,1).repeat(3,axis=-1)
-    colors = ti.field(dtype=ti.f32, shape=rgb_colors.shape)
-    colors.from_numpy(rgb_colors)
-    sky_patch_colors = ti.Vector.field(3, dtype=ti.f32, shape=(n_azimuths*n_bands))
+    def reinhart_to_meridinal_parallel_sky(self, mtx):
+        """
+        Converts a Tregenza sky matrix to a parallel/meridinal sky
+
+        Methodology:
+        - When subdividing a sky patch, assuming uniform radiance, the radiance does not change.
+        - In a Tregenza/Reinhart sky, if there are n patches in a parallel band, and we want m patches,
+            - find the lcm of (n,m)
+            - this gives a multiplication factor k s.t. n*k = lcm(n,m)
+            - subdivide each sky patch in the band into k pieces (essentially adding meridinal/azimuthal subdivisions)
+            - now regroup the sky patches
+            - now take the mean of the groups
+            - this effectively handles the steradianal-weighted average without needing to track counts or solid angles
+            - e.g. if you have 96 patches in a band, but you want 48, then clearly k=1, group by two, mean.
+            - e.g. if you have 72 patches in a band, but you want 48, then clearly 1.5 patches will correspond to a new patch,
+                - you could do 2/3 times one patch plus 1/3 times the other patch, but this gets annoying to track
+                - you could use solid angles, but also annoying to track
+                - easier to just go to the lcm of 144 - each of the patches gets divided into 2 patches, and then you group every 3 patches
+                - take the means of the resulting groups to get the resulting radiance since they are all equally sized
+            - e.g. if you have 24 patches in a band but you want 48, then clearly you just need to split patches in two
+            - e.g. if you have 18 patches in a band, but you want 48, you go up to 144 by subdividing the 18 into 8 pieces each and grouping every 3
+        - trivial to compute the solid angle of each patch
+        - L = Radiance: W/sr/m2
+        - Omega = Solid Angle: sr
+        - E = Irradiance of normal surf: W/m2 = Integrate radiance over omega = L*Omega
+
+        """
+        df = pd.read_csv(mtx, skiprows=8, names=["R", "G", "B"], sep=" ")
+        values = df.to_numpy()
+
+        # sum rgb channels
+        # TODO: track separately
+        values: np.ndarray = values.sum(axis=1)
+
+        # Standard tregenza sky division row sizes below.  gendaymtx's first "skypatch"
+        # is the ground and the last is the zenith.
+        base_patches_per_elevation = np.array(
+            [30, 30, 24, 24, 18, 12, 6], dtype=np.int64
+        )
+        # reinhart subdivision adds parallels and meridians
+        # store # of patches per parallel/elevation according to reinhart subdivision
+        patches_per_elevation = (
+            base_patches_per_elevation.repeat(self.mfactor) * self.mfactor
+        )
+        self.n_elevations = patches_per_elevation.shape[0]
+
+        elevation_patches_end_ix = np.cumsum(patches_per_elevation)
+        elevation_patches_start_ix = np.roll(elevation_patches_end_ix, shift=1)
+        elevation_patches_start_ix[0] = 0
+
+        # shape = n_skypatches x 8760
+        sky_patch_timeseries = values.reshape(-1, 8760)
+        assert np.sum(patches_per_elevation) == sky_patch_timeseries.shape[0] - 2
+        sky_patch_timeseries = sky_patch_timeseries[
+            1:-1
+        ]  # remove the ground and the zenith
+
+        # Convert reinhart sky to meridinal/parallel subdivision
+        sky_patch_radiances = []
+        for i in range(self.n_elevations):
+            elevation_band_start = elevation_patches_start_ix[i]
+            elevation_band_end = elevation_patches_end_ix[i]
+            # Get the patches for the current parallel/elevation
+            elevation_patches = sky_patch_timeseries[
+                elevation_band_start:elevation_band_end
+            ]
+            # Check how many patches are in this elevation currently
+            patches_in_elevation = elevation_patches.shape[0]
+            # compute the common multiple of the current number of patches and desired number of patches
+            lcm = np.lcm(patches_in_elevation, self.n_azimuths)
+            # Figure out the subdivision factor - nb: no truncation error because lcm/patch_count is by def integer
+            div_factor = int(lcm / patches_in_elevation)
+            # figure out the grouping factor
+            grouping_factor = int(lcm / self.n_azimuths)
+            # radiance doesn't change when subdividing assuming uniform skypatch
+            subdivided_patches = elevation_patches.repeat(div_factor, axis=0)
+            # group the subdivided patches up so that the resulting outer dimension is the
+            # number of target patches
+            grouped_patches = subdivided_patches.reshape(
+                self.n_azimuths, grouping_factor, 8760
+            )
+            # Combine patches by taking their mean, since they are all the same size
+            # no solid angle weighting necessary
+            resulting_patches = grouped_patches.mean(axis=1)
+            sky_patch_radiances.append(resulting_patches)
+        # Bands is now (n_elevations x n_azimuths x timesteps)
+        self.radiance = np.stack(sky_patch_radiances)
+        # zenith stays the same even after subdivision, so to find the distance
+        # between elevational bands, we remove the zenith and then divide by the number of bands
+        self.elevational_aperture = np.radians(90 - 6) / (self.n_elevations)
+        # elevation starts are the lower bound of each parallel/latitudinal band
+        self.elevation_starts_per_band = (
+            np.arange(self.n_elevations).astype(float) * self.elevational_aperture
+        )
+        # azimuthal aperture is trivial
+        self.azimuthal_aperture = np.radians(360) / self.n_azimuths
+
+        # compute the solid angle of each sky patch - nb: every patch within a sky band has the same
+        # solid angle as the other patches within the same band
+        self.solid_angles = compute_quad_solid_angle(
+            azimuthal_aperture=self.azimuthal_aperture,
+            elevational_aperture=self.elevational_aperture,
+            elevation_start=self.elevation_starts_per_band,
+        )
+        # irradiance of a normal surface is just: radiance of patch * solid angle
+        self.normal_irradiance = self.radiance * self.solid_angles.reshape(-1, 1, 1)
+
+        # Store it in a taichi field for gpu access later on
+        self.normal_irradiance_field = ti.field(
+            dtype=float, shape=self.normal_irradiance.shape
+        )
+        self.normal_irradiance_field.from_numpy(self.normal_irradiance)
+
+    def init_rendering_fields(
+        self,
+        display_source: Literal["radiance", "normal flux"] = "radiance",
+    ):
+        if display_source == "radiance":
+            color_source = self.radiance / 500
+        else:
+            color_source = self.normal_irradiance / 500
+
+        self.color_source = ti.field(dtype=ti.f32, shape=color_source.shape)
+        self.color_source.from_numpy(color_source)
+        self.sky_pts: ti.math.vec3 = ti.Vector.field(
+            3,
+            dtype=ti.f32,
+            shape=(self.n_elevations * self.n_azimuths),
+        )
+        self.sky_colors = ti.Vector.field(
+            3,
+            dtype=ti.f32,
+            shape=(self.n_elevations * self.n_azimuths),
+        )
+        self.init_pts()
+
     @ti.kernel
-    def init_pts():
-        r = 100.0
-        for el_ix,az_ix in ti.ndrange(n_bands,n_azimuths):
-            pt_ix = el_ix * n_azimuths + az_ix
+    def init_pts(self):
+        for el_ix, az_ix in ti.ndrange(self.n_elevations, self.n_azimuths):
+            pt_ix = el_ix * self.n_azimuths + az_ix
             # Centroid of sky patch's elevation
-            el_angle =  elevational_aperture * el_ix + elevational_aperture /2
-            az_angle = azimuthal_aperture * az_ix  + azimuthal_aperture /2
-            pt_z = r*ti.sin(el_angle)
-            r_proj = r * ti.cos(el_angle)
+            el_angle = self.elevational_aperture * el_ix + self.elevational_aperture / 2
+            az_angle = self.azimuthal_aperture * az_ix + self.azimuthal_aperture / 2
+            pt_z = self.dome_radius * ti.sin(el_angle)
+            r_proj = self.dome_radius * ti.cos(el_angle)
             pt_x = r_proj * ti.cos(az_angle)
             pt_y = r_proj * ti.sin(az_angle)
-            sky_patch_centroid_pts[pt_ix].x = pt_x
-            sky_patch_centroid_pts[pt_ix].y = pt_z # y axis is up in rendering
-            sky_patch_centroid_pts[pt_ix].z = pt_y
-    init_pts()
-    ti.sync()
-    
+            self.sky_pts[pt_ix].x = pt_x
+            self.sky_pts[pt_ix].y = pt_z  # y axis is up in rendering
+            self.sky_pts[pt_ix].z = pt_y
+
     @ti.kernel
-    def load_timestep_colors(t: int):
-        for el_ix,az_ix in ti.ndrange(n_bands,n_azimuths):
-            pt_ix = el_ix * n_azimuths + az_ix
-            r = colors[el_ix,az_ix, t, 0]
-            g = colors[el_ix,az_ix, t, 1]
-            b = colors[el_ix,az_ix, t, 2]
-            sky_patch_colors[pt_ix].r = r
-            sky_patch_colors[pt_ix].g = g
-            sky_patch_colors[pt_ix].b = b
+    def set_sky_colors(self, timestep: int):
+        for el_ix, az_ix in ti.ndrange(self.n_elevations, self.n_azimuths):
+            pt_ix = el_ix * self.n_azimuths + az_ix
+            c = self.color_source[el_ix, az_ix, timestep]
+            self.sky_colors[pt_ix].r = c
+            self.sky_colors[pt_ix].g = c
+            self.sky_colors[pt_ix].b = c
 
-    load_timestep_colors(12)
-    it = 0
-    hr = 3000
-    while window.running:
-        if it % 12 == 0:
-            load_timestep_colors(hr % 8760)
-            ti.sync()
-            hr = hr + 1
-        camera.track_user_inputs(window, hold_key=ti.ui.RMB)
-        scene.ambient_light((1, 1, 1))
+    def init_gui(self):
+        self.window = ti.ui.Window("SkyDome Viewer", (1024, 1024), pos=(100, 100))
+        self.gui = self.window.get_gui()
+        self.canvas = self.window.get_canvas()
+        self.scene = ti.ui.Scene()
+        self.camera = ti.ui.Camera()
+        self.camera.up(0, 1, 0)
+        self.camera.position(0, 10, 0)
+        self.camera.lookat(1, 10, 1)
+
+    def add_dome_to_scene(self, scene=None):
+        if scene == None:
+            scene = self.scene
         scene.particles(
-            sky_patch_centroid_pts,
+            self.sky_pts,
             radius=1,
-            # color=(1,1,1)
-            per_vertex_color=sky_patch_colors,
+            per_vertex_color=self.sky_colors,
         )
-        scene.set_camera(camera)
-        canvas.scene(scene)
-        it = it + 1
-        window.show()
 
-    exit()
-    
+    def render(self):
+        self.init_gui()
+        self.init_rendering_fields()
+        it = 0
+        hr = 0
+        while self.window.running:
+            if it % 12 == 0:
+                self.set_sky_colors(hr % 8760)
+                ti.sync()
+                hr = hr + 1
+            self.camera.track_user_inputs(self.window, hold_key=ti.ui.RMB)
+            self.scene.ambient_light((1, 1, 1))
+            self.add_dome_to_scene()
+            self.scene.set_camera(self.camera)
+            self.canvas.scene(self.scene)
+            it = it + 1
+            self.window.show()
 
-
-
-    # annual means
-    annual_means = np.mean(sky_patch_timeseries, axis=1)
-
-    # Reshape into (n_sky_patches x days x hours)
-    day_shaped = values.reshape(-1, 365, 24)
-
-    # roll so that equinoxs/solstices are approx in the middle after reshaping, i.e.
-    # june 21 is originally 172nd day in the year, it becomes 226, 226 % 91 = 44
-    day_shaped_shifted = np.roll(day_shaped, shift=54, axis=1)
-
-    # compute mean seasonal values
-    # split the year up into four parts
-    seasons = [day_shaped_shifted[:, (i * 91) : ((i + 1) * 91), :] for i in range(4)]
-
-    # flatten along the final two axes so that each array is (n_sky_patches x hours_in_season)
-    seasons = [
-        season.reshape(-1, (season.shape[-2] * season.shape[-1])) for season in seasons
-    ]
-
-    # compute the mean seasonal radiation per sky patch
-    seasons = [season.mean(axis=1).reshape(-1, 1) for season in seasons]
-
-    # combine seasons into a single mtx, shape=(n_sky_pathes x 4)
-    seasons = np.concatenate(seasons, axis=1)
-    return {
-        "annual_means": annual_means,
-        "seasonal_means": seasons,
-        "hourly": sky_patch_timeseries,
-    }
 
 def compute_quad_solid_angle(azimuthal_aperture, elevational_aperture, elevation_start):
     """
@@ -1610,7 +1696,7 @@ def compute_quad_solid_angle(azimuthal_aperture, elevational_aperture, elevation
     quad_frac = lune_frac * zone_frac
 
     # 4*pi steradians in a sphere
-    omega = quad_frac * 4*np.pi
+    omega = quad_frac * 4 * np.pi
 
     return omega
 
@@ -1631,33 +1717,9 @@ if __name__ == "__main__":
         / "city_epws_indexed"
         / "cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.epw"
     )
-    wea_fp = (
-        Path(os.path.abspath(os.path.dirname(__file__)))
-        / "data"
-        / "weas"
-        / "cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.wea"
-    )
-    mtx_fp = (
-        Path(os.path.abspath(os.path.dirname(__file__)))
-        / "data"
-        / "mtxs"
-        / "divd_cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.mtx"
-    )
-    epw_to_wea(epw_fp, wea_fp)
-    print("Starting gendaymtx...")
-    mfactor = 4
-    res = pr.gendaymtx(wea_fp, verbose=True, average=False, mfactor=mfactor)
-    mtx = BytesIO(res)
-    print("parsing results...")
-    results = parse_hourly_mtx(mtx, mfactor=mfactor)
-    print(list(results.keys()))
-    print(results["hourly"].shape)
-    exit()
-
-    # fp = Path(os.path.abspath(os.path.dirname(__file__))) / "sandySprings_Footprints.zip"
-    # height_col = "BuildingHe"
-    # id_col = "OBJECTID"
-    # archetype_col = "Archetype"
+    sky = Sky(epw_fp=epw_fp, mfactor=4, n_azimuths=48, dome_radius=100.0)
+    # sky.render()
+    sky.init_rendering_fields()
 
     tracer = Tracer(
         filepath=fp,
@@ -1674,4 +1736,4 @@ if __name__ == "__main__":
     tracer.assemble_results_df()
 
     tracer.init_gui()
-    tracer.render_scene()
+    tracer.render_scene(sky)
