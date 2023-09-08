@@ -85,6 +85,42 @@ EPLUS_DATA = [
     },
 ]
 
+ENERGY_CSV_OUTPUTS = [
+    "Date/Time",
+    "PERIM:Zone People Total Heating Energy [J](Hourly)",
+    "CORE:Zone People Total Heating Energy [J](Hourly)",
+    "PERIM:Zone Lights Electric Energy [J](Hourly)",
+    "CORE:Zone Lights Electric Energy [J](Hourly)",
+    "PERIM:Zone Electric Equipment Electric Energy [J](Hourly)",
+    "CORE:Zone Electric Equipment Electric Energy [J](Hourly)",
+    "PERIM:Zone Windows Total Transmitted Solar Radiation Energy [J](Hourly)",
+    "CORE:Zone Windows Total Transmitted Solar Radiation Energy [J](Hourly)",
+    "PERIM:Zone Mean Radiant Temperature [C](Hourly)",
+    "CORE:Zone Mean Radiant Temperature [C](Hourly)",
+    "PERIM:Zone Mean Air Temperature [C](Hourly)",
+    "PERIM:Zone Operative Temperature [C](Hourly)",
+    "CORE:Zone Mean Air Temperature [C](Hourly)",
+    "CORE:Zone Operative Temperature [C](Hourly)",
+    "PERIM:Zone Infiltration Total Heat Loss Energy [J](Hourly)",
+    "PERIM:Zone Infiltration Total Heat Gain Energy [J](Hourly)",
+    "PERIM:Zone Infiltration Air Change Rate [ach](Hourly)",
+    "CORE:Zone Infiltration Total Heat Loss Energy [J](Hourly)",
+    "CORE:Zone Infiltration Total Heat Gain Energy [J](Hourly)",
+    "CORE:Zone Infiltration Air Change Rate [ach](Hourly)",
+    "PERIM:Zone Air Temperature [C](Hourly)",
+    "PERIM:Zone Air Relative Humidity [%](Hourly)",
+    "CORE:Zone Air Temperature [C](Hourly)",
+    "CORE:Zone Air Relative Humidity [%](Hourly)",
+    "PERIM IDEAL LOADS AIR:Zone Ideal Loads Supply Air Total Heating Energy [J](Hourly)",
+    "PERIM IDEAL LOADS AIR:Zone Ideal Loads Supply Air Total Cooling Energy [J](Hourly)",
+    "PERIM IDEAL LOADS AIR:Zone Ideal Loads Zone Total Heating Energy [J](Hourly)",
+    "CORE IDEAL LOADS AIR:Zone Ideal Loads Supply Air Total Heating Energy [J](Hourly)",
+    "CORE IDEAL LOADS AIR:Zone Ideal Loads Supply Air Total Cooling Energy [J](Hourly)",
+    "CORE IDEAL LOADS AIR:Zone Ideal Loads Zone Total Heating Energy [J](Hourly)",
+    "DHW PERIM:Water Use Equipment Heating Energy [J](Hourly)",
+    "DHW CORE:Water Use Equipment Heating Energy [J](Hourly)",
+]
+
 logging.basicConfig()
 logger = logging.getLogger("UmiSurrogate")
 logger.setLevel(logging.INFO)
@@ -369,42 +405,66 @@ class UmiSurrogate(UmiProject):
         return shoeboxes
 
     def fetch_shoebox_areas(self):
-        sb_lengths = (self.shoeboxdf["Core2Perimeter"] + 1) * self.perim_offset
-        areas = sb_lengths * self.width  # Ideally get width from shoebox
+        # sb_lengths = (self.shoeboxdf["Core2Perimeter"] + 1) * self.perim_offset
+        # areas = sb_lengths * self.width  # Ideally get width from shoebox
 
         # logger.info(f"Fetching areas for {df.shape[0]} shoeboxes.")
-        # all_sb_areas = [
-        #     self.shoeboxes[x].total_building_area for x in self.shoeboxdf["ShoeboxPath"]
-        # ]
-        # logger.debug(f"Got areas for all {len(all_sb_areas)} shoeboxes.")
+
+        shoeboxes = self._fetch_shoeboxcollection()
+        areas = [
+            shoeboxes[x].total_building_area for x in self.shoeboxdf["ShoeboxPath"]
+        ]
+        logger.debug(f"Got areas for all {len(areas)} shoeboxes.")
         return areas.to_numpy()
 
     def _fetch_raw_shoebox_results(self, idf_path, num_metrics, freq="Hourly"):
         # TODO: num_metrics vs list of EPLUS DATA
         array = np.zeros((2, num_metrics, 8760))  # 2 is for core, perim
         csv_path = idf_path.replace("idf", "csv")
-        pandas_df = pd.read_csv(csv_path)
-        pandas_df.columns = pandas_df.columns.str.strip()
+        try:
+            pandas_df = pd.read_csv(csv_path)
+            pandas_df.columns = pandas_df.columns.str.strip()
+            cols = pandas_df.columns.tolist()
+        except Exception as e:
+            print(f"Error opening energy csv: {csv_path}")
+            raise e
 
-        for z, zone in enumerate(["CORE", "PERIM"]):
-            array[z, :, :] = pandas_df.filter(regex=zone).to_numpy().T
-            # for m, metric in enumerate(EPLUS_DATA):
-            #     if "Ideal" in metric["eplus_name"]:
-            #         col_name = f'{zone} IDEAL LOADS AIR:{metric["eplus_name"]} [{metric["units"]}]({freq})'
-            #     elif "Water" in metric["eplus_name"]:
-            #         col_name = (
-            #             f'DHW {zone}:{metric["eplus_name"]} [{metric["units"]}]({freq})'
-            #         )
-            #     else:
-            #         col_name = (
-            #             f'{zone}:{metric["eplus_name"]} [{metric["units"]}]({freq})'
-            #         )
-            #     # name = f'{metric["name"]}_{zone}'
-            #     # res = EnergySeries.with_timeindex(
-            #     #     pandas_df[col_name], units=metric["units"]
-            #     # )
-            #     # results[zone][name] = res
-            #     array[z, m, :] = pandas_df[col_name]
+        # TODO: if there is no water use equipment this is not added to the idf and is not in the csv output
+        # Temporary fix to add zeros if there is a missing entry
+        if len(cols) != len(ENERGY_CSV_OUTPUTS):
+            # print(f"Missing some outputs for {csv_path}")
+            for col in ENERGY_CSV_OUTPUTS:
+                if col not in cols:
+                    logger.info(
+                        f"Could not find results for {col} in {csv_path}. Assuming no energy use (zeros)."
+                    )
+                    pandas_df[col] = 0
+            # reorganize columns in correct order
+            pandas_df = pandas_df[ENERGY_CSV_OUTPUTS]
+
+        try:
+            for z, zone in enumerate(["CORE", "PERIM"]):
+                array[z, :, :] = pandas_df.filter(regex=zone).to_numpy().T
+                # for m, metric in enumerate(EPLUS_DATA):
+                #     if "Ideal" in metric["eplus_name"]:
+                #         col_name = f'{zone} IDEAL LOADS AIR:{metric["eplus_name"]} [{metric["units"]}]({freq})'
+                #     elif "Water" in metric["eplus_name"]:
+                #         col_name = (
+                #             f'DHW {zone}:{metric["eplus_name"]} [{metric["units"]}]({freq})'
+                #         )
+                #     else:
+                #         col_name = (
+                #             f'{zone}:{metric["eplus_name"]} [{metric["units"]}]({freq})'
+                #         )
+                #     # name = f'{metric["name"]}_{zone}'
+                #     # res = EnergySeries.with_timeindex(
+                #     #     pandas_df[col_name], units=metric["units"]
+                #     # )
+                #     # results[zone][name] = res
+                #     array[z, m, :] = pandas_df[col_name]
+        except Exception as e:
+            print(f"Error reading energy csv: {csv_path}")
+            raise e
         return array
 
     def get_storage_path(self):
@@ -433,9 +493,6 @@ class UmiSurrogate(UmiProject):
                 i = row["index"]
                 path = row["ShoeboxPath"]
                 res[path] = self._fetch_raw_shoebox_results(path, num_metrics)
-
-            # for path in self.shoeboxes.keys():
-            #     res[path] = self._fetch_raw_shoebox_results(path, num_metrics)
 
             for i, path in enumerate(self.shoeboxdf["ShoeboxPath"]):
                 data[i] = res[path]
@@ -476,7 +533,6 @@ class UmiSurrogate(UmiProject):
             if results.shape[-1] != self.output_resolution:
                 # TODO: interpolate?
                 n = int(results.shape[-1] / self.output_resolution)
-                # Sum ???
                 # results = np.average(
                 #     results.reshape(-1, 2, 2, self.output_resolution, n), axis=4
                 # )
@@ -628,8 +684,9 @@ class UmiSurrogate(UmiProject):
         # THREE AREA ONES ARE TO BE TAGGED ON AT END
         area = self.fetch_shoebox_areas()
         logger.info(f"AREA MAX: {area.max()}, MIN {area.min()}")
+        area = area[start_idx : start_idx + count]
         df[:, 11] = normalize(
-            area[start_idx : start_idx + count],
+            area,
             maxv=AREA_MAX,
             minv=AREA_MIN,
         )
@@ -845,7 +902,11 @@ class UmiSurrogate(UmiProject):
         # for it in tqdm(range(len(start_idxs))):
         for it in range(len(start_idxs)):
             idx = start_idxs[it]
-            umi_data = self.make_umi_dataloader(idx, count, batch_size)
+            if it == len(start_idxs) - 1:
+                batch_count = num_sb % count
+            else:
+                batch_count = count
+            umi_data = self.make_umi_dataloader(idx, batch_count, batch_size)
             self._umi_dataloader = umi_data
             with torch.no_grad():
                 for test_samples in umi_data["dataloader"]:
@@ -867,6 +928,8 @@ class UmiSurrogate(UmiProject):
         return true_loads, pred_loads, all_losses
 
     def surrogate_plot_params(self, start_ix, count, include_whiskers=True, title=None):
+        if count > len(self._umi_dataloader["dataset"]) - start_ix:
+            count = len(self._umi_dataloader["dataset"]) - start_ix
         bldg_params = np.zeros(
             (
                 len(self._umi_dataloader["dataset"]),
