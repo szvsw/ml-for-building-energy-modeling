@@ -55,6 +55,17 @@ WINDOW_TYPES = {
     4: "triple_LoE",
 }
 
+RECOVERY_TYPES = {
+    0: "None",
+    1: "Sensible",
+    2: "Enthalpy"
+}
+
+ECONOMIZER_TYPES = {
+    0 : "NoEconomizer",
+    1 : "DifferentialDryBulb",
+    2 : "DifferentialEnthalpy"
+}
 
 class ShoeboxConfiguration:
     """
@@ -113,6 +124,7 @@ class WhiteboxSimulation:
         self.build_epw_path()
         self.update_parameters()
         self.build_shoebox()
+        self.set_HVAC()
         self.build_shading_from_vect()
 
     def load_template(self):
@@ -301,7 +313,6 @@ class WhiteboxSimulation:
         np.random.seed(seed)
         angles = np.random.random(div_size) * math.pi/2
         h = [r * math.tan(a) for a in angles]
-        print(h)
         self.build_shading(heights=h, radius=r)
 
     def build_shading(self, heights, radius=10, override=True):
@@ -375,6 +386,28 @@ class WhiteboxSimulation:
         """
         for surface in self.shoebox.getshadingsurfaces():
             self.shoebox.removeidfobject(surface)
+
+    def set_HVAC(self, Sensible_Heat_Recovery_Effectiveness=0.7, Latent_Heat_Recovery_Effectiveness=0.65):
+        econ_name = None
+        recovery_name = None
+
+        # Add economizer if any
+        econ_name = ECONOMIZER_TYPES[
+            self.schema['EconomizerSettings'].extract_storage_values(self.storage_vector)
+        ]
+
+        # Add recovery if any
+        recovery_name = RECOVERY_TYPES[
+            self.schema['RecoverySettings'].extract_storage_values(self.storage_vector)
+        ]
+
+        for zone_conditions in self.shoebox.idfobjects['HVACTEMPLATE:ZONE:IDEALLOADSAIRSYSTEM']:
+            if econ_name != ECONOMIZER_TYPES[0]:
+                zone_conditions.Outdoor_Air_Economizer_Type = econ_name
+            if recovery_name != RECOVERY_TYPES[0]:
+                zone_conditions.Heat_Recovery_Type = recovery_name
+                zone_conditions.Sensible_Heat_Recovery_Effectiveness = Sensible_Heat_Recovery_Effectiveness
+                zone_conditions.Latent_Heat_Recovery_Effectiveness = Latent_Heat_Recovery_Effectiveness
 
     def simulate(self):
         self.shoebox.simulate(verbose=False, prep_outputs=False, readvars=False)
@@ -1545,8 +1578,8 @@ class Schema:
                     info="Lookup index of window type.",
                 ),
                 OneHotParameter(
-                    name="Economizer",
-                    count=2,
+                    name="EconomizerSettings",
+                    count=3,
                     info="Flag for economizer use.",
                 ),
                 OneHotParameter(

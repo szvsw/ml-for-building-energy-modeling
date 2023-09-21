@@ -82,6 +82,7 @@ class minimumTemplate(UmiTemplateLibrary):
 
         # unchanging objects
         self.WindowConstructions = self.make_window_constructions()
+        print(self.WindowConstructions)
         self.OpaqueConstructions = self.make_opaque_constructions()
 
         self.setup_default_scheds()
@@ -115,82 +116,84 @@ class minimumTemplate(UmiTemplateLibrary):
         self.DomesticHotWaterSettings = [dhw_setting]
 
     def setup_default_scheds(self):
-        # Always on
-        sch_d_on = DaySchedule.from_values(
-            Name="d_AlwaysOn", Values=[1] * 24, Type="Fraction", Category="Day"
-        )
-        # Always off
-        sch_d_off = DaySchedule.from_values(
-            Name="d_AlwaysOff", Values=[0] * 24, Type="Fraction", Category="Day"
-        )
-        self.DaySchedules.extend([sch_d_on, sch_d_off])
+        self.always_off = self.YearSchedules[3]
+        self.always_on = self.YearSchedules[4]
+        # # Always on
+        # sch_d_on = DaySchedule.from_values(
+        #     Name="d_AlwaysOn", Values=[1] * 24, Type="Fraction", Category="Day"
+        # )
+        # # Always off
+        # sch_d_off = DaySchedule.from_values(
+        #     Name="d_AlwaysOff", Values=[0] * 24, Type="Fraction", Category="Day"
+        # )
+        # self.DaySchedules.extend([sch_d_on, sch_d_off])
 
-        # Week schedules
-        # Always on
-        sch_w_on = WeekSchedule(
-            Days=[sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on],
-            Category="Week",
-            Type="Fraction",
-            Name="w_AlwaysOn",
-        )
-        # Always off
-        sch_w_off = WeekSchedule(
-            Days=[
-                sch_d_off,
-                sch_d_off,
-                sch_d_off,
-                sch_d_off,
-                sch_d_off,
-                sch_d_off,
-                sch_d_off,
-            ],
-            Category="Week",
-            Type="Fraction",
-            Name="w_AlwaysOff",
-        )
+        # # Week schedules
+        # # Always on
+        # sch_w_on = WeekSchedule(
+        #     Days=[sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on, sch_d_on],
+        #     Category="Week",
+        #     Type="Fraction",
+        #     Name="w_AlwaysOn",
+        # )
+        # # Always off
+        # sch_w_off = WeekSchedule(
+        #     Days=[
+        #         sch_d_off,
+        #         sch_d_off,
+        #         sch_d_off,
+        #         sch_d_off,
+        #         sch_d_off,
+        #         sch_d_off,
+        #         sch_d_off,
+        #     ],
+        #     Category="Week",
+        #     Type="Fraction",
+        #     Name="w_AlwaysOff",
+        # )
 
-        self.WeekSchedules.extend([sch_w_on, sch_w_off])
+        # self.WeekSchedules.extend([sch_w_on, sch_w_off])
 
-        # Year schedules
-        # Always on
-        dict_on = {
-            "$id": self.get_unique_key(),
-            "Category": "Year",
-            "Parts": [
-                {
-                    "FromDay": 1,
-                    "FromMonth": 1,
-                    "ToDay": 31,
-                    "ToMonth": 12,
-                    "Schedule": sch_w_on.to_ref(),
-                }
-            ],
-            "Type": "Fraction",
-            "Name": "y_AlwaysOn",
-        }
-        self.always_on = YearSchedule.from_dict(
-            dict_on, {a.id: a for a in self.WeekSchedules}
-        )
-        # Always off
-        dict_off = {
-            "$id": self.get_unique_key(),
-            "Category": "Year",
-            "Parts": [
-                {
-                    "FromDay": 1,
-                    "FromMonth": 1,
-                    "ToDay": 31,
-                    "ToMonth": 12,
-                    "Schedule": sch_w_off.to_ref(),
-                }
-            ],
-            "Type": "Fraction",
-            "Name": "y_AlwaysOff",
-        }
-        self.always_off = YearSchedule.from_dict(
-            dict_off, {a.id: a for a in self.WeekSchedules}
-        )
-        self.YearSchedules.extend([self.always_on, self.always_off])
+        # # Year schedules
+        # # Always on
+        # dict_on = {
+        #     # "$id": self.get_unique_key(),
+        #     "Category": "Year",
+        #     "Parts": [
+        #         {
+        #             "FromDay": 1,
+        #             "FromMonth": 1,
+        #             "ToDay": 31,
+        #             "ToMonth": 12,
+        #             "Schedule": sch_w_on.to_ref(),
+        #         }
+        #     ],
+        #     "Type": "Fraction",
+        #     "Name": "y_AlwaysOn",
+        # }
+        # self.always_on = YearSchedule.from_dict(
+        #     dict_on, {a.id: a for a in self.WeekSchedules}
+        # )
+        # # Always off
+        # dict_off = {
+        #     # "$id": self.get_unique_key(),
+        #     "Category": "Year",
+        #     "Parts": [
+        #         {
+        #             "FromDay": 1,
+        #             "FromMonth": 1,
+        #             "ToDay": 31,
+        #             "ToMonth": 12,
+        #             "Schedule": sch_w_off.to_ref(),
+        #         }
+        #     ],
+        #     "Type": "Fraction",
+        #     "Name": "y_AlwaysOff",
+        # }
+        # self.always_off = YearSchedule.from_dict(
+        #     dict_off, {a.id: a for a in self.WeekSchedules}
+        # )
+        # self.YearSchedules.extend([self.always_on, self.always_off])
 
     def make_window_constructions(self):
         airLayer = GasLayer(self.GasMaterials[0], Thickness=0.006)
@@ -629,7 +632,7 @@ class minimumTemplate(UmiTemplateLibrary):
         print(self.BuildingTemplates)
 
         ## Clean up templates
-        self.unique_components()
+        self.unique_components(keep_orphaned=True)
         self.check_key_duplicates()
 
         self.save(
@@ -783,8 +786,8 @@ if __name__ == "__main__":
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
-    # buildings_df_path = "D:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
-    buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    buildings_df_path = "D:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    # buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
     cz_templatelist = os.listdir(buildings_df_path)
     cz_templatelist = [x for x in cz_templatelist if "residentialtemplates" in x]
     cz_templatelist = [x for x in cz_templatelist if ".csv" in x]
