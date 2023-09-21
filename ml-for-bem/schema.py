@@ -41,7 +41,19 @@ from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
 
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
 
-HIGH_LOW_MASS_THESH = 00000  # J/m2K
+constructions_lib_path = os.path.join(
+        os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
+    )
+
+HIGH_LOW_MASS_THRESH = 00000  # J/m2K
+
+WINDOW_TYPES = {
+    0: "single_clr",
+    1: "dbl_clr",
+    2: "dbl_LoE",
+    3: "triple_clr",
+    4: "triple_LoE",
+}
 
 
 class ShoeboxConfiguration:
@@ -101,6 +113,7 @@ class WhiteboxSimulation:
         self.build_epw_path()
         self.update_parameters()
         self.build_shoebox()
+        self.build_shading_from_vect()
 
     def load_template(self):
         """
@@ -140,7 +153,7 @@ class WhiteboxSimulation:
         tmass = self.schema["FacadeMass"].extract_storage_values(self.storage_vector)
 
         mass_flag = 0
-        if tmass > HIGH_LOW_MASS_THESH:
+        if tmass > HIGH_LOW_MASS_THRESH:
             mass_flag = 1
 
         n_programs = len(RESTYPES)
@@ -280,6 +293,16 @@ class WhiteboxSimulation:
         sb.outputs.add_custom(outputs)
         sb.outputs.apply()
         self.shoebox = sb
+
+    def build_shading_from_vect(self, div_size=12):
+        r = 2 * self.shoebox_config.width
+        seed = int(self.schema["shading_seed"].extract_storage_values(self.storage_vector))
+        # make random set of angles for heights
+        np.random.seed(seed)
+        angles = np.random.random(div_size) * math.pi/2
+        h = [r * math.tan(a) for a in angles]
+        print(h)
+        self.build_shading(heights=h, radius=r)
 
     def build_shading(self, heights, radius=10, override=True):
         """
@@ -709,15 +732,6 @@ class SchemaParameter:
                     if value is None
                     else value
                 )
-            elif isinstance(self, WindowParameter):
-                vals = self.normalize(
-                    self.extract_storage_values_batch(storage_batch).reshape(
-                        -1, *self.shape_ml
-                    )
-                    if value is None
-                    else value
-                )
-                return vals
             else:
                 vals = self.normalize(
                     self.extract_storage_values_batch(storage_batch).reshape(
@@ -1049,12 +1063,11 @@ class TMassParameter(BuildingTemplateParameter):
         return self.to_ml(value=val)
 
 
-class WindowParameter(NumericParameter):
-    def __init__(self, min, max, **kwargs):
-        super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
-        self.min = np.array(min)
-        self.max = np.array(max)
-        self.range = self.max - self.min
+class WindowParameter(OneHotParameter):
+    __slots__ = ()
+
+    def __init__(self, **kwargs):
+        super().__init__(count=5, **kwargs)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
@@ -1076,43 +1089,25 @@ class WindowParameter(NumericParameter):
         )
 
         # get the three values for u/shgc/vlt
-        values = self.extract_storage_values(whitebox_sim.storage_vector)
+        idx = self.extract_storage_values(whitebox_sim.storage_vector)
 
-        # separate them
-        u_value = values[0]
-        shgc = values[1]
-        vlt = values[2]
-
-        # create a new single layer window that has the properties from special single layer material
-        window = WindowConstruction.from_shgc(
-            Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
-            solar_heat_gain_coefficient=shgc,
-            u_factor=u_value,
-            visible_transmittance=vlt,
-        )
-
+        # Window name lookup
+        window_typ = WINDOW_TYPES[idx]
+        all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
         # Update the window
-        whitebox_sim.template.Windows.Construction = window
+        whitebox_sim.template.Windows.Construction = whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
 
-    def extract_from_template(self, building_template):
+    def extract_from_template(self, building_template): #TODO: Categorize window based on values
         """
         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
         Works as the reverse of mutate_simulation_object
         Args:
             whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+            building_template: Archetypal BuildingTemplate 
         """
-        # return self.to_ml(
-        #     value=np.array(
-        #         [
-        #             building_template.Windows.Construction.u_value,
-        #             0.5,  # TODO SHGC
-        #             building_template.Windows.Construction.visible_transmittance,
-        #         ]
-        #     )
-        # )
         window = building_template.Windows.Construction
         uval = window.u_value
+        # TODO: 3 layer window???
         if window.glazing_count == 2:
             shgc = window.shgc()
         elif window.glazing_count == 1:
@@ -1125,18 +1120,9 @@ class WindowParameter(NumericParameter):
                 f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
             )
             shgc = 0.6
-
-        window_array = np.array(
-            [
-                uval,
-                shgc,  # TODO SHGC
-                window.visible_transmittance,
-            ]
-        )
-        # return self.normalize(value=window_array)
-        # window_array = np.reshape(window_array,)
-        return self.to_ml(value=window_array)
-        # return window_array
+        vlt = window.visible_transmittance
+        # return self.to_ml(value=window_array)
+        raise ValueError ("Capability not yet working for this.")
 
     def single_pane_shgc_estimation(self, tsol, uval):
         """
@@ -1176,17 +1162,6 @@ class WindowParameter(NumericParameter):
             )
         else:
             return shgc_intermediate(tsol, uval)
-
-    # def normalize(self, window_array):
-    #     # TODO: discuss this - normalizing only the u_value
-    #     print("NORMALIZING WINDOW ARRAY")
-    #     norm_window_array = window_array.copy()
-    #     print(f"Min {self.min[0]}, max {self.max[0]}, range{self.range[0]}")
-    #     norm_val = (window_array[0] - self.min[0]) / self.range[0]
-    #     print(norm_val)
-    #     norm_window_array[0] = norm_val
-    #     print(window_array, norm_window_array)
-    #     return norm_window_array
 
 
 class SchedulesParameters(SchemaParameter):
@@ -1407,14 +1382,6 @@ class Schema:
                     source="dogan_shoeboxer_2017",
                     info="Footprint to ground ratio (unitless)",
                 ),
-                # ShoeboxGeometryParameter(
-                #     name="shading_fact",
-                #     min=0,
-                #     max=1,
-                #     mean=0.1,
-                #     std=0.33,
-                #     info="Shading fact (unitless)",
-                # ),
                 ShoeboxGeometryParameter(
                     name="wwr",
                     min=0.05,
@@ -1426,6 +1393,15 @@ class Schema:
                 ShoeboxOrientationParameter(
                     name="orientation",
                     info="Shoebox Orientation",
+                ),
+                NumericParameter(
+                    name="shading_seed",
+                    info="Seed to generate random shading angles, turns into sched.",
+                    min=0,
+                    max=90,
+                    mean=20,
+                    std=10,
+                    shape_ml=(0,),
                 ),
                 BuildingTemplateParameter(
                     name="HeatingSetpoint",
@@ -1555,14 +1531,28 @@ class Schema:
                     source="ComStock, tacit knowledge",
                     info="Slab R-value",
                 ),
+                # WindowParameter(
+                #     name="WindowSettings",
+                #     min=(0.3, 0.05, 0.05),
+                #     max=(7.0, 0.99, 0.99),
+                #     mean=np.array([5, 0.5, 0.5]),
+                #     std=np.array([2, 0.1, 0.1]),
+                #     source="climate studio",
+                #     info="U-value (m2K/W), shgc, vlt",
+                # ),
                 WindowParameter(
                     name="WindowSettings",
-                    min=(0.3, 0.05, 0.05),
-                    max=(7.0, 0.99, 0.99),
-                    mean=np.array([5, 0.5, 0.5]),
-                    std=np.array([2, 0.1, 0.1]),
-                    source="climate studio",
-                    info="U-value (m2K/W), shgc, vlt",
+                    info="Lookup index of window type.",
+                ),
+                OneHotParameter(
+                    name="Economizer",
+                    count=2,
+                    info="Flag for economizer use.",
+                ),
+                OneHotParameter(
+                    name="RecoverySettings",
+                    count=3,
+                    info="Index for use of heat recovery (type) - none, hrv, erv.",
                 ),
                 SchemaParameter(
                     name="schedules_seed",

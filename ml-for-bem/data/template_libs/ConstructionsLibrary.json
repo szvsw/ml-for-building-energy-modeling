@@ -906,6 +906,74 @@
   "StructureDefinitions": [],
   "DaySchedules": [
     {
+      "$id": "1958794053440",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_AlwaysOff"
+    },
+    {
+      "$id": "1958794053312",
+      "Category": "Day",
+      "Type": "Fraction",
+      "Values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "Comments": null,
+      "DataSource": null,
+      "Name": "d_AlwaysOn"
+    },
+    {
       "$id": "140272712016832",
       "Category": "Day",
       "Type": "Fraction",
@@ -4716,6 +4784,68 @@
   ],
   "WeekSchedules": [
     {
+      "$id": "1958793941344",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "1958794053440"
+        },
+        {
+          "$ref": "1958794053440"
+        },
+        {
+          "$ref": "1958794053440"
+        },
+        {
+          "$ref": "1958794053440"
+        },
+        {
+          "$ref": "1958794053440"
+        },
+        {
+          "$ref": "1958794053440"
+        },
+        {
+          "$ref": "1958794053440"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_AlwaysOff"
+    },
+    {
+      "$id": "1958793941200",
+      "Category": "Week",
+      "Days": [
+        {
+          "$ref": "1958794053312"
+        },
+        {
+          "$ref": "1958794053312"
+        },
+        {
+          "$ref": "1958794053312"
+        },
+        {
+          "$ref": "1958794053312"
+        },
+        {
+          "$ref": "1958794053312"
+        },
+        {
+          "$ref": "1958794053312"
+        },
+        {
+          "$ref": "1958794053312"
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "w_AlwaysOn"
+    },
+    {
       "$id": "140272721197088",
       "Category": "Week",
       "Days": [
@@ -5361,6 +5491,44 @@
       "Comments": null,
       "DataSource": null,
       "Name": "Res_Equip_Sched"
+    },
+    {
+      "$id": "4041045876181",
+      "Category": "Year",
+      "Parts": [
+        {
+          "FromDay": 1,
+          "FromMonth": 1,
+          "ToDay": 31,
+          "ToMonth": 12,
+          "Schedule": {
+            "$ref": "1958793941344"
+          }
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "y_AlwaysOff"
+    },
+    {
+      "$id": "5564999956131",
+      "Category": "Year",
+      "Parts": [
+        {
+          "FromDay": 1,
+          "FromMonth": 1,
+          "ToDay": 31,
+          "ToMonth": 12,
+          "Schedule": {
+            "$ref": "1958793941200"
+          }
+        }
+      ],
+      "Type": "Fraction",
+      "Comments": null,
+      "DataSource": null,
+      "Name": "y_AlwaysOn"
     }
   ],
   "DomesticHotWaterSettings": [],
