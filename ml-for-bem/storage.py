@@ -16,13 +16,16 @@ logger.setLevel(logging.INFO)
 
 
 try:
-    creds = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+    creds = {}
+    for key, val in os.environ.items():
+        if key.upper().startswith("GOOGLE_APPLICATION_CREDENTIALS_"):
+            key = key.split("GOOGLE_APPLICATION_CREDENTIALS_")[-1].lower()
+            creds[key] = val
     storage_client = storage.Client.from_service_account_info(creds)
     logger.info("Successfully opened GCS client.")
 except BaseException as e:
-    logger.error("ERR", exc_info=e)
     logger.warning(
-        "Could not find GCS credentials in system env, falling back to json."
+        "Could not find valid GCS credentials in system env, falling back to json."
     )
     storage_client = storage.Client.from_service_account_json(
         Path(os.path.dirname(os.path.abspath(__file__)))
