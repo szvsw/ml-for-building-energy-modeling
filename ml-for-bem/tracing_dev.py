@@ -420,7 +420,25 @@ class Tracer:
         self.camera.position(0, 10, 0)
         self.camera.lookat(1, 10, 1)
 
+    @ti.kernel
+    def init_mesh_pts(self):
+        for edge_ix in self.edges:
+            edge = self.edges[edge_ix]
+            height = edge.height
+            start = edge.start
+            end = edge.end
+            mesh_pts_start_ix = 6 * edge_ix
+
+            self.mesh_pts[mesh_pts_start_ix + 0] = ti.Vector([start.x, 0, start.y])
+            self.mesh_pts[mesh_pts_start_ix + 1] = ti.Vector([end.x, 0, end.y])
+            self.mesh_pts[mesh_pts_start_ix + 2] = ti.Vector([start.x, height, start.y])
+            self.mesh_pts[mesh_pts_start_ix + 3] = ti.Vector([start.x, height, start.y])
+            self.mesh_pts[mesh_pts_start_ix + 4] = ti.Vector([end.x, 0, end.y])
+            self.mesh_pts[mesh_pts_start_ix + 5] = ti.Vector([end.x, height, end.y])
+
     def render_scene(self, sky=False):
+        self.mesh_pts = ti.Vector.field(3, dtype=ti.f32, shape=self.edges.shape[0] * 6)
+        self.init_mesh_pts()
         it = 0
         sensor_ix = 0
         use_auto_timestepper = True
@@ -480,6 +498,7 @@ class Tracer:
                 radius=0.2,
                 per_vertex_color=self.sensor_3d_colors,
             )
+            self.scene.mesh(self.mesh_pts, color=(0.5, 0.5, 0.5), two_sided=True)
             if sky:
                 if use_auto_timestepper:
                     if it % 18 == 0:
@@ -706,6 +725,7 @@ class Tracer:
             y1 = edge.end.y
             h = edge.height
             slope = edge.slope
+            normal = edge.normal
 
             # Sort the end points
             x_min = ti.min(x0, x1)
@@ -739,6 +759,28 @@ class Tracer:
                 ti.atomic_max(self.nodes[x - 1, y_ix].height, h)  # update left node
                 ti.atomic_max(self.nodes[x, y_ix].height, h)  # update right node
 
+                # Thicken the edges
+                if edge.normal_theta >= 0.0 and edge.normal_theta < np.pi / 4:
+                    ti.atomic_max(self.nodes[x - 2, y_ix].height, h)  # update left node
+                    ti.atomic_max(
+                        self.nodes[x - 1, y_ix].height, h
+                    )  # update right node
+                elif (
+                    edge.normal_theta >= 3 * np.pi / 4
+                    and edge.normal_theta < 5 * np.pi / 4
+                ):
+                    ti.atomic_max(self.nodes[x, y_ix].height, h)  # update left node
+                    ti.atomic_max(
+                        self.nodes[x + 1, y_ix].height, h
+                    )  # update right node
+                elif (
+                    edge.normal_theta >= 7 * np.pi / 4 and edge.normal_theta < 2 * np.pi
+                ):
+                    ti.atomic_max(self.nodes[x - 2, y_ix].height, h)  # update left node
+                    ti.atomic_max(
+                        self.nodes[x - 1, y_ix].height, h
+                    )  # update right node
+
             for y_int_ix in range(n_y_thresholds):
                 y = y_start + y_int_ix  # TODO: currently only supports node width of 1
                 x = (1 / slope) * (y - y0) + x0
@@ -747,6 +789,23 @@ class Tracer:
                 # Add height to quadtree if the edge is taller than the existing edge
                 ti.atomic_max(self.nodes[x_ix, y - 1].height, h)  # update lower node
                 ti.atomic_max(self.nodes[x_ix, y].height, h)  # update upper node
+
+                # Thicken the edges
+                if edge.normal_theta >= np.pi / 4 and edge.normal_theta < 3 * np.pi / 4:
+                    ti.atomic_max(
+                        self.nodes[x_ix, y - 2].height, h
+                    )  # update lower node
+                    ti.atomic_max(
+                        self.nodes[x_ix, y - 1].height, h
+                    )  # update upper node
+                elif (
+                    edge.normal_theta >= 5 * np.pi / 4
+                    and edge.normal_theta < 7 * np.pi / 4
+                ):
+                    ti.atomic_max(self.nodes[x_ix, y].height, h)  # update lower node
+                    ti.atomic_max(
+                        self.nodes[x_ix, y + 1].height, h
+                    )  # update upper node
 
     @ti.kernel
     def init_xy_sensors(self):
@@ -1146,9 +1205,9 @@ class Tracer:
             self.sensor_3d_points[sensor_ix].x = parent_xy_sen.loc.x
             self.sensor_3d_points[sensor_ix].y = xyz_sensor.height
             self.sensor_3d_points[sensor_ix].z = parent_xy_sen.loc.y
-            self.sensor_3d_colors[sensor_ix].x = 0.5
-            self.sensor_3d_colors[sensor_ix].y = ti.min(
-                timestep_result / 3000.0,
+
+            c_norm = ti.min(
+                timestep_result / 1000.0,
                 # ti.max(
                 #     (xyz_sensor.rad - 650.0)
                 #     / (self.n_azimuths * self.n_elevations - 650),
@@ -1156,7 +1215,9 @@ class Tracer:
                 # ),
                 1.0,
             )
-            self.sensor_3d_colors[sensor_ix].z = 0.5
+            self.sensor_3d_colors[sensor_ix].x = 1
+            self.sensor_3d_colors[sensor_ix].y = 1 - c_norm
+            self.sensor_3d_colors[sensor_ix].z = 1 - c_norm
 
     @ti.kernel
     def load_3d_sensor_rays(self, sensor_ix: int):
@@ -1552,7 +1613,13 @@ class Sky:
         epw_to_wea(self.epw_fp, self.wea_fp)
         logger.info("Converting WEA to MTX...")
         res = pr.gendaymtx(
-            self.wea_fp, verbose=True, average=False, mfactor=mfactor, rotate=270
+            self.wea_fp,
+            verbose=True,
+            average=False,
+            mfactor=mfactor,
+            rotate=270,
+            sky_color=[1, 1, 1],
+            solar_radiance=True,
         )
         mtx = BytesIO(res)
         logger.info("Converting Reinhart to meridinal/parallel...")
@@ -1595,7 +1662,7 @@ class Sky:
 
         # sum rgb channels
         # TODO: track separately
-        values: np.ndarray = values.sum(axis=1)
+        values: np.ndarray = values.mean(axis=1)
 
         # Standard tregenza sky division row sizes below.  gendaymtx's first "skypatch"
         # is the ground and the last is the zenith.
@@ -1692,9 +1759,9 @@ class Sky:
         display_source: Literal["radiance", "normal irradiance"] = "radiance",
     ):
         if display_source == "radiance":
-            color_source = self.radiance / 500
+            color_source = self.radiance / 100
         else:
-            color_source = self.normal_irradiance / 500
+            color_source = self.normal_irradiance / 100
 
         self.color_source = ti.field(dtype=ti.f32, shape=color_source.shape)
         self.color_source.from_numpy(color_source)
@@ -1817,6 +1884,15 @@ if __name__ == "__main__":
     height_col = "height (m)"
     id_col = "id"
     archetype_col = "Archetype"
+
+    fp = (
+        Path(os.path.abspath(os.path.dirname(__file__)))
+        / "data"
+        / "Florianopolis_Baseline.zip"
+    )
+    height_col = "HEIGHT"
+    id_col = "OBJECTID"
+    archetype_col = "BUILTYPE"
 
     epw_fp = (
         Path(os.path.abspath(os.path.dirname(__file__)))
