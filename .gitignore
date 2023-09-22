@@ -137,6 +137,8 @@ credentials/*.json
 ml-for-bem/data/**/*.hdf5
 ml-for-bem/data/epws/city_epws_indexed/**.epw
 ml-for-bem/data/epws/city_epws_indexed.zip
+ml-for-bem/data/epws/global_epws_indexed/**.epw
+ml-for-bem/data/epws/global_epws_indexed.zip
 NREL/data/ComStock/
 ml-for-bem/data/template_libs/cz_libs/residential/epresults
 ml-for-bem/data/**/*.npy

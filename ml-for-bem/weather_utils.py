@@ -267,7 +267,7 @@ def collect_values(epw_obj):
 if __name__ == "__main__":
     # ml-for-bem\data\epws\city_epws_indexed
     epw_base_path = os.path.join(
-        os.getcwd(), "ml-for-bem", "data", "epws", "city_epws_indexed"
+        os.getcwd(), "ml-for-bem", "data", "epws", "global_epws_indexed"
     )
     epw_path_list = os.listdir(epw_base_path)
     epw_path_list = [x for x in epw_path_list if ".epw" in x]
@@ -286,7 +286,13 @@ if __name__ == "__main__":
         # ]
     # hdf5
     np.save(
-        os.path.join(os.getcwd(), "ml-for-bem", "data", "epws", f"climate_array.npy"),
+        os.path.join(
+            os.getcwd(),
+            "ml-for-bem",
+            "data",
+            "epws",
+            f"global_climate_array.npy",
+        ),
         climarray,
     )
     # n weather files x channels x 8760
