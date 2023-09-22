@@ -42,8 +42,12 @@ from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
 
 constructions_lib_path = os.path.join(
-        os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
-    )
+    os.getcwd(),
+    "ml-for-bem",
+    "data",
+    "template_libs",
+    "ConstructionsLibrary.json",
+)
 
 HIGH_LOW_MASS_THRESH = 00000  # J/m2K
 
@@ -58,14 +62,15 @@ WINDOW_TYPES = {
 RECOVERY_TYPES = {
     0: "None",
     1: "Sensible",
-    2: "Enthalpy"
+    2: "Enthalpy",
 }
 
 ECONOMIZER_TYPES = {
-    0 : "NoEconomizer",
-    1 : "DifferentialDryBulb",
-    2 : "DifferentialEnthalpy"
+    0: "NoEconomizer",
+    1: "DifferentialDryBulb",
+    2: "DifferentialEnthalpy",
 }
+
 
 class ShoeboxConfiguration:
     """
@@ -209,8 +214,9 @@ class WhiteboxSimulation:
         """
         # TODO: improve this to use a specific map rather than a globber
         cityidx = self.schema["base_epw"].extract_storage_values(self.storage_vector)
+        # TODO: switch to global epws
         globber = (
-            data_path / "epws" / "city_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
+            data_path / "epws" / "global_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
         )
         files = glob(str(globber))
         self.epw_path = data_path / files[0]
@@ -308,10 +314,12 @@ class WhiteboxSimulation:
 
     def build_shading_from_vect(self, div_size=12):
         r = 2 * self.shoebox_config.width
-        seed = int(self.schema["shading_seed"].extract_storage_values(self.storage_vector))
+        seed = int(
+            self.schema["shading_seed"].extract_storage_values(self.storage_vector)
+        )
         # make random set of angles for heights
         np.random.seed(seed)
-        angles = np.random.random(div_size) * math.pi/2
+        angles = np.random.random(div_size) * math.pi / 2
         h = [r * math.tan(a) for a in angles]
         self.build_shading(heights=h, radius=r)
 
@@ -387,27 +395,39 @@ class WhiteboxSimulation:
         for surface in self.shoebox.getshadingsurfaces():
             self.shoebox.removeidfobject(surface)
 
-    def set_HVAC(self, Sensible_Heat_Recovery_Effectiveness=0.7, Latent_Heat_Recovery_Effectiveness=0.65):
+    def set_HVAC(
+        self,
+        Sensible_Heat_Recovery_Effectiveness=0.7,
+        Latent_Heat_Recovery_Effectiveness=0.65,
+    ):
         econ_name = None
         recovery_name = None
 
         # Add economizer if any
         econ_name = ECONOMIZER_TYPES[
-            self.schema['EconomizerSettings'].extract_storage_values(self.storage_vector)
+            self.schema["EconomizerSettings"].extract_storage_values(
+                self.storage_vector
+            )
         ]
 
         # Add recovery if any
         recovery_name = RECOVERY_TYPES[
-            self.schema['RecoverySettings'].extract_storage_values(self.storage_vector)
+            self.schema["RecoverySettings"].extract_storage_values(self.storage_vector)
         ]
 
-        for zone_conditions in self.shoebox.idfobjects['HVACTEMPLATE:ZONE:IDEALLOADSAIRSYSTEM']:
+        for zone_conditions in self.shoebox.idfobjects[
+            "HVACTEMPLATE:ZONE:IDEALLOADSAIRSYSTEM"
+        ]:
             if econ_name != ECONOMIZER_TYPES[0]:
                 zone_conditions.Outdoor_Air_Economizer_Type = econ_name
             if recovery_name != RECOVERY_TYPES[0]:
                 zone_conditions.Heat_Recovery_Type = recovery_name
-                zone_conditions.Sensible_Heat_Recovery_Effectiveness = Sensible_Heat_Recovery_Effectiveness
-                zone_conditions.Latent_Heat_Recovery_Effectiveness = Latent_Heat_Recovery_Effectiveness
+                zone_conditions.Sensible_Heat_Recovery_Effectiveness = (
+                    Sensible_Heat_Recovery_Effectiveness
+                )
+                zone_conditions.Latent_Heat_Recovery_Effectiveness = (
+                    Latent_Heat_Recovery_Effectiveness
+                )
 
     def simulate(self):
         self.shoebox.simulate(verbose=False, prep_outputs=False, readvars=False)
@@ -1128,9 +1148,13 @@ class WindowParameter(OneHotParameter):
         window_typ = WINDOW_TYPES[idx]
         all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
         # Update the window
-        whitebox_sim.template.Windows.Construction = whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
+        whitebox_sim.template.Windows.Construction = (
+            whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
+        )
 
-    def extract_from_template(self, building_template): #TODO: Categorize window based on values
+    def extract_from_template(
+        self, building_template
+    ):  # TODO: Categorize window based on values
         """
         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
         Works as the reverse of mutate_simulation_object
