@@ -3,6 +3,7 @@ import json
 import shutil
 import logging
 
+import base64
 from pathlib import Path
 
 from google.cloud import storage
@@ -20,10 +21,15 @@ try:
     for key, val in os.environ.items():
         if key.upper().startswith("GOOGLE_APPLICATION_CREDENTIALS_"):
             key = key.split("GOOGLE_APPLICATION_CREDENTIALS_")[-1].lower()
+            if key.lower().endswith("private_key"):
+                val = base64.b64decode(val)
             creds[key] = val
+            logger.info(f"found {key}")
+
     storage_client = storage.Client.from_service_account_info(creds)
     logger.info("Successfully opened GCS client.")
 except BaseException as e:
+    logger.error("ERR", exc_info=e)
     logger.warning(
         "Could not find valid GCS credentials in system env, falling back to json."
     )
