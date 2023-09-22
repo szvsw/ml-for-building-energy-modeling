@@ -49,7 +49,7 @@ HIGH_LOW_MASS_THRESH = 00000  # J/m2K
 
 WINDOW_TYPES = {
     0: "single_clr",
-    1: "dbl_clr",
+    1: "Double_clr",
     2: "dbl_LoE",
     3: "triple_clr",
     4: "triple_LoE",
@@ -1137,25 +1137,48 @@ class WindowParameter(OneHotParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
             building_template: Archetypal BuildingTemplate 
+        Logic for window sorting (from ClimateStudio database):
+            SINGLE
+                Uval > 2.6
+            DOUBLE
+                Uval [0.84, 2.67]
+                1.6 < Uval < 2.6 LOE 1.0 < Uval < 1.6
+            TRIPLE
+                Uval [0.785, 1.75]
+                0.7 < Uval < 1.0 LOE Uval < 0.7
+
         """
         window = building_template.Windows.Construction
         uval = window.u_value
-        # TODO: 3 layer window???
-        if window.glazing_count == 2:
-            shgc = window.shgc()
-        elif window.glazing_count == 1:
-            # Calculate shgc from t_sol of construction
-            tsol = window.Layers[0].Material.SolarTransmittance
-            shgc = self.single_pane_shgc_estimation(tsol, uval)
+        # if window.glazing_count == 2:
+        #     shgc = window.shgc()
+        # elif window.glazing_count == 1:
+        #     # Calculate shgc from t_sol of construction
+        #     tsol = window.Layers[0].Material.SolarTransmittance
+        #     shgc = self.single_pane_shgc_estimation(tsol, uval)
+        # else:
+        #     # if window is not 2 layers
+        #     logging.info(
+        #         f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
+        #     )
+        #     shgc = 0.6
+        # vlt = window.visible_transmittance
+
+        # sort into window type
+        
+        if uval >= 1.6 and uval < 2.6:
+            type = 1
+        elif uval >= 1.0 and uval < 1.6:
+            type = 2
+        elif uval >= 0.7 and uval < 1.0:
+            type = 3
+        elif uval < 0.7:
+            type = 4
         else:
-            # if window is not 2 layers
-            logging.info(
-                f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
-            )
-            shgc = 0.6
-        vlt = window.visible_transmittance
-        # return self.to_ml(value=window_array)
-        raise ValueError ("Capability not yet working for this.")
+            type = 0
+
+        # return self.to_ml(value=np.array([type])) #TODO
+        return type
 
     def single_pane_shgc_estimation(self, tsol, uval):
         """
@@ -1787,7 +1810,7 @@ class Schema:
                     template_vect.append(val)
                 elif isinstance(parameter, WindowParameter):
                     val = parameter.extract_from_template(building_template)
-                    template_vect.extend(val)
+                    template_vect.append(val)
 
         # return values which will be used for a building parameter vector and/or timeseries vector (schedules)
         return dict(
