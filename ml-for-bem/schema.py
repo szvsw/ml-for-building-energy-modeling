@@ -302,6 +302,13 @@ class WhiteboxSimulation:
         outputs = [
             timeseries.to_output_dict() for timeseries in self.schema.timeseries_outputs
         ]
+        # Report Hourly Meters Monthly as Well, and both as annual
+        for timeseries in self.schema.timeseries_outputs:
+            if timeseries.freq.upper() == "HOURLY".upper():
+                ts_dict = timeseries.to_output_dict()
+                ts_dict["Reporting_Frequency"] = "Monthly"
+                outputs.append(ts_dict)
+
         sb.rotate(
             self.shoebox_config.orientation * 90
         )  # 0 is S facing windows, 90 is E facing windows
@@ -453,6 +460,7 @@ class WhiteboxSimulation:
                 series_to_retrieve_hourly, reporting_frequency="Hourly"
             )
         )
+        series_to_retrieve_monthly.extend(series_to_retrieve_hourly)
         ep_df_monthly = pd.DataFrame(
             sql.timeseries_by_name(
                 series_to_retrieve_monthly, reporting_frequency="Monthly"
@@ -1327,7 +1335,7 @@ class TimeSeriesOutput:
         var_name=None,
         key_name=None,
         store_output=True,
-        freq="hourly",
+        freq="Hourly",
         key="OUTPUT:VARIABLE",
     ):
         self.name = name
@@ -1650,28 +1658,28 @@ class Schema:
                 name="Heating",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Ideal Loads Zone Total Heating Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=True,
             ),
             TimeSeriesOutput(
                 name="Cooling",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Ideal Loads Zone Total Cooling Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=True,
             ),
             TimeSeriesOutput(
                 name="Lighting",
                 key="OUTPUT:VARIABLE",
                 var_name="Lights Total Heating Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=False,
             ),
             TimeSeriesOutput(
                 name="TransmittedSolar",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Windows Total Transmitted Solar Radiation Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=False,
             ),
         ]
