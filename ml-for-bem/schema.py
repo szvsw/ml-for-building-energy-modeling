@@ -216,7 +216,7 @@ class WhiteboxSimulation:
         cityidx = self.schema["base_epw"].extract_storage_values(self.storage_vector)
         # TODO: switch to global epws
         globber = (
-            data_path / "epws" / "global_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
+            data_path / "epws" / "city_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
         )
         files = glob(str(globber))
         self.epw_path = data_path / files[0]
@@ -1160,7 +1160,7 @@ class WindowParameter(OneHotParameter):
         Works as the reverse of mutate_simulation_object
         Args:
             whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate 
+            building_template: Archetypal BuildingTemplate
         Logic for window sorting (from ClimateStudio database):
             SINGLE
                 Uval > 2.6
@@ -1189,7 +1189,7 @@ class WindowParameter(OneHotParameter):
         # vlt = window.visible_transmittance
 
         # sort into window type
-        
+
         if uval >= 1.6 and uval < 2.6:
             type = 1
         elif uval >= 1.0 and uval < 1.6:
