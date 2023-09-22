@@ -24,7 +24,6 @@ try:
             if key.lower().endswith("private_key"):
                 val = base64.b64decode(val)
             creds[key] = val
-            logger.info(f"found {key}")
 
     storage_client = storage.Client.from_service_account_info(creds)
     logger.info("Successfully opened GCS client.")
