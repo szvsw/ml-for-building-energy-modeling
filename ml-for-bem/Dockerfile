@@ -46,4 +46,4 @@ WORKDIR /usr/src/ml-for-bem
 
 
 # Run app.py when the container launches
-CMD ["python", "aws-batch-tester.py"]
+CMD ["python", "aws-batch-tester.py", "--mode", "test", "--name", "test-batch", "--artifact", "test-batch-artifact", "--job_id", "0", "--job_offset", "0", "--context", "AWS"]

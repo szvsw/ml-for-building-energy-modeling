@@ -16,3 +16,4 @@ chardet~=4.0.0
 pint<=0.19
 ladybug-core
 python-dotenv
+wandb
