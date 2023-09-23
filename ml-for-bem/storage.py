@@ -28,16 +28,18 @@ try:
     storage_client = storage.Client.from_service_account_info(creds)
     logger.info("Successfully opened GCS client.")
 except BaseException as e:
-    logger.error("ERR", exc_info=e)
-    logger.warning(
-        "Could not find valid GCS credentials in system env, falling back to json."
-    )
-    storage_client = storage.Client.from_service_account_json(
+    creds_path = (
         Path(os.path.dirname(os.path.abspath(__file__)))
         / ".."
         / "credentials"
         / "bucket-key.json"
     )
+    with open(creds_path, "r") as f:
+        creds = json.load(f)
+    logger.warning(
+        "Could not find valid GCS credentials in system env, falling back to json."
+    )
+    storage_client = storage.Client.from_service_account_json(creds_path)
 
 try:
     bucket = storage_client.get_bucket("ml-for-bem-data")

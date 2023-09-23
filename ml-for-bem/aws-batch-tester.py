@@ -1,20 +1,18 @@
+import logging
+import click
 import os
 from datetime import datetime
 import h5py
 import json
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
+import wandb
 
 from storage import upload_to_bucket
-
-import logging
-
-logging.basicConfig()
-logger = logging.getLogger("Sampler Sim Test")
-
 
 from schema import (
     Schema,
@@ -34,64 +32,82 @@ from nrel_uitls import (
     RESTYPES,
 )
 
-with open("./data/city_map.json", "r") as f:
-    city_map = json.load(f)
 
-timeseries = [
-    TimeSeriesOutput(
-        name="DistrictCooling",
-        key_name="Cooling:DistrictCooling",
-        key="OUTPUT:METER",
-        freq="Monthly",
-        store_output=True,
-    ),
-    TimeSeriesOutput(
-        name="DistrictHeating",
-        key_name="Heating:DistrictHeating",
-        key="OUTPUT:METER",
-        freq="Monthly",
-        store_output=True,
-    ),
-    TimeSeriesOutput(
-        name="Supply Air Heating",
-        var_name="Zone Ideal Loads Supply Air Total Heating Energy",
-        key="OUTPUT:VARIABLE",
-        freq="Hourly",
-        store_output=True,
-    ),
-    TimeSeriesOutput(
-        name="Supply Air Cooling",
-        var_name="Zone Ideal Loads Supply Air Total Cooling Energy",
-        key="OUTPUT:VARIABLE",
-        freq="Hourly",
-        store_output=True,
-    ),
-    TimeSeriesOutput(
-        name="OA Heating",
-        var_name="Zone Ideal Loads Outdoor Air Total Heating Energy",
-        key="OUTPUT:VARIABLE",
-        freq="Hourly",
-        store_output=True,
-    ),
-    TimeSeriesOutput(
-        name="OA Cooling",
-        var_name="Zone Ideal Loads Outdoor Air Total Cooling Energy",
-        key="OUTPUT:VARIABLE",
-        freq="Hourly",
-        store_output=True,
-    ),
-    # Zone Ideal Loads Supply Air Total Heating Energy
-    # Zone Ideal Loads Zone Total Heating Energy
-]
-schema = Schema(timeseries_outputs=timeseries)
+logging.basicConfig()
+logger = logging.getLogger("Sampler Sim Test")
+logger.setLevel(logging.INFO)
 
-s_id = int(os.getenv("AWS_BATCH_JOB_ARRAY_INDEX", -1))
 
-if s_id == -1:
-    s_id = 1
+def config_gcs_adc():
+    from storage import creds
 
-for i in range((20 * s_id) if s_id != 0 else 1):
-    logger.info(f"---Starting simulation {i}---")
+    # Copies credentials loaded in from env/json, dump them into local storage file
+    with open("credentials.json", "w") as f:
+        creds = creds.copy()
+        for key, val in creds.items():
+            if isinstance(val, bytes):
+                val = val.decode("utf-8")
+
+            creds[key] = val
+        f.write(json.dumps(creds))
+
+    # Set the credentials env variable
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
+
+
+def make_whitebox_sim():
+    # Load in the City Map
+    with open("./data/city_map.json", "r") as f:
+        city_map = json.load(f)
+
+    timeseries = [
+        TimeSeriesOutput(
+            name="DistrictCooling",
+            key_name="Cooling:DistrictCooling",
+            key="OUTPUT:METER",
+            freq="Monthly",
+            store_output=True,
+        ),
+        TimeSeriesOutput(
+            name="DistrictHeating",
+            key_name="Heating:DistrictHeating",
+            key="OUTPUT:METER",
+            freq="Monthly",
+            store_output=True,
+        ),
+        TimeSeriesOutput(
+            name="Supply Air Heating",
+            var_name="Zone Ideal Loads Supply Air Total Heating Energy",
+            key="OUTPUT:VARIABLE",
+            freq="Hourly",
+            store_output=True,
+        ),
+        TimeSeriesOutput(
+            name="Supply Air Cooling",
+            var_name="Zone Ideal Loads Supply Air Total Cooling Energy",
+            key="OUTPUT:VARIABLE",
+            freq="Hourly",
+            store_output=True,
+        ),
+        TimeSeriesOutput(
+            name="OA Heating",
+            var_name="Zone Ideal Loads Outdoor Air Total Heating Energy",
+            key="OUTPUT:VARIABLE",
+            freq="Hourly",
+            store_output=True,
+        ),
+        TimeSeriesOutput(
+            name="OA Cooling",
+            var_name="Zone Ideal Loads Outdoor Air Total Cooling Energy",
+            key="OUTPUT:VARIABLE",
+            freq="Hourly",
+            store_output=True,
+        ),
+        # Zone Ideal Loads Supply Air Total Heating Energy
+        # Zone Ideal Loads Zone Total Heating Energy
+    ]
+    schema = Schema(timeseries_outputs=timeseries)
+
     storage_vector = schema.generate_empty_storage_vector()
     # just using
     # TODO: orientation
@@ -148,26 +164,307 @@ for i in range((20 * s_id) if s_id != 0 else 1):
         # Lights
         schedules[2, SchedulesParameters.op_indices["invert"]] = 1
 
-    whitebox_sim = WhiteboxSimulation(schema, storage_vector)
-    res_hourly, res_monthly = whitebox_sim.simulate()
+    return schema, storage_vector
 
-    res_hourly.to_hdf("test.hdf5", key=f"hourly_{i:05d}", mode="w" if i == 0 else "a")
-    res_monthly.to_hdf("test.hdf5", key=f"monthly_{i:05d}", mode="a")
 
-    with h5py.File("test.hdf5", mode="r+") as f:
-        f.create_dataset(
-            f"storage_vector_{i:05d}",
-            shape=storage_vector.shape,
-            data=storage_vector,
+def get_run_config(job_ix: int, job_offset: int):
+    # placeholder
+    schema, storage_vector = make_whitebox_sim()
+    return schema, np.expand_dims(storage_vector, axis=0).repeat(5, axis=0)
+
+
+def make_distributed_id(run_name: str, artifact_name: str):
+    return f"{run_name}_{artifact_name}"
+
+
+def make_gcs_upload_dir(artifact_name: str):
+    return f"sim-data/{artifact_name}/"
+
+
+def configure_distributed(
+    run_name: str,
+    artifact_name: str,
+    context: str,
+    job_id: int,
+    job_offset: int,
+    mode: str,
+):
+    if mode != "finish":
+        if context == "LOCAL" and job_id == -1:
+            raise ValueError("A Job ID must be provided when running in LOCAL context.")
+
+        aws_job_id = int(os.getenv("AWS_BATCH_JOB_ARRAY_INDEX", -1))
+        if context == "AWS":
+            if aws_job_id != -1:
+                job_id == aws_job_id
+            else:
+                if job_id == -1:
+                    raise ValueError("Running in AWS, but no job_id was provided")
+
+        assert job_id != -1, "No job_id was provided!"
+    # Initiate a WandB run for data tracking
+    distributed_id = make_distributed_id(
+        run_name=run_name,
+        artifact_name=artifact_name,
+    )
+
+    gcs_upload_dir = make_gcs_upload_dir(artifact_name)
+    logger.info(
+        f"\nRun Name: {run_name}\nArtifact Name: {artifact_name}\nDistributed ID: {distributed_id}\nJob ID: {job_id}\nJob Offset: {job_offset}"
+    )
+    return run_name, artifact_name, gcs_upload_dir, distributed_id, job_id, job_offset
+
+
+def run_distributed(
+    run_name: str,
+    artifact_name: str,
+    context: str,
+    job_id: int,
+    job_offset: int,
+    mode: str,
+):
+    (
+        run_name,
+        artifact_name,
+        gcs_upload_dir,
+        distributed_id,
+        job_id,
+        job_offset,
+    ) = configure_distributed(
+        run_name=run_name,
+        artifact_name=artifact_name,
+        context=context,
+        job_id=job_id,
+        job_offset=job_offset,
+        mode=mode,
+    )
+    with wandb.init(
+        project="ml-for-bem",
+        group="batch-simulation",
+        job_type="simulation",
+        name=run_name,  # TODO: pass this in as an arg
+        save_code=True,
+        config={
+            "CONTEXT": context,
+            "GCS_UPLOAD_DIR": gcs_upload_dir,
+            "DISTRIBUTED_ID": distributed_id,
+            "ARTIFACT_NAME": artifact_name,
+            "JOB_ID": job_id,
+            "JOB_OFFSET": job_offset,
+        },
+    ) as run:
+        # Get the job context from AWS Batch
+
+        # Get the vectors to simulate
+        schema, storage_batch = get_run_config(
+            wandb.config.JOB_ID, wandb.config.JOB_OFFSET
+        )
+        simulations_to_execute = storage_batch.shape[0]
+
+        hourly_hdf5_path = Path(
+            f"JOB_{wandb.config.JOB_ID:05}_{wandb.config.JOB_OFFSET:05}_hourly.hdf5"
+        )
+        monthly_hdf5_path = Path(
+            f"JOB_{wandb.config.JOB_ID:05}_{wandb.config.JOB_OFFSET:05}_monthly.hdf5"
         )
 
-if s_id != -1:
-    upload_to_bucket(
-        blob_name=f"batch-sims/array-test/multi/{(10*s_id):05d}.hdf5",
-        file_name="test.hdf5",
+        # Start sequential simulation
+        for i in range(simulations_to_execute):
+            logger.info(f"---Starting simulation {i}---")
+
+            # Pick out the vector and make whitebox sim
+            storage_vector = storage_batch[i]
+            whitebox_sim = WhiteboxSimulation(schema, storage_vector)
+
+            # Generate results
+            res_hourly, res_monthly = whitebox_sim.simulate()
+
+            # Save results to local file
+            # TODO: concatenate results into a single DF
+            res_hourly.to_hdf(
+                hourly_hdf5_path,
+                key=f"JOB_{i:05d}",
+                mode="w" if i == 0 else "a",
+            )
+            res_monthly.to_hdf(
+                monthly_hdf5_path,
+                key=f"JOB_{i:05d}",
+                mode="w" if i == 0 else "a",
+            )
+
+            with h5py.File(hourly_hdf5_path, mode="r+") as f:
+                f.create_dataset(
+                    f"storage_vector_{i:05d}",
+                    shape=storage_vector.shape,
+                    data=storage_vector,
+                )
+            with h5py.File(monthly_hdf5_path, mode="r+") as f:
+                f.create_dataset(
+                    f"storage_vector_{i:05d}",
+                    shape=storage_vector.shape,
+                    data=storage_vector,
+                )
+
+        upload_to_bucket(
+            blob_name=f"{wandb.config.GCS_UPLOAD_DIR}monthly/{monthly_hdf5_path.name}",
+            file_name=monthly_hdf5_path,
+        )
+        upload_to_bucket(
+            blob_name=f"{wandb.config.GCS_UPLOAD_DIR}hourly/{hourly_hdf5_path.name}",
+            file_name=hourly_hdf5_path,
+        )
+        art = wandb.Artifact(
+            name=wandb.config.ARTIFACT_NAME,
+            type="dataset",
+            description="batch simulation results with monthly and hourly files, "
+            "which also include storage vectors.  Use pd.HDFStore to read in "
+            "'monthly' and 'hourly' dataframes from respective hdf5 files.",
+        )
+        art.add_reference(
+            f"gs://ml-for-bem-data/{wandb.config.GCS_UPLOAD_DIR}", max_objects=50000
+        )
+        run.upsert_artifact(art, distributed_id=wandb.config.DISTRIBUTED_ID)
+
+
+def init_distributed(
+    run_name: str,
+    artifact_name: str,
+    context: str,
+    job_id: int,
+    job_offset: int,
+    mode: str,
+):
+    pass
+
+
+def finish_distributed(
+    run_name: str,
+    artifact_name: str,
+    context: str,
+    job_id: int,
+    job_offset: int,
+    mode: str,
+):
+    (
+        run_name,
+        artifact_name,
+        gcs_upload_dir,
+        distributed_id,
+        job_id,
+        job_offset,
+    ) = configure_distributed(
+        run_name=run_name,
+        artifact_name=artifact_name,
+        context=context,
+        job_id=job_id,
+        job_offset=job_offset,
+        mode=mode,
     )
-else:
-    upload_to_bucket(
-        blob_name=f"batch-sims/array-test/no_id/timestamp_{datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}.hdf5",
-        file_name="test.hdf5",
-    )
+    with wandb.init(
+        project="ml-for-bem",
+        group="batch-simulation",
+        job_type="simulation",
+        name=run_name,  # TODO: pass this in as an arg
+        save_code=True,
+        config={
+            "GCS_UPLOAD_DIR": gcs_upload_dir,
+            "CONTEXT": context,
+            "DISTRIBUTED_ID": distributed_id,
+            "ARTIFACT_NAME": artifact_name,
+            "JOB_ID": job_id,
+            "JOB_OFFSET": job_offset,
+        },
+    ) as run:
+        art = wandb.Artifact(
+            wandb.config.ARTIFACT_NAME,
+            type="dataset",
+            description="batch simulation results with monthly and hourly files, "
+            "which also include storage vectors.  Use pd.HDFStore to read in "
+            "'monthly' and 'hourly' dataframes from respective hdf5 files.",
+        )
+        art.add_reference(
+            f"gs://ml-for-bem-data/{wandb.config.GCS_UPLOAD_DIR}", max_objects=50000
+        )
+        run.finish_artifact(art)
+
+
+@click.command()
+@click.option(
+    "--mode",
+    type=click.Choice(["submit", "init", "run", "finish", "test"]),
+    required=True,
+    help="Operating mode",
+)
+@click.option(
+    "--name",
+    type=str,
+    required=True,
+    help="Name of the run",
+)
+@click.option(
+    "--artifact",
+    type=str,
+    required=True,
+    help="Name of the artifact to generate",
+)
+@click.option(
+    "--context",
+    type=click.Choice(["AWS", "LOCAL"]),
+    required=True,
+    help="Execution context",
+)
+@click.option(
+    "--job_id",
+    type=int,
+    default=-1,
+    required=False,
+    help="Optional job id",
+)
+@click.option(
+    "--job_offset",
+    type=int,
+    required=False,
+    default=0,
+)
+def main(mode, name, artifact, context, job_id, job_offset):
+    config_gcs_adc()
+
+    if mode == "test":
+        logger.info("TESTING")
+        logger.info(f"name: {name}")
+        logger.info(f"artifact: {artifact}")
+        logger.info(f"context: {context}")
+        logger.info(f"job_id: {job_id}")
+        logger.info(f"job_offset: {job_offset}")
+
+    if mode == "init":
+        init_distributed(
+            run_name=name,
+            artifact_name=artifact,
+            context=context,
+            job_id=job_id,
+            job_offset=job_offset,
+            mode=mode,
+        )
+    if mode == "run":
+        run_distributed(
+            run_name=name,
+            artifact_name=artifact,
+            context=context,
+            job_id=job_id,
+            job_offset=job_offset,
+            mode=mode,
+        )
+    if mode == "finish":
+        finish_distributed(
+            run_name=name,
+            artifact_name=artifact,
+            context=context,
+            job_id=job_id,
+            job_offset=job_offset,
+            mode=mode,
+        )
+
+
+if __name__ == "__main__":
+    main()
