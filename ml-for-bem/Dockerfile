@@ -46,4 +46,4 @@ WORKDIR /usr/src/ml-for-bem
 
 
 # Run app.py when the container launches
-CMD ["tail", "-f", "/dev/null"]
+CMD ["python", "sample.py"]
