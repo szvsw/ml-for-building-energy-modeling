@@ -196,7 +196,7 @@ def configure_distributed(
         aws_job_id = int(os.getenv("AWS_BATCH_JOB_ARRAY_INDEX", -1))
         if context == "AWS":
             if aws_job_id != -1:
-                job_id == aws_job_id
+                job_id = aws_job_id
             else:
                 if job_id == -1:
                     raise ValueError("Running in AWS, but no job_id was provided")
