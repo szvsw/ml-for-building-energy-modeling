@@ -49,6 +49,23 @@ except BaseException as e:
     raise e
 
 
+def config_gcs_adc():
+    global creds
+
+    # Copies credentials loaded in from env/json, dump them into local storage file
+    with open("credentials.json", "w") as f:
+        creds = creds.copy()
+        for key, val in creds.items():
+            if isinstance(val, bytes):
+                val = val.decode("utf-8")
+
+            creds[key] = val
+        f.write(json.dumps(creds))
+
+    # Set the credentials env variable
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
+
+
 def check_bucket_completeness():
     found = []
     for blob in storage_client.list_blobs("ml-for-bem-data", prefix="final_results"):
