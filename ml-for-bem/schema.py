@@ -1710,7 +1710,7 @@ class Schema:
         """Return a list of the named parameters in the schema"""
         return list(self._key_ix_lookup.keys())
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> SchemaParameter:
         """
         Args:
             key: str, name of parameter
