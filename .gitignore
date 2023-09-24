@@ -149,3 +149,4 @@ ml-for-bem/umi/**/*.hdf5
 umi/*
 credentials.json
 wandb/
+artifacts/
