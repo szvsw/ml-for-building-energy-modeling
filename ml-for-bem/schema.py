@@ -216,7 +216,7 @@ class WhiteboxSimulation:
         cityidx = self.schema["base_epw"].extract_storage_values(self.storage_vector)
         # TODO: switch to global epws
         globber = (
-            data_path / "epws" / "global_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
+            data_path / "epws" / "city_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
         )
         files = glob(str(globber))
         self.epw_path = data_path / files[0]
@@ -302,6 +302,13 @@ class WhiteboxSimulation:
         outputs = [
             timeseries.to_output_dict() for timeseries in self.schema.timeseries_outputs
         ]
+        # Report Hourly Meters Monthly as Well, and both as annual
+        for timeseries in self.schema.timeseries_outputs:
+            if timeseries.freq.upper() == "HOURLY".upper():
+                ts_dict = timeseries.to_output_dict()
+                ts_dict["Reporting_Frequency"] = "Monthly"
+                outputs.append(ts_dict)
+
         sb.rotate(
             self.shoebox_config.orientation * 90
         )  # 0 is S facing windows, 90 is E facing windows
@@ -453,6 +460,7 @@ class WhiteboxSimulation:
                 series_to_retrieve_hourly, reporting_frequency="Hourly"
             )
         )
+        series_to_retrieve_monthly.extend(series_to_retrieve_hourly)
         ep_df_monthly = pd.DataFrame(
             sql.timeseries_by_name(
                 series_to_retrieve_monthly, reporting_frequency="Monthly"
@@ -1185,7 +1193,7 @@ class WindowParameter(NumericParameter):
         Works as the reverse of mutate_simulation_object
         Args:
             whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate 
+            building_template: Archetypal BuildingTemplate
         Logic for window sorting (from ClimateStudio database):
             SINGLE
                 Uval > 2.6
@@ -1351,7 +1359,7 @@ class TimeSeriesOutput:
         var_name=None,
         key_name=None,
         store_output=True,
-        freq="hourly",
+        freq="Hourly",
         key="OUTPUT:VARIABLE",
     ):
         self.name = name
@@ -1674,28 +1682,28 @@ class Schema:
                 name="Heating",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Ideal Loads Zone Total Heating Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=True,
             ),
             TimeSeriesOutput(
                 name="Cooling",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Ideal Loads Zone Total Cooling Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=True,
             ),
             TimeSeriesOutput(
                 name="Lighting",
                 key="OUTPUT:VARIABLE",
                 var_name="Lights Total Heating Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=False,
             ),
             TimeSeriesOutput(
                 name="TransmittedSolar",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Windows Total Transmitted Solar Radiation Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=False,
             ),
         ]
@@ -1726,7 +1734,7 @@ class Schema:
         """Return a list of the named parameters in the schema"""
         return list(self._key_ix_lookup.keys())
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> SchemaParameter:
         """
         Args:
             key: str, name of parameter
