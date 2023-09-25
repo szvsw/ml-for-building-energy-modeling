@@ -1116,11 +1116,19 @@ class TMassParameter(BuildingTemplateParameter):
         return self.to_ml(value=val)
 
 
-class WindowParameter(OneHotParameter):
-    __slots__ = ()
+# class WindowParameter(OneHotParameter):
+    # __slots__ = ()
 
-    def __init__(self, **kwargs):
-        super().__init__(count=5, **kwargs)
+    # def __init__(self, **kwargs):
+    #     super().__init__(count=5, **kwargs)
+
+class WindowParameter(NumericParameter):
+    def __init__(self, min, max, **kwargs):
+        super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
+        self.min = np.array(min)
+        self.max = np.array(max)
+        self.range = self.max - self.min
+    
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
@@ -1142,15 +1150,32 @@ class WindowParameter(OneHotParameter):
         )
 
         # get the three values for u/shgc/vlt
-        idx = self.extract_storage_values(whitebox_sim.storage_vector)
+        values = self.extract_storage_values(whitebox_sim.storage_vector)
 
-        # Window name lookup
-        window_typ = WINDOW_TYPES[idx]
-        all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
-        # Update the window
-        whitebox_sim.template.Windows.Construction = (
-            whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
+        # separate them
+        u_value = values[0]
+        shgc = values[1]
+        vlt = values[2]
+
+        # # Window name lookup
+        # window_typ = WINDOW_TYPES[idx]
+        # all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
+        # # Update the window
+        # whitebox_sim.template.Windows.Construction = (
+        #     whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
+        # )
+
+        # create a new single layer window that has the properties from special single layer material
+        # TODO use new EnergyPlus window from u-val and shgc
+        window = WindowConstruction.from_shgc(
+            Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
+            solar_heat_gain_coefficient=shgc,
+            u_factor=u_value,
+            visible_transmittance=vlt,
         )
+
+        # Update the window
+        whitebox_sim.template.Windows.Construction = window
 
     def extract_from_template(
         self, building_template
@@ -1174,35 +1199,34 @@ class WindowParameter(OneHotParameter):
         """
         window = building_template.Windows.Construction
         uval = window.u_value
-        # if window.glazing_count == 2:
-        #     shgc = window.shgc()
-        # elif window.glazing_count == 1:
-        #     # Calculate shgc from t_sol of construction
-        #     tsol = window.Layers[0].Material.SolarTransmittance
-        #     shgc = self.single_pane_shgc_estimation(tsol, uval)
-        # else:
-        #     # if window is not 2 layers
-        #     logging.info(
-        #         f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
-        #     )
-        #     shgc = 0.6
-        # vlt = window.visible_transmittance
-
-        # sort into window type
-        
-        if uval >= 1.6 and uval < 2.6:
-            type = 1
-        elif uval >= 1.0 and uval < 1.6:
-            type = 2
-        elif uval >= 0.7 and uval < 1.0:
-            type = 3
-        elif uval < 0.7:
-            type = 4
+        if window.glazing_count == 2:
+            shgc = window.shgc()
+        elif window.glazing_count == 1:
+            # Calculate shgc from t_sol of construction
+            tsol = window.Layers[0].Material.SolarTransmittance
+            shgc = self.single_pane_shgc_estimation(tsol, uval)
         else:
-            type = 0
+            # if window is not 2 layers
+            logging.info(
+                f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
+            )
+            shgc = 0.6
+        vlt = window.visible_transmittance
 
-        # return self.to_ml(value=np.array([type])) #TODO
-        return type
+        # # sort into window type
+        # if uval >= 1.6 and uval < 2.6:
+        #     type = 1
+        # elif uval >= 1.0 and uval < 1.6:
+        #     type = 2
+        # elif uval >= 0.7 and uval < 1.0:
+        #     type = 3
+        # elif uval < 0.7:
+        #     type = 4
+        # else:
+        #     type = 0
+        # return type
+
+        return self.to_ml(value=np.array([uval, shgc, vlt]))
 
     def single_pane_shgc_estimation(self, tsol, uval):
         """
@@ -1611,19 +1635,19 @@ class Schema:
                     source="ComStock, tacit knowledge",
                     info="Slab R-value",
                 ),
-                # WindowParameter(
-                #     name="WindowSettings",
-                #     min=(0.3, 0.05, 0.05),
-                #     max=(7.0, 0.99, 0.99),
-                #     mean=np.array([5, 0.5, 0.5]),
-                #     std=np.array([2, 0.1, 0.1]),
-                #     source="climate studio",
-                #     info="U-value (m2K/W), shgc, vlt",
-                # ),
                 WindowParameter(
                     name="WindowSettings",
-                    info="Lookup index of window type.",
+                    min=(0.3, 0.05, 0.05),
+                    max=(7.0, 0.99, 0.99),
+                    mean=np.array([5, 0.5, 0.5]),
+                    std=np.array([2, 0.1, 0.1]),
+                    source="climate studio",
+                    info="U-value (m2K/W), shgc, vlt",
                 ),
+                # WindowParameter(
+                #     name="WindowSettings",
+                #     info="Lookup index of window type.",
+                # ),
                 OneHotParameter(
                     name="EconomizerSettings",
                     count=3,
@@ -1834,7 +1858,8 @@ class Schema:
                     template_vect.append(val)
                 elif isinstance(parameter, WindowParameter):
                     val = parameter.extract_from_template(building_template)
-                    template_vect.append(val)
+                    # template_vect.append(val)
+                    template_vect.extend(val)
 
         # return values which will be used for a building parameter vector and/or timeseries vector (schedules)
         return dict(
