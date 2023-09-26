@@ -5,6 +5,7 @@ from glob import glob
 from functools import reduce
 from pathlib import Path
 from typing import List
+import collections
 
 import numpy as np
 import math
@@ -20,11 +21,14 @@ try:
     from archetypal import UmiTemplateLibrary
     from archetypal.idfclass.sql import Sql
     from archetypal.template.schedule import UmiSchedule
+    from archetypal.template.materials import SimpleGlazingMaterial
+    from archetypal.template.materials.material_base import MaterialBase
     from archetypal.template.materials.material_layer import MaterialLayer
     from archetypal.template.constructions.window_construction import WindowConstruction
     import pandas as pd
     from pyumi.shoeboxer.shoebox import ShoeBox
     from pyumi.epw import EPW
+    from validator_collection import validators
 except (ImportError, ModuleNotFoundError) as e:
     logger.error("Failed to import a package! Be wary about continuing...", exc_info=e)
 
@@ -295,7 +299,28 @@ class WhiteboxSimulation:
                 surface.Sun_Exposure = "NoSun"
                 surface.Wind_Exposure = "NoWind"
 
-        # Internal partition and glazing
+        # Internal partition
+
+        # Glazing
+        u_value, shgc = self.schema["WindowSettings"].extract_storage_values(self.storage_vector)
+        # make material
+        sb.newidfobject(
+            key="WINDOWMATERIAL:SIMPLEGLAZINGSYSTEM",
+            Name=f"SimpleWindowMat_U{round(u_value, 1)}_SHGC{round(shgc, 2)}",
+            UFactor=u_value,
+            Solar_Heat_Gain_Coefficient=shgc,
+        )
+        # make construction
+        sb.newidfobject(
+            key="CONSTRUCTION",
+            Name=f"SimpleWindow_U{round(u_value, 1)}_SHGC{round(shgc, 2)}",
+            Outside_Layer=f"SimpleWindowMat_U{round(u_value, 1)}_SHGC{round(shgc, 2)}"
+        )
+        # set window construction
+        for surface in sb.getsubsurfaces():
+            if surface.Surface_Type.upper() == "WINDOW":
+                surface.Construction_Name = f"SimpleWindow_U{round(u_value, 1)}_SHGC{round(shgc, 2)}"
+
         # Orientation
 
         # TODO: - confirm that these do not need to be moved inside of simulate parallel process
@@ -673,11 +698,12 @@ class WhiteboxSimulation:
         )
         print(
             "U Window:", self.template.Windows.Construction.u_value
-        )  # TODO: this is slightly different!)
-        print(
-            "VLT",
-            self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
-        )
+            # "U Window:", self.template.Windows.Construction.Layers[0].Material.Uvalue
+        )  # TODO: this is slightly different!) #TODO update this to read idf
+        # print(
+        #     "VLT",
+        #     self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
+        # )
         print("Roof RSI:", self.template.Perimeter.Constructions.Roof.r_value)
         print("Facade RSI:", self.template.Perimeter.Constructions.Facade.r_value)
         print("Slab RSI:", self.template.Perimeter.Constructions.Slab.r_value)
@@ -1132,7 +1158,7 @@ class TMassParameter(BuildingTemplateParameter):
 
 class WindowParameter(NumericParameter):
     def __init__(self, min, max, **kwargs):
-        super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
+        super().__init__(shape_storage=(2,), shape_ml=(2,), **kwargs)
         self.min = np.array(min)
         self.max = np.array(max)
         self.range = self.max - self.min
@@ -1149,23 +1175,33 @@ class WindowParameter(NumericParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
+        logger.info("Skipping update of window parameters - will build simple window in build_shoebox")
         # Get the var id and batch id for naming purposes
-        variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
-            whitebox_sim.storage_vector
-        )
-        batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
-            whitebox_sim.storage_vector
-        )
+        # variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
+        #     whitebox_sim.storage_vector
+        # )
+        # batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
+        #     whitebox_sim.storage_vector
+        # )
 
-        # get the three values for u/shgc/vlt
-        values = self.extract_storage_values(whitebox_sim.storage_vector)
+        # # get the three values for u/shgc/vlt
+        # values = self.extract_storage_values(whitebox_sim.storage_vector)
 
-        # separate them
-        u_value = values[0]
-        shgc = values[1]
-        vlt = values[2]
+        # # separate them
+        # u_value = values[0]
+        # shgc = values[1]
 
-        # # Window name lookup
+        # ORIGINAL COMPLEX WINDOW VERSION
+        # create a new single layer window that has the properties from special single layer material
+        # TODO use new EnergyPlus window from u-val and shgc
+        # window = WindowConstruction.from_shgc(
+        #     Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
+        #     solar_heat_gain_coefficient=shgc,
+        #     u_factor=u_value,
+        #     visible_transmittance=vlt,
+        # )
+
+        # VERSION WITH DISCRETE WINDOW (ONEHOT)
         # window_typ = WINDOW_TYPES[idx]
         # all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
         # # Update the window
@@ -1173,17 +1209,12 @@ class WindowParameter(NumericParameter):
         #     whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
         # )
 
-        # create a new single layer window that has the properties from special single layer material
-        # TODO use new EnergyPlus window from u-val and shgc
-        window = WindowConstruction.from_shgc(
-            Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
-            solar_heat_gain_coefficient=shgc,
-            u_factor=u_value,
-            visible_transmittance=vlt,
-        )
-
-        # Update the window
-        whitebox_sim.template.Windows.Construction = window
+        # VERSION WTIH ARCHETYPAL
+        # window_material = SimpleGlazingMaterial(Name=f"SimpleWindowMat_U{u_value}_SHGC{shgc}", Uvalue=u_value, SolarHeatGainCoefficient=shgc)
+        # window_layer = MaterialLayer(window_material, Thickness=0.06)
+        # window_construction = WindowConstruction(Name=f"SimpleWindowCon_U{u_value}_SHGC{shgc}", Layers=[window_layer])
+        # # Update the window
+        # whitebox_sim.template.Windows.Construction = (window_construction)
 
     def extract_from_template(
         self, building_template
@@ -1219,7 +1250,7 @@ class WindowParameter(NumericParameter):
                 f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
             )
             shgc = 0.6
-        vlt = window.visible_transmittance
+        # vlt = window.visible_transmittance
 
         # # sort into window type
         # if uval >= 1.6 and uval < 2.6:
@@ -1234,7 +1265,7 @@ class WindowParameter(NumericParameter):
         #     type = 0
         # return type
 
-        return self.to_ml(value=np.array([uval, shgc, vlt]))
+        return self.to_ml(value=np.array([uval, shgc]))
 
     def single_pane_shgc_estimation(self, tsol, uval):
         """
@@ -1645,12 +1676,12 @@ class Schema:
                 ),
                 WindowParameter(
                     name="WindowSettings",
-                    min=(0.3, 0.05, 0.05),
-                    max=(7.0, 0.99, 0.99),
-                    mean=np.array([5, 0.5, 0.5]),
-                    std=np.array([2, 0.1, 0.1]),
+                    min=(0.3, 0.05),
+                    max=(7.0, 0.99),
+                    mean=np.array([5, 0.5]),
+                    std=np.array([2, 0.1]),
                     source="climate studio",
-                    info="U-value (m2K/W), shgc, vlt",
+                    info="U-value (m2K/W), shgc",
                 ),
                 # WindowParameter(
                 #     name="WindowSettings",
