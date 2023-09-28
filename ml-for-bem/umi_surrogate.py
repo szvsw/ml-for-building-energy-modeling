@@ -41,7 +41,7 @@ from archetypal.template.zonedefinition import ZoneDefinition
 
 from surrogate import Surrogate, ClimateData, normalize
 from weather_utils import collect_values, calc_surface_temp
-from schema import Schema, OneHotParameter, WindowParameter
+from schema import Schema, OneHotParameter, WindowParameter, ShoeboxGeometryParameter, ShoeboxOrientationParameter
 
 # from tqdm.autonotebook import tqdm
 
@@ -389,20 +389,23 @@ class UmiSurrogate(UmiProject):
         self.shoeboxdf["ShoeboxPath"] = new_paths
         # return self.shoeboxdf
 
-    def _fetch_shoeboxcollection(self):
-        # pass
-        logger.info(f"Fetching shoebox IDFs.")
-        tock = time.time()
-        shoeboxes = ShoeBoxCollection()
-        df = self.shoeboxdf.reset_index().groupby("ShoeboxPath").first().reset_index()
-        for _, row in df.iterrows():
-            idf_path = row["ShoeboxPath"]
-            # print(idf_path)
-            # idf = IDF(idf_path)
-            shoeboxes[idf_path] = ShoeBox(idf_path)
-        tick = time.time()
-        logger.info(f"Completed fetching shoebox IDFs in {round(tick-tock)} seconds.")
-        return shoeboxes
+    def _fetch_shoeboxcollection(self, start_idx=0, count=None):
+        try:
+            self.shoeboxes.shape
+        except:
+            logger.info(f"Fetching shoebox IDFs.")
+            tock = time.time()
+            self.shoeboxes = ShoeBoxCollection()
+            # sbdf = self.shoeboxdf.iloc[start_idx:start_idx+count]
+            df = self.shoeboxdf.reset_index().groupby("ShoeboxPath").first().reset_index()
+            for _, row in df.iterrows():
+                idf_path = row["ShoeboxPath"]
+                # print(idf_path)
+                # idf = IDF(idf_path)
+                self.shoeboxes[idf_path] = ShoeBox(idf_path)
+            tick = time.time()
+            logger.info(f"Completed fetching shoebox IDFs in {round(tick-tock)} seconds.")
+        return self.shoeboxes
 
     def fetch_shoebox_areas(self):
         # sb_lengths = (self.shoeboxdf["Core2Perimeter"] + 1) * self.perim_offset
@@ -415,7 +418,7 @@ class UmiSurrogate(UmiProject):
             shoeboxes[x].total_building_area for x in self.shoeboxdf["ShoeboxPath"]
         ]
         logger.debug(f"Got areas for all {len(areas)} shoeboxes.")
-        return areas.to_numpy()
+        return np.array(areas)
 
     def _fetch_raw_shoebox_results(self, idf_path, num_metrics, freq="Hourly"):
         # TODO: num_metrics vs list of EPLUS DATA
@@ -625,54 +628,73 @@ class UmiSurrogate(UmiProject):
         Return np.array of shape (n_shoeboxes, n_geom_params)
         """
         # df = np.zeros((self.shoeboxdf.shape[0], 8))
-        df = np.zeros((count, 14))  # TODO make this dynamic
+        ml_param_list = [
+            p.name for p in self.schema.parameters 
+            if p.in_ml 
+            and isinstance(p, (ShoeboxGeometryParameter, ShoeboxOrientationParameter))
+            ]
+        dimension = sum(
+            [
+                p.shape_ml[0] for p in self.schema.parameters 
+                if p.in_ml 
+                and isinstance(p, (ShoeboxGeometryParameter, ShoeboxOrientationParameter))
+            ]
+        )
+        df = np.zeros((count, dimension+3)) # add 3 for areas
 
         # width
-        df[:, 0] = normalize(
+        i = ml_param_list.index('width')
+        df[:, i] = normalize(
             width,
             maxv=self.schema["width"].max,
             minv=self.schema["width"].min,
         )
         # height - note height in shoeboxdf is whole building height
-        df[:, 1] = normalize(
+        i = ml_param_list.index('height')
+        df[:, i] = normalize(
             height,
             maxv=self.schema["height"].max,
             minv=self.schema["height"].min,
         )
-        # facade_2_footprint
-        df[:, 2] = normalize(
+        # floor_2_facade
+        i = ml_param_list.index('floor_2_facade')
+        df[:, i] = normalize(
             self.shoeboxdf["Floor2Fac"][start_idx : start_idx + count],
-            maxv=self.schema["facade_2_footprint"].max,
-            minv=self.schema["facade_2_footprint"].min,
+            maxv=self.schema["floor_2_facade"].max,
+            minv=self.schema["floor_2_facade"].min,
         )
-        # perim_2_footprint
-        P2A = 1 / (self.shoeboxdf["Core2Perimeter"][start_idx : start_idx + count] + 1)
-        df[:, 3] = normalize(
-            P2A,
-            maxv=self.schema["perim_2_footprint"].max,
-            minv=self.schema["perim_2_footprint"].min,
+        # core_2_perim
+        i = ml_param_list.index('core_2_perim')
+        df[:, i] = normalize(
+            self.shoeboxdf["Core2Perimeter"][start_idx : start_idx + count],
+            maxv=self.schema["core_2_perim"].max,
+            minv=self.schema["core_2_perim"].min,
         )
         # roof_2_footprint
-        df[:, 4] = normalize(
+        i = ml_param_list.index('roof_2_footprint')
+        df[:, i] = normalize(
             self.shoeboxdf["Roof2FloorRatio"][start_idx : start_idx + count],
             maxv=self.schema["roof_2_footprint"].max,
             minv=self.schema["roof_2_footprint"].min,
         )
-        # footprint_2_ground - TODO: is this the other way around?
-        df[:, 5] = normalize(
+        # ground_2_footprint - TODO: is this the other way around?
+        i = ml_param_list.index('ground_2_footprint')
+        df[:, i] = normalize(
             self.shoeboxdf["Ground2FloorRatio"][start_idx : start_idx + count],
-            maxv=self.schema["footprint_2_ground"].max,
-            minv=self.schema["footprint_2_ground"].min,
+            maxv=self.schema["ground_2_footprint"].max,
+            minv=self.schema["ground_2_footprint"].min,
         )
         # wwr
-        df[:, 6] = self.shoeboxdf["WwrE"][start_idx : start_idx + count]
+        i = ml_param_list.index('wwr')
+        df[:, i] = self.shoeboxdf["WwrE"][start_idx : start_idx + count]
 
         # orientation TODO - help with the one hot to_ml??
+        i = ml_param_list.index('orientation')
         o = self.shoeboxdf["Orientation"][start_idx : start_idx + count]
         orient_lookup = {"North": 0, "East": 1, "South": 2, "West": 3}
         orient_idxs = [orient_lookup[x] for x in o]
         orient_idxs = np.expand_dims(np.array(orient_idxs), axis=1)
-        df[:, 7:11] = self.schema["orientation"].to_ml(value=orient_idxs)
+        df[:, i:i+4] = self.schema["orientation"].to_ml(value=orient_idxs)
 
         # make tsol air array
         shoebox_norm_tsol_vector = np.zeros((count, 8760))
@@ -685,7 +707,7 @@ class UmiSurrogate(UmiProject):
         area = self.fetch_shoebox_areas()
         logger.info(f"AREA MAX: {area.max()}, MIN {area.min()}")
         area = area[start_idx : start_idx + count]
-        df[:, 11] = normalize(
+        df[:, dimension] = normalize(
             area,
             maxv=AREA_MAX,
             minv=AREA_MIN,
@@ -696,14 +718,15 @@ class UmiSurrogate(UmiProject):
         perim_area = np.ones(area.shape) * (self.perim_offset * self.width)
         logger.info(f"PERIM AREA MAX: {perim_area.max()}, MIN {perim_area.min()}")
 
-        df[:, 12] = normalize(
+        i = ml_param_list.index('orientation')
+        df[:, dimension+1] = normalize(
             perim_area,
             maxv=PERIM_AREA_MAX,
             minv=PERIM_AREA_MIN,
         )
         core_area = area - perim_area
         logger.info(f"CORE AREA MAX: {core_area.max()}, MIN {core_area.min()}")
-        df[:, 13] = normalize(
+        df[:, dimension+2] = normalize(
             core_area,
             maxv=CORE_AREA_MAX,
             minv=CORE_AREA_MIN,

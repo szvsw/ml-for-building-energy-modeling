@@ -84,10 +84,10 @@ class ShoeboxConfiguration:
     __slots__ = (
         "width",
         "height",
-        "facade_2_footprint",
-        "perim_2_footprint",
+        "floor_2_facade",
+        "core_2_perim",
         "roof_2_footprint",
-        "footprint_2_ground",
+        "ground_2_footprint",
         # "shading_fact",
         "wwr",
         "orientation",
@@ -233,11 +233,19 @@ class WhiteboxSimulation:
         Method for constructing the actual shoebox simulation object
         """
         wwr_map = {0: 0, 90: 0, 180: self.shoebox_config.wwr, 270: 0}  # N is 0, E is 90
-        # Convert to coords
+        # Get shoebox dimensions
         width = self.shoebox_config.width
-        depth = self.shoebox_config.height / self.shoebox_config.facade_2_footprint
-        perim_depth = depth * self.shoebox_config.perim_2_footprint
         height = self.shoebox_config.height
+        perim_depth = self.shoebox_config.floor_2_facade * height
+        core_depth = self.shoebox_config.core_2_perim * perim_depth
+        if core_depth < 0.1:
+            core_depth = 0.5
+        # roof_2_perim = self.shoebox_config.roof_2_footprint * perim_depth
+        # roof_2_core = self.shoebox_config.roof_2_footprint * core_depth
+        # ground_2_perim = self.shoebox_config.ground_2_footprint * perim_depth
+        # ground_2_core = self.shoebox_config.ground_2_footprint * core_depth
+        logger.info(f"height = {height}, width = {width}, perim_depth = {perim_depth}, core_depth = {core_depth}")
+        # Convert to coords
         zones_data = [
             {
                 "name": "Perim",
@@ -255,8 +263,8 @@ class WhiteboxSimulation:
                 "name": "Core",
                 "coordinates": [
                     (width, perim_depth),
-                    (width, depth),
-                    (0, depth),
+                    (width, perim_depth+core_depth),
+                    (0, perim_depth+core_depth),
                     (0, perim_depth),
                 ],
                 "height": height,
@@ -277,13 +285,13 @@ class WhiteboxSimulation:
             name = surface.Name
             name = name.replace("Roof", "Ceiling")
             sb.add_adiabatic_to_surface(
-                surface, name, self.shoebox_config.roof_2_footprint
+                surface, name, 1-self.shoebox_config.roof_2_footprint
             )
         for surface in sb.getsurfaces(surface_type="floor"):
             name = surface.Name
             name = name.replace("Floor", "Int Floor")
             sb.add_adiabatic_to_surface(
-                surface, name, self.shoebox_config.footprint_2_ground
+                surface, name, 1-self.shoebox_config.ground_2_footprint
             )
         # Make core walls adiabatic
         exterior_facade = sb.getsubsurfaces()[0].Building_Surface_Name
@@ -650,9 +658,9 @@ class WhiteboxSimulation:
         print("Height", self.shoebox_config.height)
         print("Width", self.shoebox_config.width)
         print("WWR", self.shoebox_config.wwr)
-        print("Facade2Foot", self.shoebox_config.facade_2_footprint)
-        print("Perim2Foot", self.shoebox_config.perim_2_footprint)
-        print("Foot2Gnd [adia %]", self.shoebox_config.footprint_2_ground)
+        print("Floor2Facade", self.shoebox_config.floor_2_facade)
+        print("Core2Perim", self.shoebox_config.core_2_perim)
+        print("Foot2Gnd [adia %]", self.shoebox_config.ground_2_footprint)
         print("Roof2Gnd [adia %]", self.shoebox_config.roof_2_footprint)
         print("Orientation", self.shoebox_config.orientation)
         print("---PERIM/CORE Values---")
@@ -824,7 +832,7 @@ class SchemaParameter:
                     self.extract_storage_values_batch(storage_batch).reshape(
                         -1, *self.shape_ml
                     )
-                    if value == None
+                    if value is None
                     else value
                 )
                 return vals
@@ -1267,7 +1275,8 @@ class WindowParameter(NumericParameter):
 
         return self.to_ml(value=np.array([uval, shgc]))
 
-    def single_pane_shgc_estimation(self, tsol, uval):
+    @classmethod
+    def single_pane_shgc_estimation(cls, tsol, uval):
         """
         Calculate shgc for single pane window - from Archetypal tsol calulation based on u-val and shgc
         """
@@ -1490,22 +1499,22 @@ class Schema:
                     info="Height [m]",
                 ),
                 ShoeboxGeometryParameter(
-                    name="facade_2_footprint",
+                    name="floor_2_facade", # PERIM DEPTH, CORE DEPTH, GROUND DEPTH, ROOF DEPTH
                     min=0.25,
                     max=1.5,
                     mean=0.75,
                     std=0.15,
                     source="dogan_shoeboxer_2017",
-                    info="Facade to footprint ratio (unitless)",
+                    info="Building floor area to facade (walls only) ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="perim_2_footprint",
+                    name="core_2_perim",
                     min=0.05,
                     max=0.95,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
-                    info="Perimeter to footprint ratio (unitless)",
+                    info="Core to Perimeter ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="roof_2_footprint",
@@ -1517,13 +1526,13 @@ class Schema:
                     info="Roof to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="footprint_2_ground",  # TODO: change this to ground_2_footprint for cohesiveness
+                    name="ground_2_footprint",
                     min=0.05,
                     max=0.95,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
-                    info="Footprint to ground ratio (unitless)",
+                    info="Ground to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="wwr",
