@@ -141,9 +141,9 @@
             "zone_name": "Core"
         },
         "Core:f4": {
-            "construction_name": "Core:f4UnderGroundSlabCF",
+            "construction_name": "Ground Slab",
             "number_of_vertices": 4,
-            "outside_boundary_condition": "GroundFCfactorMethod",
+            "outside_boundary_condition": "Ground",
             "sun_exposure": "NoSun",
             "surface_type": "Floor",
             "vertices": [
@@ -398,9 +398,9 @@
             "zone_name": "Perimeter"
         },
         "Perimeter:f4": {
-            "construction_name": "Perimeter:f4UnderGroundSlabCF",
+            "construction_name": "Ground Slab",
             "number_of_vertices": 4,
-            "outside_boundary_condition": "GroundFCfactorMethod",
+            "outside_boundary_condition": "Ground",
             "sun_exposure": "NoSun",
             "surface_type": "Floor",
             "vertices": [
@@ -555,18 +555,16 @@
         },
         "defaultGlazing": {
             "outside_layer": "SimpleGlazing"
-        }
-    },
-    "Construction:FfactorGroundFloor": {
-        "Core:f4UnderGroundSlabCF": {
-            "area": 15,
-            "f_factor": 0.73,
-            "perimeterexposed": 0
         },
-        "Perimeter:f4UnderGroundSlabCF": {
-            "area": 7.5,
-            "f_factor": 0.73,
-            "perimeterexposed": 3
+        "Ground Slab": {
+            "layer_2": "GroundSlabXPS",
+            "layer_3": "GroundSlabConcrete",
+            "outside_layer": "GroundSlabCarpet"
+        },
+        "Ground Slab_FLIPPED": {
+            "layer_2": "GroundSlabCarpet",
+            "layer_3": "GroundSlabConcrete",
+            "outside_layer": "GroundSlabXPS"
         }
     },
     "ConvergenceLimits": {
@@ -833,6 +831,9 @@
             "diagnostics": [
                 {
                     "key": "DisplayAdvancedReportVariables"
+                },
+                {
+                    "key": "DisplayExtraWarnings"
                 }
             ]
         }

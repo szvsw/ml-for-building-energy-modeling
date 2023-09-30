@@ -130,6 +130,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+cache
 benchmark/cache/
 ml-for-bem/cache/
 ipynb/cache/

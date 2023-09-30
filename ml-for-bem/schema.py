@@ -41,6 +41,8 @@ from schedules import (
     update_schedule_objects,
 )
 
+from shoeboxer.shoebox_config import ShoeboxConfiguration
+
 from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
 
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
@@ -76,25 +78,25 @@ ECONOMIZER_TYPES = {
 }
 
 
-class ShoeboxConfiguration:
-    """
-    Stateful class for shoebox object args
-    """
+# class ShoeboxConfiguration:
+#     """
+#     Stateful class for shoebox object args
+#     """
 
-    __slots__ = (
-        "width",
-        "height",
-        "floor_2_facade",
-        "core_2_perim",
-        "roof_2_footprint",
-        "ground_2_footprint",
-        # "shading_fact",
-        "wwr",
-        "orientation",
-    )
+#     __slots__ = (
+#         "width",
+#         "height",
+#         "floor_2_facade",
+#         "core_2_perim",
+#         "roof_2_footprint",
+#         "ground_2_footprint",
+#         # "shading_fact",
+#         "wwr",
+#         "orientation",
+#     )
 
-    def __init__(self):
-        pass
+#     def __init__(self):
+#         pass
 
 
 class WhiteboxSimulation:
