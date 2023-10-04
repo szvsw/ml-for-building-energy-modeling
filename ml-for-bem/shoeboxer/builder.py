@@ -112,28 +112,28 @@ SCHEDULE_PATHS = [
 ]
 
 sched_type_limits = dict(
-            key="SCHEDULETYPELIMITS",
-            Name="Fraction",
-            Lower_Limit_Value=0.0,
-            Upper_Limit_Value=1.0,
-            Numeric_Type="Continuous",
-            Unit_Type="Dimensionless",
-        )
+    key="SCHEDULETYPELIMITS",
+    Name="Fraction",
+    Lower_Limit_Value=0.0,
+    Upper_Limit_Value=1.0,
+    Numeric_Type="Continuous",
+    Unit_Type="Dimensionless",
+)
 
 
 def day_to_epbunch(dsched, idx=0, sched_lim=sched_type_limits):
     return {
-        dsched.Name:
-            dict(
-                    **{"hour_{}".format(i + 1): dsched.all_values[i] for i in range(24)},
-                    schedule_type_limits_name=sched_lim["Name"],
-                )
-        }
+        dsched.Name: dict(
+            **{"hour_{}".format(i + 1): dsched.all_values[i] for i in range(24)},
+            schedule_type_limits_name=sched_lim["Name"],
+        )
+    }
+
 
 def week_to_epbunch(wsched, idx=0, sched_lim=sched_type_limits):
     return {
-        wsched.Name:
-            dict(**{
+        wsched.Name: dict(
+            **{
                 f"{calendar.day_name[i].lower()}_schedule_day_name": day.Name
                 for i, day in enumerate(wsched.Days)
             },
@@ -142,26 +142,31 @@ def week_to_epbunch(wsched, idx=0, sched_lim=sched_type_limits):
             winterdesignday_schedule_day_name=wsched.Days[0].Name,
             customday1_schedule_day_name=wsched.Days[1].Name,
             customday2_schedule_day_name=wsched.Days[6].Name,
-            )
+        )
     }
 
+
 def year_to_epbunch(sched, sched_lim=sched_type_limits):
-    dict_list=[]
+    dict_list = []
     for i, part in enumerate(sched.Parts):
-        dict_list.append(dict(**{
-                "schedule_week_name": part.Schedule.Name,
-                "start_month": part.FromMonth,
-                "start_day".format(i + 1): part.FromDay,
-                "end_month".format(i + 1): part.ToMonth,
-                "end_day".format(i + 1): part.ToDay,
-            }))
+        dict_list.append(
+            dict(
+                **{
+                    "schedule_week_name": part.Schedule.Name,
+                    "start_month": part.FromMonth,
+                    "start_day".format(i + 1): part.FromDay,
+                    "end_month".format(i + 1): part.ToMonth,
+                    "end_day".format(i + 1): part.ToDay,
+                }
+            )
+        )
     return dict(
         schedule_type_limits_name=sched_lim["Name"],
         schedule_weeks=dict_list,
-        )
+    )
 
 
-def schedule_to_epbunch(name, values, sched_lims_bunch = sched_type_limits):
+def schedule_to_epbunch(name, values, sched_lims_bunch=sched_type_limits):
     assert len(values) == 8760, "Schedule length does not equal 8760 hours!"
     arch_schedule = Schedule(Name=name, Values=values)
     y, w, d = arch_schedule.to_year_week_day()
@@ -208,7 +213,7 @@ def template_dict(
         equipment_power_density=equipment_power_density,
         infiltration_per_area=infiltration_per_area,
         ventilation_per_floor_area=ventilation_per_floor_area,
-        ventilation_per_person = ventilation_per_person,
+        ventilation_per_person=ventilation_per_person,
         ventilation_mode=ventilation_mode,
         heating_sp=heating_sp,
         cooling_sp=cooling_sp,
@@ -230,7 +235,7 @@ def template_dict(
 
 
 def get_template_dict_from_archetypal(template):
-    pass #TODO
+    pass  # TODO
 
 
 class ShoeBox:
@@ -264,9 +269,10 @@ class ShoeBox:
             fname = self.output_directory / f"{self.name}.epjson"
         else:
             fname = f"{self.name}.epjson"
-
         self.ep_json_path = fname
+        self.save_json()
 
+    def save_json(self):
         with open(self.ep_json_path, "w") as f:
             json.dump(self.epjson, f, indent=4)
 
@@ -274,20 +280,31 @@ class ShoeBox:
         # Rotate North
         new_north_deg = self.shoebox_config.orientation * 90
         self.rotate_relative_north(new_north_deg)
+
         # Update characteristics based on archetypal template
         self.handle_template(template_dict)
+
         # Save new epJSON in output directory or cache
         with open(self.ep_json_path, "w") as f:
             json.dump(self.epjson, f, indent=4)
-        # Turn into an IDF for geometry handling
-        idf = self.idf(run_simulation=run_simulation)
+
         # Update geometry
         # self.handle_geometry()
-        idf = self.handle_shading(idf)
+        self.handle_shading()
+
+        # Turn into an IDF
+        self.save_json()
+        idf = self.idf(run_simulation=run_simulation)
+        idf.save()
+
         if change_summary:
-            # TODO: get idf as a json again
-            json_path = self.convert(path = self.ep_json_path)
-            self.compare_idfs()
+            # get idf as a json again
+            json_path = self.convert(
+                path=str(self.ep_json_path).replace("epjson", "idf"), file_type="epjson"
+            )
+            with open(json_path, "r") as f:
+                self.compare_idfs(json.load(f))
+
         return idf
 
     def rotate_relative_north(self, orient):
@@ -385,16 +402,14 @@ class ShoeBox:
         lights_sched_name = lights_var_def["schedule_name"]
         assert lights_sched_name == "LightsSchedule"
 
-        idx = [SCHEDULE_PATHS.index(i) for i in SCHEDULE_PATHS if "Lights" in i[1]][
-            0
-        ]
+        idx = [SCHEDULE_PATHS.index(i) for i in SCHEDULE_PATHS if "Lights" in i[1]][0]
         values = template_dict["schedules"][idx, :]
         self.handle_schedules(lights_sched_name, values)
 
     def handle_people(self, template_dict):
         people_def = self.epjson["People"]["SharedPeople"]
         people_def["people_per_floor_area"] = template_dict["people_density"]
-        
+
         # Schedules
         people_sched_name = people_def["number_of_people_schedule_name"]
         assert people_sched_name == "OccupancySchedule"
@@ -429,22 +444,27 @@ class ShoeBox:
         ]
         values = template_dict["schedules"][idx, :]
         self.handle_schedules(equipment_var_sched_name, values)
-        
+
     def handle_schedules(self, sched_name, values):
         """
         Update all schedules in the idf with archetypal
         """
-        year_bunch, week_bunches, day_bunches = schedule_to_epbunch(sched_name, values, sched_lims_bunch = sched_type_limits)
+        year_bunch, week_bunches, day_bunches = schedule_to_epbunch(
+            sched_name, values, sched_lims_bunch=sched_type_limits
+        )
         # Remove all schedules containing base name
         # previous_day_names = []
-        previous_week_names = [x["schedule_week_name"] for x in self.epjson["Schedule:Year"][sched_name]['schedule_weeks']]
-        
+        previous_week_names = [
+            x["schedule_week_name"]
+            for x in self.epjson["Schedule:Year"][sched_name]["schedule_weeks"]
+        ]
+
         for week in previous_week_names:
             # w = self.epjson["Schedule:Week:Daily"][week]
             # previous_day_names.extend(w.values())
             # Remove the week
             del self.epjson["Schedule:Week:Daily"][week]
-            
+
         # previous_day_names = set(previous_day_names)
         # for day in previous_day_names:
         #     del self.epjson["Schedule:Day:Hourly"][day]
@@ -486,7 +506,7 @@ class ShoeBox:
                 zone["heat_recovery_type"] = "Enthalpy"
 
             # Handle Economizer
-            zone["outdoor_air_economizer_type"] = Econ(template_dict['economizer']).name
+            zone["outdoor_air_economizer_type"] = Econ(template_dict["economizer"]).name
 
     def handle_sat_minmax(self, template_dict):
         """
@@ -519,10 +539,14 @@ class ShoeBox:
 
         # Find those schedules and update them
         for schedule_name in humidimax_scheds_to_change:
-            self.epjson["Schedule:Constant"][schedule_name]["hourly_value"] = template_dict["humid_max"]
+            self.epjson["Schedule:Constant"][schedule_name][
+                "hourly_value"
+            ] = template_dict["humid_max"]
 
         for schedule_name in humidimin_scheds_to_change:
-            self.epjson["Schedule:Constant"][schedule_name]["hourly_value"] = template_dict["humid_min"]
+            self.epjson["Schedule:Constant"][schedule_name][
+                "hourly_value"
+            ] = template_dict["humid_min"]
 
     def handle_ventilation(self, template_dict):
         """
@@ -536,15 +560,17 @@ class ShoeBox:
 
         """
 
-        mech_vent_sched_name = MechVentModeSched(template_dict['ventilation_mode']).name
-        
+        mech_vent_sched_name = MechVentModeSched(template_dict["ventilation_mode"]).name
+
         logger.info(f"Mechanical ventilation schedule: {mech_vent_sched_name}")
         # TODO: check outputs of when ventilation is on
         self.epjson["DesignSpecification:OutdoorAir"]["SharedDesignSpecOutdoorAir"] = {
             "outdoor_air_flow_per_person": template_dict["ventilation_per_person"],
-            "outdoor_air_flow_per_zone_floor_area": template_dict["ventilation_per_floor_area"],
+            "outdoor_air_flow_per_zone_floor_area": template_dict[
+                "ventilation_per_floor_area"
+            ],
             "outdoor_air_method": "Sum",
-            "outdoor_air_schedule_name": "", # TODO will this ever change?
+            "outdoor_air_schedule_name": "",  # TODO will this ever change?
         }
 
         if mech_vent_sched_name == MechVentModeSched.OccupancySchedule:
@@ -556,22 +582,31 @@ class ShoeBox:
 
     def handle_thermostat(self, template_dict):
         # TODO: allow for schedule?
-        self.epjson["Schedule:Constant"]["CoolingSPSchedule"]["hourly_value"] = template_dict["cooling_sp"]
-        self.epjson["Schedule:Constant"]["HeatingSPSchedule"]["hourly_value"] = template_dict["heating_sp"]
+        self.epjson["Schedule:Constant"]["CoolingSPSchedule"][
+            "hourly_value"
+        ] = template_dict["cooling_sp"]
+        self.epjson["Schedule:Constant"]["HeatingSPSchedule"][
+            "hourly_value"
+        ] = template_dict["heating_sp"]
 
     def handle_geometry(self):
         # scale geometry
+        # Change adiabatic roof and floor dimensions
         gu.set_adiabatic_surfaces()
         # Update window to wall ratio
         gu.update_wwr(shoebox_config.wwr)
 
-    def handle_shading(self, idf):
+    def handle_shading(self):
         r = 2 * self.shoebox_config.width
-        idf = gu.build_shading(idf, angles=self.shoebox_config.shading_vect, radius=r, override=False)
-        return idf
-    
+        self.epjson = gu.build_shading(
+            self.epjson,
+            angles=self.shoebox_config.shading_vect,
+            radius=r,
+            override=False,
+        )
+
     def idf(self, run_simulation=True):
-        idf_path = self.convert(path = self.ep_json_path)
+        idf_path = self.convert(path=self.ep_json_path)
         idf = IDF(idf_path, epw=self.epw)
         if run_simulation:
             self.hourly, self.monthly = self.simulate(idf)
@@ -610,10 +645,11 @@ class ShoeBox:
         )
         return ep_df_hourly, ep_df_monthly
 
-    def convert(self, path):
+    def convert(self, path, file_type="idf"):
+        logger.info(f"Converting {path} to {file_type}")
         # Define the command and its arguments
         cmd = settings.energyplus_location / "energyplus.exe"
-        args = ["--convert-only", path]
+        args = ["--convert-only", "--output-directory", self.output_directory, path]
 
         # TODO change location of idf
 
@@ -632,12 +668,14 @@ class ShoeBox:
             logger.error(f"Command failed with exit code {exit_code}.")
             raise RuntimeError(f"Failed to convert EpJSON to IDF.")
 
-        # return str(fname).replace("epjson", "idf")
-        print(path) # TODO get actual new file name
-        return f"{self.name}.idf"
+        return str(path).split(".")[0] + f".{file_type}"
+        # TODO get actual new file name
+        # return f"{self.name}.{file_type}"
 
-    def compare_idfs(self):
-        diff_report = jsondiff.diff(self.epjson, self._seed_epjson, syntax="symmetric", dump=True)
+    def compare_idfs(self, json_new):
+        diff_report = jsondiff.diff(
+            self._seed_epjson, json_new, syntax="symmetric", dump=True
+        )
         if diff_report:
             fname = self.output_directory / f"{self.name}_changereport.json"
             json.dump(json.loads(diff_report), open(fname, "w"), indent=4)
@@ -681,11 +719,15 @@ if __name__ == "__main__":
     out_dir = Path("./ml-for-bem/shoeboxer/cache")
 
     sb = ShoeBox(
-        name="test", shoebox_config=shoebox_config, epw=epw, output_directory=out_dir
+        name="test",
+        shoebox_config=shoebox_config,
+        epw=epw,
+        output_directory=out_dir,
     )
     idf = sb.update_epjson(template_dict(scheds), run_simulation=True)
 
+    print("")
     print("HEATING/COOLING EUI")
-    print(sb.monthly.sum()/sb.floor_area*2.77e-07)
-
+    print(sb.monthly.sum() / sb.floor_area * 2.77e-07)
+    print("")
     idf.view_model()
