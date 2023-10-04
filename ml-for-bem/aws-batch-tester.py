@@ -167,10 +167,41 @@ def make_whitebox_sim():
     return schema, storage_vector
 
 
-def get_run_config(job_ix: int, job_offset: int):
-    # placeholder
-    schema, storage_vector = make_whitebox_sim()
-    return schema, np.expand_dims(storage_vector, axis=0).repeat(5, axis=0)
+def get_run_config(run, job_ix: int, job_offset: int):
+    # TODO: worker count should be passed in as well
+    schema = Schema()
+    art = run.use_artifact("sample-storage-batches:latest", type="dataset")
+    TOTAL_SAMPLES_IN_BATCH = 1000
+    JOBS_PER_WORKER = 2
+    WORKERS_PER_BATCH = int(TOTAL_SAMPLES_IN_BATCH / JOBS_PER_WORKER)
+    batch_id = (job_ix) // WORKERS_PER_BATCH + job_offset
+    logger.info(f"Joining queue for {batch_id}...")
+    job_in_batch = job_ix % WORKERS_PER_BATCH
+    logger.info(f"Worker #{job_in_batch} out of {WORKERS_PER_BATCH}...")
+    sample_start_ix = job_in_batch * JOBS_PER_WORKER
+    logger.info(
+        f"Starting at {sample_start_ix}, will complete {JOBS_PER_WORKER} simulations..."
+    )
+    # No striding here, just plain stepping
+    sample_ixs = np.arange(sample_start_ix, sample_start_ix + JOBS_PER_WORKER, 1)
+    # TODO: switch to other sets when batch is above certain threshold
+    path = art.get_path(f"train_epws_train_set/BATCH_{batch_id:05d}.hdf5")
+    loc = path.download()
+    with h5py.File(loc, mode="r") as f:
+        storage_batch = f["storage_vectors"][...]
+        storage_batch = storage_batch[sample_ixs, :]
+
+    # TODO: make sure you have weather data as needed
+    schema.update_storage_batch(
+        storage_batch=storage_batch, parameter="base_epw", value=batch_id
+    )
+
+    return (
+        schema,
+        storage_batch,
+        batch_id,
+        sample_start_ix,
+    )
 
 
 def make_distributed_id(run_name: str, artifact_name: str):
@@ -242,7 +273,7 @@ def run_distributed(
         project="ml-for-bem",
         group="batch-simulation",
         job_type="simulation",
-        name=run_name,  # TODO: pass this in as an arg
+        name=run_name,
         save_code=True,
         config={
             "CONTEXT": context,
@@ -256,16 +287,16 @@ def run_distributed(
         # Get the job context from AWS Batch
 
         # Get the vectors to simulate
-        schema, storage_batch = get_run_config(
-            wandb.config.JOB_ID, wandb.config.JOB_OFFSET
+        (schema, storage_batch, batch_id, sample_start_ix) = get_run_config(
+            run, wandb.config.JOB_ID, wandb.config.JOB_OFFSET
         )
         simulations_to_execute = storage_batch.shape[0]
 
         hourly_hdf5_path = Path(
-            f"JOB_{wandb.config.JOB_ID:05}_{wandb.config.JOB_OFFSET:05}_hourly.hdf5"
+            f"BATCH_{batch_id:05d}_IX_{sample_start_ix:05d}_hourly.hdf5"
         )
         monthly_hdf5_path = Path(
-            f"JOB_{wandb.config.JOB_ID:05}_{wandb.config.JOB_OFFSET:05}_monthly.hdf5"
+            f"BATCH_{batch_id:05d}_IX_{sample_start_ix:05d}_monthly.hdf5"
         )
 
         # Start sequential simulation
@@ -274,33 +305,42 @@ def run_distributed(
 
             # Pick out the vector and make whitebox sim
             storage_vector = storage_batch[i]
-            whitebox_sim = WhiteboxSimulation(schema, storage_vector)
+            try:
+                whitebox_sim = WhiteboxSimulation(schema, storage_vector)
+            except BaseException as e:
+                logger.error(f"ERROR in setting up simulation {i}", exc_info=e)
+                continue
+            logger.info(whitebox_sim.summarize())
 
             # Generate results
-            res_hourly, res_monthly = whitebox_sim.simulate()
+            try:
+                res_hourly, res_monthly = whitebox_sim.simulate()
+            except BaseException as e:
+                logger.error(f"ERROR in running simulation {i}", exc_info=e)
+                continue
 
             # Save results to local file
             # TODO: concatenate results into a single DF
             res_hourly.to_hdf(
                 hourly_hdf5_path,
-                key=f"JOB_{i:05d}",
+                key=f"IX_{(i+sample_start_ix):05d}",
                 mode="w" if i == 0 else "a",
             )
             res_monthly.to_hdf(
                 monthly_hdf5_path,
-                key=f"JOB_{i:05d}",
+                key=f"IX_{(i+sample_start_ix):05d}",
                 mode="w" if i == 0 else "a",
             )
 
             with h5py.File(hourly_hdf5_path, mode="r+") as f:
                 f.create_dataset(
-                    f"storage_vector_{i:05d}",
+                    f"storage_vector_{(i+sample_start_ix):05d}",
                     shape=storage_vector.shape,
                     data=storage_vector,
                 )
             with h5py.File(monthly_hdf5_path, mode="r+") as f:
                 f.create_dataset(
-                    f"storage_vector_{i:05d}",
+                    f"storage_vector_{(i+sample_start_ix):05d}",
                     shape=storage_vector.shape,
                     data=storage_vector,
                 )
