@@ -59,10 +59,10 @@ def shoebox_from_template(
             zone_params = {
                 "width": 3.0+2*random.random(),
                 "height": 3.0+random.random(),
-                "facade_2_footprint": 0.3,
-                "perim_2_footprint": 0.5,
+                "floor_2_facade": 0.3,
+                "core_2_perim": 0.5,
                 "roof_2_ground": 0.5,
-                "footprint_2_ground": 0.5,
+                "ground_2_footprint": 0.5,
                 "shading_fact": 0.8,
             }
 
@@ -72,8 +72,8 @@ def shoebox_from_template(
         wwr_map = {0: 0, 90: 0, 180: wwr, 270: 0}  # N is 0, E is 90
         # Convert to coords
         width = zone_params["width"]
-        depth = zone_params["height"] / zone_params["facade_2_footprint"]
-        perim_depth = depth * zone_params["perim_2_footprint"]
+        depth = zone_params["height"] / zone_params["floor_2_facade"]
+        perim_depth = depth * zone_params["core_2_perim"]
         zones_data = [
             {
                 "name": "Perim",
@@ -130,7 +130,7 @@ def shoebox_from_template(
                 name = surface.Name
                 name = name.replace("Floor", "Int Floor")
                 # sb.add_adiabatic_to_surface(
-                #     surface, name, zone_params["footprint_2_ground"]
+                #     surface, name, zone_params["ground_2_footprint"]
                 # )
             # Internal partition and glazing
             # Orientation

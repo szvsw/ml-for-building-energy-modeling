@@ -5,6 +5,7 @@ from glob import glob
 from functools import reduce
 from pathlib import Path
 from typing import List
+import collections
 
 import numpy as np
 import math
@@ -20,11 +21,14 @@ try:
     from archetypal import UmiTemplateLibrary
     from archetypal.idfclass.sql import Sql
     from archetypal.template.schedule import UmiSchedule
+    from archetypal.template.materials import SimpleGlazingMaterial
+    from archetypal.template.materials.material_base import MaterialBase
     from archetypal.template.materials.material_layer import MaterialLayer
     from archetypal.template.constructions.window_construction import WindowConstruction
     import pandas as pd
     from pyumi.shoeboxer.shoebox import ShoeBox
     from pyumi.epw import EPW
+    from validator_collection import validators
 except (ImportError, ModuleNotFoundError) as e:
     logger.error("Failed to import a package! Be wary about continuing...", exc_info=e)
 
@@ -36,6 +40,8 @@ from schedules import (
     mutate_timeseries,
     update_schedule_objects,
 )
+
+from shoeboxer.shoebox_config import ShoeboxConfiguration
 
 from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
 
@@ -72,25 +78,25 @@ ECONOMIZER_TYPES = {
 }
 
 
-class ShoeboxConfiguration:
-    """
-    Stateful class for shoebox object args
-    """
+# class ShoeboxConfiguration:
+#     """
+#     Stateful class for shoebox object args
+#     """
 
-    __slots__ = (
-        "width",
-        "height",
-        "facade_2_footprint",
-        "perim_2_footprint",
-        "roof_2_footprint",
-        "footprint_2_ground",
-        # "shading_fact",
-        "wwr",
-        "orientation",
-    )
+#     __slots__ = (
+#         "width",
+#         "height",
+#         "floor_2_facade",
+#         "core_2_perim",
+#         "roof_2_footprint",
+#         "ground_2_footprint",
+#         # "shading_fact",
+#         "wwr",
+#         "orientation",
+#     )
 
-    def __init__(self):
-        pass
+#     def __init__(self):
+#         pass
 
 
 class WhiteboxSimulation:
@@ -229,11 +235,19 @@ class WhiteboxSimulation:
         Method for constructing the actual shoebox simulation object
         """
         wwr_map = {0: 0, 90: 0, 180: self.shoebox_config.wwr, 270: 0}  # N is 0, E is 90
-        # Convert to coords
+        # Get shoebox dimensions
         width = self.shoebox_config.width
-        depth = self.shoebox_config.height / self.shoebox_config.facade_2_footprint
-        perim_depth = depth * self.shoebox_config.perim_2_footprint
         height = self.shoebox_config.height
+        perim_depth = self.shoebox_config.floor_2_facade * height
+        core_depth = self.shoebox_config.core_2_perim * perim_depth
+        if core_depth < 0.1:
+            core_depth = 0.5
+        # roof_2_perim = self.shoebox_config.roof_2_footprint * perim_depth
+        # roof_2_core = self.shoebox_config.roof_2_footprint * core_depth
+        # ground_2_perim = self.shoebox_config.ground_2_footprint * perim_depth
+        # ground_2_core = self.shoebox_config.ground_2_footprint * core_depth
+        logger.info(f"height = {height}, width = {width}, perim_depth = {perim_depth}, core_depth = {core_depth}")
+        # Convert to coords
         zones_data = [
             {
                 "name": "Perim",
@@ -251,8 +265,8 @@ class WhiteboxSimulation:
                 "name": "Core",
                 "coordinates": [
                     (width, perim_depth),
-                    (width, depth),
-                    (0, depth),
+                    (width, perim_depth+core_depth),
+                    (0, perim_depth+core_depth),
                     (0, perim_depth),
                 ],
                 "height": height,
@@ -273,13 +287,13 @@ class WhiteboxSimulation:
             name = surface.Name
             name = name.replace("Roof", "Ceiling")
             sb.add_adiabatic_to_surface(
-                surface, name, self.shoebox_config.roof_2_footprint
+                surface, name, 1-self.shoebox_config.roof_2_footprint
             )
         for surface in sb.getsurfaces(surface_type="floor"):
             name = surface.Name
             name = name.replace("Floor", "Int Floor")
             sb.add_adiabatic_to_surface(
-                surface, name, self.shoebox_config.footprint_2_ground
+                surface, name, 1-self.shoebox_config.ground_2_footprint
             )
         # Make core walls adiabatic
         exterior_facade = sb.getsubsurfaces()[0].Building_Surface_Name
@@ -295,7 +309,28 @@ class WhiteboxSimulation:
                 surface.Sun_Exposure = "NoSun"
                 surface.Wind_Exposure = "NoWind"
 
-        # Internal partition and glazing
+        # Internal partition
+
+        # Glazing
+        u_value, shgc = self.schema["WindowSettings"].extract_storage_values(self.storage_vector)
+        # make material
+        sb.newidfobject(
+            key="WINDOWMATERIAL:SIMPLEGLAZINGSYSTEM",
+            Name=f"SimpleWindowMat_U{round(u_value, 1)}_SHGC{round(shgc, 2)}",
+            UFactor=u_value,
+            Solar_Heat_Gain_Coefficient=shgc,
+        )
+        # make construction
+        sb.newidfobject(
+            key="CONSTRUCTION",
+            Name=f"SimpleWindow_U{round(u_value, 1)}_SHGC{round(shgc, 2)}",
+            Outside_Layer=f"SimpleWindowMat_U{round(u_value, 1)}_SHGC{round(shgc, 2)}"
+        )
+        # set window construction
+        for surface in sb.getsubsurfaces():
+            if surface.Surface_Type.upper() == "WINDOW":
+                surface.Construction_Name = f"SimpleWindow_U{round(u_value, 1)}_SHGC{round(shgc, 2)}"
+
         # Orientation
 
         # TODO: - confirm that these do not need to be moved inside of simulate parallel process
@@ -625,9 +660,9 @@ class WhiteboxSimulation:
         print("Height", self.shoebox_config.height)
         print("Width", self.shoebox_config.width)
         print("WWR", self.shoebox_config.wwr)
-        print("Facade2Foot", self.shoebox_config.facade_2_footprint)
-        print("Perim2Foot", self.shoebox_config.perim_2_footprint)
-        print("Foot2Gnd [adia %]", self.shoebox_config.footprint_2_ground)
+        print("Floor2Facade", self.shoebox_config.floor_2_facade)
+        print("Core2Perim", self.shoebox_config.core_2_perim)
+        print("Foot2Gnd [adia %]", self.shoebox_config.ground_2_footprint)
         print("Roof2Gnd [adia %]", self.shoebox_config.roof_2_footprint)
         print("Orientation", self.shoebox_config.orientation)
         print("---PERIM/CORE Values---")
@@ -673,11 +708,12 @@ class WhiteboxSimulation:
         )
         print(
             "U Window:", self.template.Windows.Construction.u_value
-        )  # TODO: this is slightly different!)
-        print(
-            "VLT",
-            self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
-        )
+            # "U Window:", self.template.Windows.Construction.Layers[0].Material.Uvalue
+        )  # TODO: this is slightly different!) #TODO update this to read idf
+        # print(
+        #     "VLT",
+        #     self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
+        # )
         print("Roof RSI:", self.template.Perimeter.Constructions.Roof.r_value)
         print("Facade RSI:", self.template.Perimeter.Constructions.Facade.r_value)
         print("Slab RSI:", self.template.Perimeter.Constructions.Slab.r_value)
@@ -798,7 +834,7 @@ class SchemaParameter:
                     self.extract_storage_values_batch(storage_batch).reshape(
                         -1, *self.shape_ml
                     )
-                    if value == None
+                    if value is None
                     else value
                 )
                 return vals
@@ -1124,11 +1160,19 @@ class TMassParameter(BuildingTemplateParameter):
         return self.to_ml(value=val)
 
 
-class WindowParameter(OneHotParameter):
-    __slots__ = ()
+# class WindowParameter(OneHotParameter):
+    # __slots__ = ()
 
-    def __init__(self, **kwargs):
-        super().__init__(count=5, **kwargs)
+    # def __init__(self, **kwargs):
+    #     super().__init__(count=5, **kwargs)
+
+class WindowParameter(NumericParameter):
+    def __init__(self, min, max, **kwargs):
+        super().__init__(shape_storage=(2,), shape_ml=(2,), **kwargs)
+        self.min = np.array(min)
+        self.max = np.array(max)
+        self.range = self.max - self.min
+    
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
@@ -1141,24 +1185,46 @@ class WindowParameter(OneHotParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
+        logger.info("Skipping update of window parameters - will build simple window in build_shoebox")
         # Get the var id and batch id for naming purposes
-        variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
-            whitebox_sim.storage_vector
-        )
-        batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
-            whitebox_sim.storage_vector
-        )
+        # variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
+        #     whitebox_sim.storage_vector
+        # )
+        # batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
+        #     whitebox_sim.storage_vector
+        # )
 
-        # get the three values for u/shgc/vlt
-        idx = self.extract_storage_values(whitebox_sim.storage_vector)
+        # # get the three values for u/shgc/vlt
+        # values = self.extract_storage_values(whitebox_sim.storage_vector)
 
-        # Window name lookup
-        window_typ = WINDOW_TYPES[idx]
-        all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
-        # Update the window
-        whitebox_sim.template.Windows.Construction = (
-            whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
-        )
+        # # separate them
+        # u_value = values[0]
+        # shgc = values[1]
+
+        # ORIGINAL COMPLEX WINDOW VERSION
+        # create a new single layer window that has the properties from special single layer material
+        # TODO use new EnergyPlus window from u-val and shgc
+        # window = WindowConstruction.from_shgc(
+        #     Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
+        #     solar_heat_gain_coefficient=shgc,
+        #     u_factor=u_value,
+        #     visible_transmittance=vlt,
+        # )
+
+        # VERSION WITH DISCRETE WINDOW (ONEHOT)
+        # window_typ = WINDOW_TYPES[idx]
+        # all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
+        # # Update the window
+        # whitebox_sim.template.Windows.Construction = (
+        #     whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
+        # )
+
+        # VERSION WTIH ARCHETYPAL
+        # window_material = SimpleGlazingMaterial(Name=f"SimpleWindowMat_U{u_value}_SHGC{shgc}", Uvalue=u_value, SolarHeatGainCoefficient=shgc)
+        # window_layer = MaterialLayer(window_material, Thickness=0.06)
+        # window_construction = WindowConstruction(Name=f"SimpleWindowCon_U{u_value}_SHGC{shgc}", Layers=[window_layer])
+        # # Update the window
+        # whitebox_sim.template.Windows.Construction = (window_construction)
 
     def extract_from_template(
         self, building_template
@@ -1182,37 +1248,37 @@ class WindowParameter(OneHotParameter):
         """
         window = building_template.Windows.Construction
         uval = window.u_value
-        # if window.glazing_count == 2:
-        #     shgc = window.shgc()
-        # elif window.glazing_count == 1:
-        #     # Calculate shgc from t_sol of construction
-        #     tsol = window.Layers[0].Material.SolarTransmittance
-        #     shgc = self.single_pane_shgc_estimation(tsol, uval)
-        # else:
-        #     # if window is not 2 layers
-        #     logging.info(
-        #         f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
-        #     )
-        #     shgc = 0.6
+        if window.glazing_count == 2:
+            shgc = window.shgc()
+        elif window.glazing_count == 1:
+            # Calculate shgc from t_sol of construction
+            tsol = window.Layers[0].Material.SolarTransmittance
+            shgc = self.single_pane_shgc_estimation(tsol, uval)
+        else:
+            # if window is not 2 layers
+            logging.info(
+                f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
+            )
+            shgc = 0.6
         # vlt = window.visible_transmittance
 
-        # sort into window type
+        # # sort into window type
+        # if uval >= 1.6 and uval < 2.6:
+        #     type = 1
+        # elif uval >= 1.0 and uval < 1.6:
+        #     type = 2
+        # elif uval >= 0.7 and uval < 1.0:
+        #     type = 3
+        # elif uval < 0.7:
+        #     type = 4
+        # else:
+        #     type = 0
+        # return type
 
-        if uval >= 1.6 and uval < 2.6:
-            type = 1
-        elif uval >= 1.0 and uval < 1.6:
-            type = 2
-        elif uval >= 0.7 and uval < 1.0:
-            type = 3
-        elif uval < 0.7:
-            type = 4
-        else:
-            type = 0
+        return self.to_ml(value=np.array([uval, shgc]))
 
-        # return self.to_ml(value=np.array([type])) #TODO
-        return type
-
-    def single_pane_shgc_estimation(self, tsol, uval):
+    @classmethod
+    def single_pane_shgc_estimation(cls, tsol, uval):
         """
         Calculate shgc for single pane window - from Archetypal tsol calulation based on u-val and shgc
         """
@@ -1435,22 +1501,22 @@ class Schema:
                     info="Height [m]",
                 ),
                 ShoeboxGeometryParameter(
-                    name="facade_2_footprint",
+                    name="floor_2_facade", # PERIM DEPTH, CORE DEPTH, GROUND DEPTH, ROOF DEPTH
                     min=0.25,
                     max=1.5,
                     mean=0.75,
                     std=0.15,
                     source="dogan_shoeboxer_2017",
-                    info="Facade to footprint ratio (unitless)",
+                    info="Building floor area to facade (walls only) ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="perim_2_footprint",
+                    name="core_2_perim",
                     min=0.05,
                     max=0.95,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
-                    info="Perimeter to footprint ratio (unitless)",
+                    info="Core to Perimeter ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="roof_2_footprint",
@@ -1462,13 +1528,13 @@ class Schema:
                     info="Roof to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="footprint_2_ground",  # TODO: change this to ground_2_footprint for cohesiveness
+                    name="ground_2_footprint",
                     min=0.05,
                     max=0.95,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
-                    info="Footprint to ground ratio (unitless)",
+                    info="Ground to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="wwr",
@@ -1619,19 +1685,19 @@ class Schema:
                     source="ComStock, tacit knowledge",
                     info="Slab R-value",
                 ),
-                # WindowParameter(
-                #     name="WindowSettings",
-                #     min=(0.3, 0.05, 0.05),
-                #     max=(7.0, 0.99, 0.99),
-                #     mean=np.array([5, 0.5, 0.5]),
-                #     std=np.array([2, 0.1, 0.1]),
-                #     source="climate studio",
-                #     info="U-value (m2K/W), shgc, vlt",
-                # ),
                 WindowParameter(
                     name="WindowSettings",
-                    info="Lookup index of window type.",
+                    min=(0.3, 0.05),
+                    max=(7.0, 0.99),
+                    mean=np.array([5, 0.5]),
+                    std=np.array([2, 0.1]),
+                    source="climate studio",
+                    info="U-value (m2K/W), shgc",
                 ),
+                # WindowParameter(
+                #     name="WindowSettings",
+                #     info="Lookup index of window type.",
+                # ),
                 OneHotParameter(
                     name="EconomizerSettings",
                     count=3,
@@ -1842,7 +1908,8 @@ class Schema:
                     template_vect.append(val)
                 elif isinstance(parameter, WindowParameter):
                     val = parameter.extract_from_template(building_template)
-                    template_vect.append(val)
+                    # template_vect.append(val)
+                    template_vect.extend(val)
 
         # return values which will be used for a building parameter vector and/or timeseries vector (schedules)
         return dict(

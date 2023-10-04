@@ -311,12 +311,12 @@ class Surrogate:
             self.full_storage_batch = f["storage_batch"][...]
             self.results["area_core"] = self.results["area"] * (
                 1
-                - self.schema["perim_2_footprint"].extract_storage_values_batch(
+                - self.schema["core_2_perim"].extract_storage_values_batch(
                     self.full_storage_batch
                 )
             )
             self.results["area_perim"] = self.results["area"] * self.schema[
-                "perim_2_footprint"
+                "core_2_perim"
             ].extract_storage_values_batch(self.full_storage_batch)
             perim_heating_eui = (
                 self.results["monthly"][:, 0] * 2.7777e-7 / self.results["area_perim"]
