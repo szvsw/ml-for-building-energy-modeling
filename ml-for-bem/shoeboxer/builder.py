@@ -289,7 +289,7 @@ class ShoeBox:
             json.dump(self.epjson, f, indent=4)
 
         # Update geometry
-        # self.handle_geometry()
+        self.handle_geometry()
         self.handle_shading()
 
         # Turn into an IDF
@@ -591,10 +591,24 @@ class ShoeBox:
 
     def handle_geometry(self):
         # scale geometry
-        # Change adiabatic roof and floor dimensions
-        gu.set_adiabatic_surfaces()
+        self.epjson = gu.scale_shoebox(
+            sb=self.epjson,
+            width=self.shoebox_config.width,
+            height=self.shoebox_config.height,
+            floor_2_facade=self.shoebox_config.floor_2_facade,
+            core_2_perim=self.shoebox_config.core_2_perim,
+        )
         # Update window to wall ratio
-        gu.update_wwr(shoebox_config.wwr)
+        self.epjson = gu.update_wwr(self.epjson, self.shoebox_config.wwr)
+        # Change adiabatic roof and floor dimensions
+        self.epjson = gu.set_adiabatic_surfaces(
+            sb=self.epjson,
+            height=self.shoebox_config.height,
+            floor_2_facade=self.shoebox_config.floor_2_facade,
+            core_2_perim=self.shoebox_config.core_2_perim,
+            roof_2_footprint=self.shoebox_config.roof_2_footprint,
+            ground_2_footprint=self.shoebox_config.ground_2_footprint,
+        )
 
     def handle_shading(self):
         r = 2 * self.shoebox_config.width
@@ -610,6 +624,8 @@ class ShoeBox:
         idf = IDF(idf_path, epw=self.epw)
         if run_simulation:
             self.hourly, self.monthly = self.simulate(idf)
+            logger.info("HEATING/COOLING EUI")
+            logger.info(sb.monthly.sum() / sb.floor_area * 2.77e-07)
         return idf
 
     @classmethod
@@ -686,16 +702,16 @@ class ShoeBox:
 
 if __name__ == "__main__":
     shoebox_config = ShoeboxConfiguration()
-    shoebox_config.width = 3.0
-    shoebox_config.height = 4.5
-    shoebox_config.floor_2_facade = 0.5
-    shoebox_config.core_2_perim = 0.5
-    shoebox_config.roof_2_footprint = 0.5
-    shoebox_config.ground_2_footprint = 0.5
-    shoebox_config.wwr = 0.4
+    shoebox_config.width = 10
+    shoebox_config.height = 10
+    shoebox_config.floor_2_facade = 0.9
+    shoebox_config.core_2_perim = 1.5
+    shoebox_config.roof_2_footprint = 0.7
+    shoebox_config.ground_2_footprint = 0.2
+    shoebox_config.wwr = 0.1
     shoebox_config.orientation = 2
     shoebox_config.template_name = "baseline"
-    shoebox_config.shading_vect = np.random.random(12) * math.pi / 2
+    shoebox_config.shading_vect = np.random.random(12) * math.pi / 3
 
     # MAKE FAKE SCHEDULES
     schedules = np.zeros((3, 21))
@@ -724,10 +740,5 @@ if __name__ == "__main__":
         epw=epw,
         output_directory=out_dir,
     )
-    idf = sb.update_epjson(template_dict(scheds), run_simulation=True)
-
-    print("")
-    print("HEATING/COOLING EUI")
-    print(sb.monthly.sum() / sb.floor_area * 2.77e-07)
-    print("")
+    idf = sb.update_epjson(template_dict(scheds), run_simulation=False)
     idf.view_model()
