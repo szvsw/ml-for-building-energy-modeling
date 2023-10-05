@@ -15215,7 +15215,7 @@
             "design_specification_outdoor_air_object_name": "SharedDesignSpecOutdoorAir",
             "heat_recovery_type": "Enthalpy",
             "heating_availability_schedule_name": "AllOn",
-            "heating_limit": "LimitFlowRateAndCapacity",
+            "heating_limit": "NoLimit",
             "humidification_control_type": "None",
             "latent_heat_recovery_effectiveness": 0.5,
             "maximum_cooling_air_flow_rate": 3000,

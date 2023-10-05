@@ -69,7 +69,6 @@ def scale_shoebox(
     sb["BuildingSurface:Detailed"] = replace_all_coords(
         sb["BuildingSurface:Detailed"], new_coords
     )
-    logger.info(window_coords[0, :, :].shape)
     sb["FenestrationSurface:Detailed"]["Perimeter:f0:w0"] = replace_window_coords(
         sb["FenestrationSurface:Detailed"]["Perimeter:f0:w0"], window_coords[0, :, :]
     )
@@ -89,6 +88,7 @@ def set_adiabatic_surfaces(
     roof_2_footprint,
     ground_2_footprint,
 ):
+    # TODO: remove if zero
     logger.info("Updating adiabatic surfaces.")
     perim_depth = floor_2_facade * height
     core_depth = core_2_perim * perim_depth
@@ -138,7 +138,6 @@ def set_adiabatic_surfaces(
     )
     old_roof_core_depth = old_ground_core_depth = old_roof_perim_depth * core_2_perim
     core_origin = min(all_coords[core_roof_idxs, :, 1].flatten())
-    logger.info(core_origin)
 
     # move perim adiabatic line for roof
     pr = all_coords[perim_roof_idxs]

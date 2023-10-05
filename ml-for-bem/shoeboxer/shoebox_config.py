@@ -13,11 +13,15 @@ class ShoeboxConfiguration:
         "wwr",
         "orientation",
         "shading_vect",
-        "template_name"
     )
 
     def __init__(self):
         pass
+
+    @classmethod
+    def from_umi(cls):
+        pass  # TODO
+
 
 # TODO
 # Add bounds and checks to params

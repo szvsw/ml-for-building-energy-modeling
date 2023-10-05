@@ -26,8 +26,8 @@ from archetypal.schedule import Schedule, ScheduleTypeLimits
 from schedules import mutate_timeseries
 from schema import TimeSeriesOutput
 
-from shoebox_config import ShoeboxConfiguration
-import geometry_utils as gu
+from shoeboxer.shoebox_config import ShoeboxConfiguration
+import shoeboxer.geometry_utils as gu
 
 import numpy as np
 import pandas as pd
@@ -52,7 +52,7 @@ class Econ(IntEnum):
     DifferentialEnthalpy = 2
 
 
-class MechVentModeSched(IntEnum):
+class MechVentMode(IntEnum):
     Off = 0
     AllOn = 1
     OccupancySchedule = 2
@@ -187,8 +187,8 @@ def template_dict(
     equipment_power_density=5,
     infiltration_per_area=0.0001,
     ventilation_per_floor_area=0.0004,
-    ventilation_per_person=0.025,
-    ventilation_mode=0,  # one hot of 0-2
+    ventilation_per_person=0.0025,
+    ventilation_mode=1,  # one hot of 0-2
     heating_sp=18,
     cooling_sp=24,
     humid_max=81,
@@ -235,6 +235,10 @@ def template_dict(
 
 
 def get_template_dict_from_archetypal(template):
+    pass  # TODO make class function
+
+
+def get_template_dict_from_vector(template):
     pass  # TODO
 
 
@@ -244,8 +248,10 @@ class ShoeBox:
         name,
         shoebox_config: ShoeboxConfiguration,
         epw,
-        seed=Path(module_path, "shoeboxer/shoebox-template.json"),
+        template_dict,
+        seed_model=Path(module_path, "shoeboxer/shoebox-template.json"),
         output_directory=None,
+        change_summary=False,
     ):
         self.name = name
         self.output_directory = output_directory
@@ -260,7 +266,7 @@ class ShoeBox:
         self.floor_area = shoebox_config.width * length
 
         # Load the seed model
-        with open(seed, "r") as f:
+        with open(seed_model, "r") as f:
             self._seed_epjson = json.load(f)
             self.epjson = copy.deepcopy(self._seed_epjson)
 
@@ -271,12 +277,13 @@ class ShoeBox:
             fname = f"{self.name}.epjson"
         self.ep_json_path = fname
         self.save_json()
+        self.update_epjson(template_dict, change_summary=change_summary)
 
     def save_json(self):
         with open(self.ep_json_path, "w") as f:
             json.dump(self.epjson, f, indent=4)
 
-    def update_epjson(self, template_dict, change_summary=True, run_simulation=False):
+    def update_epjson(self, template_dict, change_summary=True):
         # Rotate North
         new_north_deg = self.shoebox_config.orientation * 90
         self.rotate_relative_north(new_north_deg)
@@ -294,18 +301,18 @@ class ShoeBox:
 
         # Turn into an IDF
         self.save_json()
-        idf = self.idf(run_simulation=run_simulation)
-        idf.save()
+        # idf.save()
 
         if change_summary:
-            # get idf as a json again
-            json_path = self.convert(
-                path=str(self.ep_json_path).replace("epjson", "idf"), file_type="epjson"
-            )
-            with open(json_path, "r") as f:
-                self.compare_idfs(json.load(f))
+            self.compare_idfs(self.epjson)
+        #     # get idf as a json again
+        #     json_path = self.convert(
+        #         path=str(self.ep_json_path).replace("epjson", "idf"), file_type="epjson"
+        #     )
+        #     with open(json_path, "r") as f:
+        #         self.compare_idfs(json.load(f))
 
-        return idf
+        return self.epjson
 
     def rotate_relative_north(self, orient):
         self.epjson["Building"]["Building"]["north_axis"] = int(orient)
@@ -492,6 +499,8 @@ class ShoeBox:
         """
         Update Basic HVAC stuff
         # TODO: Should we also be updating the Sizing:Zone object?
+        # TODO: limits are needed to avoid overheating - no limits, no stress (esp. for large shoeboxes) - cooling had large numbers, heating has no limit
+        # OR look at sizing options for ideal loads?? Ask ben
         """
         for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
             # Handle Heat Recovery
@@ -560,9 +569,9 @@ class ShoeBox:
 
         """
 
-        mech_vent_sched_name = MechVentModeSched(template_dict["ventilation_mode"]).name
+        mech_vent_sched_mode = MechVentMode(template_dict["ventilation_mode"]).name
 
-        logger.info(f"Mechanical ventilation schedule: {mech_vent_sched_name}")
+        logger.info(f"Mechanical ventilation schedule: {mech_vent_sched_mode}")
         # TODO: check outputs of when ventilation is on
         self.epjson["DesignSpecification:OutdoorAir"]["SharedDesignSpecOutdoorAir"] = {
             "outdoor_air_flow_per_person": template_dict["ventilation_per_person"],
@@ -570,12 +579,12 @@ class ShoeBox:
                 "ventilation_per_floor_area"
             ],
             "outdoor_air_method": "Sum",
-            "outdoor_air_schedule_name": "",  # TODO will this ever change?
+            "outdoor_air_schedule_name": "",  # AllOn
         }
 
-        if mech_vent_sched_name == MechVentModeSched.OccupancySchedule:
+        if mech_vent_sched_mode == MechVentMode.OccupancySchedule:
             for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
-                zone["demand_controlled_ventilation_type"] = mech_vent_sched_name
+                zone["demand_controlled_ventilation_type"] = mech_vent_sched_mode
         else:
             for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
                 zone["demand_controlled_ventilation_type"] = "None"
@@ -706,11 +715,10 @@ if __name__ == "__main__":
     shoebox_config.height = 10
     shoebox_config.floor_2_facade = 0.9
     shoebox_config.core_2_perim = 1.5
-    shoebox_config.roof_2_footprint = 0.7
+    shoebox_config.roof_2_footprint = 0.8
     shoebox_config.ground_2_footprint = 0.2
-    shoebox_config.wwr = 0.1
-    shoebox_config.orientation = 2
-    shoebox_config.template_name = "baseline"
+    shoebox_config.wwr = 0.2
+    shoebox_config.orientation = 0
     shoebox_config.shading_vect = np.random.random(12) * math.pi / 3
 
     # MAKE FAKE SCHEDULES
@@ -733,12 +741,15 @@ if __name__ == "__main__":
 
     epw = "D:/Users/zoelh/GitRepos/ml-for-building-energy-modeling/ml-for-bem/data/epws/city_epws_indexed/cityidx_0001_USA_NY-New York Central Prk Obs Belv.725033_TMY3.epw"
     out_dir = Path("./ml-for-bem/shoeboxer/cache")
-
+    d = template_dict(scheds)
+    d["ventilation_mode"] = 1
     sb = ShoeBox(
         name="test",
         shoebox_config=shoebox_config,
         epw=epw,
         output_directory=out_dir,
+        template_dict=d,
+        change_summary=True,
     )
-    idf = sb.update_epjson(template_dict(scheds), run_simulation=False)
+    idf = sb.idf(run_simulation=True)
     idf.view_model()
