@@ -560,11 +560,6 @@
             "layer_2": "GroundSlabXPS",
             "layer_3": "GroundSlabConcrete",
             "outside_layer": "GroundSlabCarpet"
-        },
-        "Ground Slab_FLIPPED": {
-            "layer_2": "GroundSlabCarpet",
-            "layer_3": "GroundSlabConcrete",
-            "outside_layer": "GroundSlabXPS"
         }
     },
     "ConvergenceLimits": {
@@ -15114,10 +15109,10 @@
     "Zone": {
         "Core": {
             "direction_of_relative_north": 0,
-            "floor_area": 30,
+            "floor_area": "Autocalculate",
             "multiplier": 1,
             "type": 1,
-            "volume": 120,
+            "volume": "Autocalculate",
             "x_origin": 0,
             "y_origin": 0,
             "z_origin": 0,
@@ -15126,10 +15121,10 @@
         },
         "Perimeter": {
             "direction_of_relative_north": 0,
-            "floor_area": 15,
+            "floor_area": "Autocalculate",
             "multiplier": 1,
             "type": 1,
-            "volume": 60,
+            "volume": "Autocalculate",
             "x_origin": 0,
             "y_origin": 0,
             "z_origin": 0,
