@@ -20,7 +20,7 @@ from schema import (
     ECONOMIZER_TYPES,
     RECOVERY_TYPES,
 )
-from nrel_uitls import ResStockConfiguration, CLIMATEZONES, RESTYPES
+from utils.nrel_uitls import ResStockConfiguration, CLIMATEZONES, RESTYPES
 import logging
 
 import wandb

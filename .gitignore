@@ -140,14 +140,15 @@ ml-for-bem/data/epws/city_epws_indexed/**.epw
 ml-for-bem/data/epws/city_epws_indexed.zip
 ml-for-bem/data/epws/global_epws_indexed/**.epw
 ml-for-bem/data/epws/global_epws_indexed.zip
-NREL/data/ComStock/
 ml-for-bem/data/template_libs/cz_libs/residential/epresults
 ml-for-bem/data/**/*.npy
 ml-for-bem/checkpoints/**/*.pt
 ml-for-bem/checkpoints/**/*.pth
 
 ml-for-bem/umi/**/*.hdf5
-umi/*
+umi_data/*
+NREL/data/ComStock/
+NREL/data/ResStock/
 credentials.json
 wandb/
 artifacts/

@@ -24,7 +24,7 @@ from schema import (
     WindowParameter,
     SchedulesParameters,
 )
-from nrel_uitls import (
+from utils.nrel_uitls import (
     ResStockConfiguration,
     CLIMATEZONES,
     CLIMATEZONES_LIST,

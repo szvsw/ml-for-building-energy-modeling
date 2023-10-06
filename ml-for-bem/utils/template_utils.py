@@ -9,7 +9,7 @@ import pandas as pd
 from random import randint
 
 # Import window schema
-from nrel_uitls import WINDTYPES
+from utils.nrel_uitls import WINDTYPES
 
 import warnings
 
@@ -55,7 +55,7 @@ with warnings.catch_warnings():
     from archetypal.utils import reduce
     from pyumi.shoeboxer.shoebox import ShoeBox
 
-from nrel_uitls import RESTYPES
+from utils.nrel_uitls import RESTYPES
 
 
 PEOPLE_DENSITY = 0.2  # pp/m2
