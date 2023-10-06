@@ -198,7 +198,7 @@ def template_dict(
     heat_recovery=0,
     economizer=1,
     wall_r_val=2,
-    wall_mass=8000,
+    wall_mass=30000,  # need to revisit minimums
     roof_r_val=6,
     roof_mass=200000,
     slab_r_val=4,
@@ -332,7 +332,7 @@ class ShoeBox:
         self.handle_infiltration(template_dict)
         self.handle_hvac_econ_enthalpy(template_dict)
         # self.handle_sat_minmax(template_dict)
-        # self.handle_humidistat(template_dict) # TODO: are we using?
+        # self.handle_humidistat(template_dict)
         self.handle_ventilation(template_dict)
         self.handle_thermostat(template_dict)
 
@@ -344,16 +344,18 @@ class ShoeBox:
         for con_name, con_def in self.epjson["Construction"].items():
             if "Exterior Wall" in con_name:
                 self.change_construction_r(con_def, template_dict["wall_r_val"])
+                self.change_construction_mass(
+                    con_def, template_dict["wall_mass"], template_dict["wall_r_val"]
+                )
             elif "Exterior Roof" in con_name:
                 self.change_construction_r(con_def, template_dict["roof_r_val"])
+                self.change_construction_mass(
+                    con_def, template_dict["roof_mass"], template_dict["roof_r_val"]
+                )
             elif "Ground Slab" in con_name:
-                self.change_construction_r(con_def, template_dict["roof_r_val"])
-            # TODO: change construction mass
+                self.change_construction_r(con_def, template_dict["slab_r_val"])
 
-    def change_construction_r(self, construction, new_r):
-        """
-        Change a Construction's insulation layer to reach a target u
-        """
+    def calculate_r(self, construction):
         r_vals = []
         for layer_name in construction.values():
             material_def = self.epjson["Material"][layer_name]
@@ -361,7 +363,15 @@ class ShoeBox:
             thick = material_def["thickness"]
             r_val = 1 / (k / thick)
             r_vals.append((layer_name, r_val, material_def))
+        return r_vals
 
+    def change_construction_r(
+        self, construction, new_r
+    ):  # TODO: why is slab not working???
+        """
+        Change a Construction's insulation layer to reach a target u
+        """
+        r_vals = self.calculate_r(construction)
         # TODO: U-Vals come out the same, but R is slightly different?
         current_r_val = sum(r_val for _, r_val, _ in r_vals)
         sorted_layers = sorted(r_vals, key=lambda x: -x[1])
@@ -372,7 +382,74 @@ class ShoeBox:
         needed_r = new_r - r_val_without_insulator
         assert needed_r > 0
         new_thickness = needed_r * insulator_def["conductivity"]
+        if new_thickness < 0.003:
+            logger.warning(
+                "Thickness of insulation is less than 0.003. This will create a warning in EnergyPlus."
+            )
         insulator_def["thickness"] = round(new_thickness, 3)
+        new_r_vals = self.calculate_r(construction)
+        logger.info(
+            f"New R-val = {sum(r for _, r, _ in new_r_vals)} compared to desired {new_r}"
+        )
+
+    def calculate_tm(self, construction):
+        tm_vals = []
+        for layer_name in construction.values():
+            material_def = self.epjson["Material"][layer_name]
+            c = material_def["specific_heat"]
+            thick = material_def["thickness"]
+            rho = material_def["density"]
+            tm_val = c * rho * thick
+            tm_vals.append((layer_name, tm_val, material_def))
+        return tm_vals
+
+    def change_construction_mass(self, construction, new_thermal_mass, new_r_val):
+        """
+        specific heat (c) of the material layer from template is in units of J/(kg-K)
+        density is in kg/m3
+        thermal mass is in J/Km2 TM = c * density * thickness
+        """
+        # TODO: assuming that the roof cannot have concrete entirely removed - only floor gets wood
+        if (
+            new_thermal_mass < 40000
+            and "ExteriorWall" in list(construction.values())[0]
+        ):
+            logger.info(
+                "Light mass wall condition, replacing high-mass stucco with wood siding."
+            )
+            construction["outside_layer"] = "ExteriorWallWoodSiding"
+            del construction["layer_4"]
+            logger.info("Recalculating r-values...")
+            self.change_construction_r(construction, new_r_val)
+
+        tm_vals = self.calculate_tm(construction)
+        current_tm_val = sum(tm for _, tm, _ in tm_vals)
+        sorted_layers = sorted(tm_vals, key=lambda x: -x[1])
+        mass_layer = sorted_layers[0]
+        mass_layer_tm = mass_layer[1]
+        mass_layer_def = mass_layer[2]
+        mass_without_concrete = current_tm_val - mass_layer_tm
+        needed_tm = new_thermal_mass - mass_without_concrete
+        # logger.info(f"Current mass: {current_tm_val}")
+        # logger.info(f"Needed mass: {new_thermal_mass}")
+        # logger.info(f"Needed mass of concrete: {needed_tm}")
+        # logger.info(f"mass_without_concrete: {mass_without_concrete}")
+        # Check if mass/rvalue combo is possible
+        assert needed_tm > 0, "Desired mass is not possible with given r-value"
+        new_thickness = (
+            needed_tm / mass_layer_def["specific_heat"] / mass_layer_def["density"]
+        )
+        new_thickness = round(new_thickness, 3)
+        if new_thickness < 0.003:
+            logger.warning(
+                f"Thickness of insulation is less than 0.003, at {new_thickness}. This will raise a warning in EnergyPlus."  # TODO delete??
+            )
+        logger.info(f"New thickness of {new_thickness} for {mass_layer[0]}")
+        mass_layer_def["thickness"] = new_thickness
+        new_tm_vals = self.calculate_tm(construction)
+        logger.info(
+            f"New thermal mass = {sum(tm for _, tm, _ in new_tm_vals)} compared to desired {new_thermal_mass}"
+        )
 
     def handle_windows(self, template_dict):
         """

@@ -729,6 +729,16 @@
             "thickness": 0.025,
             "visible_absorptance": 0.7
         },
+        "ExteriorWallWoodSiding": {
+            "conductivity": 0.13,
+            "density": 530,
+            "roughness": "Rough",
+            "solar_absorptance": 0.6,
+            "specific_heat": 900,
+            "thermal_absorptance": 0.9,
+            "thickness": 0.009,
+            "visible_absorptance": 0.6
+        },
         "GroundSlabCarpet": {
             "conductivity": 0.06,
             "density": 288,
