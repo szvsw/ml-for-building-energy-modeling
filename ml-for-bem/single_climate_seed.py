@@ -12,13 +12,22 @@ with open(Path(os.getcwd(), "ml-for-bem", "data", "city_map.json"), "r") as f:
     city_map = json.load(f)
 
 schema = Schema()
+
 storage_vector = schema.generate_empty_storage_vector()
+# Choose random values for storage vector
 for param in schema.parameters:
     try:
-        val = param.mean
+        # val = param.mean
+        val = np.random.uniform(low=param.min, high=param.max)
     except:
         val = 0
     schema.update_storage_vector(storage_vector, parameter=param.name, value=val)
+
+# TODO: fix this
+# Check setpoints
+if schema["HeatingSetpoint"].extract_storage_values(storage_vector) > schema["CoolingSetpoint"].extract_storage_values(storage_vector):
+    hsp = schema["CoolingSetpoint"].extract_storage_values(storage_vector) - 5
+    schema.update_storage_vector(storage_vector, parameter="HeatingSetpoint", value=hsp)
 
 cz_string = "4A"
 cz_value = CLIMATEZONES[cz_string]
@@ -33,7 +42,6 @@ schema.update_storage_vector(
     parameter="base_epw",
     value=city_map["NY, New York"]["idx"],
 )
-
 shoebox_config = ShoeboxConfiguration()
 shoebox_config.width = schema["width"].extract_storage_values(storage_vector)
 shoebox_config.height = schema["height"].extract_storage_values(storage_vector)
@@ -55,6 +63,7 @@ shoebox_config.orientation = schema["orientation"].extract_storage_values(
 )
 shoebox_config.shading_vect = np.zeros((12,))
 
+# UNCOMMENT TO GET .npy FILE OF RESIDENTIAL TEMPLATE SCHEDULES
 # template_lib_idx = CLIMATEZONES["4A"]
 
 # cz_value = int(cz_value)
@@ -77,8 +86,25 @@ schedules = np.load(
     Path(os.getcwd(), "ml-for-bem", "data", "residential_schedules.npy")
 )
 
+skip = [
+    "batch_id",
+    "variation_id",
+    "program_type",
+    "vintage",
+    "climate_zone",
+    "base_epw",
+    "schedules_seed",
+    "schedules",
+]
+schema_param_names = [x for x in schema.parameter_names if not x in skip]
+simple_dict = {}
+for param_name in schema_param_names:
+    simple_dict[param_name] = schema[param_name].extract_storage_values(storage_vector)
+print(simple_dict)
+
+sb_name = "shoebox_test"
 sb = ShoeBox.from_vector(
-    name="shoebox_test",
+    name=sb_name,
     schema=schema,
     shoebox_config=shoebox_config,
     vector=storage_vector,
@@ -86,5 +112,9 @@ sb = ShoeBox.from_vector(
     change_summary=False,
     output_directory=Path(os.getcwd(), "cache"),
 )
-idf = sb.idf(run_simulation=True)
-idf.view_model()
+print(sb.ep_json_path)
+
+# RUNNING TO GET DATAFRAME OF RESULTS
+idf = sb.idf(run_simulation=False)
+hourly_df, monthly_df = sb.simulate(idf)
+print(monthly_df.head())
