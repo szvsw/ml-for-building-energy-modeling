@@ -3,16 +3,11 @@ import sys
 from pathlib import Path
 from enum import IntEnum
 
-module_path = os.path.abspath(os.path.join(".."))
-module_path = Path(module_path, "ml-for-bem")
-if module_path not in sys.path:
-    sys.path.append(str(module_path))
-
 JOULES_TO_KWH = 2.777e-7
-
 SHADING_DIV_SIZE = 12
-EPW_PATH = Path(module_path, "data/epws/global_epws_indexed")
-SHOEBOX_PATH = Path(module_path, "shoeboxer/cache")
+
+EPW_RELATIVE_PATH = "data/epws/city_epws_indexed"
+SHOEBOX_RELATIVE_PATH = "shoeboxer/cache"
 HIGH_LOW_MASS_THRESH = 00000  # J/m2K # TODO why is this zero
 
 WINDOW_TYPES = {
@@ -23,6 +18,7 @@ WINDOW_TYPES = {
     4: "triple_LoE",
 }
 
+
 class HRV(IntEnum):
     NoHRV = 0
     Sensible = 1
@@ -31,8 +27,8 @@ class HRV(IntEnum):
 
 class Econ(IntEnum):
     NoEconomizer = 0
-    DifferentialDryBulb = 1
-    DifferentialEnthalpy = 2
+    DifferentialEnthalpy = 1
+    # DifferentialDryBulb = 2
 
 
 class MechVentMode(IntEnum):

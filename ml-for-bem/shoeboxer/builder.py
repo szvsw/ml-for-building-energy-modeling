@@ -36,6 +36,8 @@ import pandas as pd
 settings.energyplus_location = Path("D:\EnergyPlusV22-2-0")
 settings.ep_version = "22.2.0"
 
+EPW_PATH = Path(module_path, EPW_RELATIVE_PATH)
+
 logging.basicConfig()
 logger = logging.getLogger("ShoeBox")
 # logger.setLevel(logging.DEBUG)
@@ -168,7 +170,7 @@ class ShoeBox:
     ):
         self.name = name
         self.output_directory = output_directory
-        self.shoebox_config = shoebox_config
+        self.shoebox_config = shoebox_config  # TODO if this changes, update the json
         self.epw = epw
         self.hourly = None
         self.monthly = None
@@ -201,25 +203,6 @@ class ShoeBox:
         epw = os.listdir(EPW_PATH)[
             int(schema["base_epw"].extract_storage_values(vector))
         ]
-        # shoebox_config = ShoeboxConfiguration()
-        # shoebox_config.width = schema["width"].extract_storage_values(vector)
-        # shoebox_config.height = schema["height"].extract_storage_values(vector)
-        # shoebox_config.floor_2_facade = schema["floor_2_facade"].extract_storage_values(
-        #     vector
-        # )
-        # shoebox_config.core_2_perim = schema["core_2_perim"].extract_storage_values(
-        #     vector
-        # )
-        # shoebox_config.roof_2_footprint = schema[
-        #     "roof_2_footprint"
-        # ].extract_storage_values(vector)
-        # shoebox_config.ground_2_footprint = schema[
-        #     "ground_2_footprint"
-        # ].extract_storage_values(vector)
-        # shoebox_config.wwr = schema["wwr"].extract_storage_values(vector)
-        # shoebox_config.orientation = schema["orientation"].extract_storage_values(
-        #     vector
-        # )
         seed = int(schema["shading_seed"].extract_storage_values(vector))
         np.random.seed(seed)
         shoebox_config.shading_vect = (

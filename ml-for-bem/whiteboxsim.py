@@ -1,10 +1,16 @@
 import os
+import sys
 from glob import glob
 from pathlib import Path
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 import logging
+
+module_path = os.path.abspath(os.path.join(".."))
+module_path = Path(module_path, "ml-for-building-energy-modeling", "ml-for-bem")
+if module_path not in sys.path:
+    sys.path.append(str(module_path))
 
 logging.basicConfig()
 logger = logging.getLogger("WhiteBoxSim")
@@ -26,6 +32,7 @@ from shoeboxer.shoebox_config import ShoeboxConfiguration
 from shoeboxer.builder import ShoeBox
 
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
+SHOEBOX_PATH = Path(module_path, SHOEBOX_RELATIVE_PATH)
 
 constructions_lib_path = os.path.join(
     os.getcwd(),
