@@ -8,7 +8,6 @@ import os
 import sys
 import jsondiff
 import copy
-from enum import IntEnum
 import math
 import calendar
 
@@ -24,10 +23,12 @@ from archetypal.idfclass.sql import Sql
 from archetypal.schedule import Schedule, ScheduleTypeLimits
 
 from schedules import mutate_timeseries
-from schema import TimeSeriesOutput
+from utils.constants import *
 
 from shoeboxer.shoebox_config import ShoeboxConfiguration
 import shoeboxer.geometry_utils as gu
+
+# from schema import Schema
 
 import numpy as np
 import pandas as pd
@@ -36,89 +37,9 @@ settings.energyplus_location = Path("D:\EnergyPlusV22-2-0")
 settings.ep_version = "22.2.0"
 
 logging.basicConfig()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ShoeBox")
+# logger.setLevel(logging.DEBUG)
 logger.setLevel(logging.INFO)
-
-
-class HRV(IntEnum):
-    NoHRV = 0
-    Sensible = 1
-    Enthalpy = 2
-
-
-class Econ(IntEnum):
-    NoEconomizer = 0
-    DifferentialDryBulb = 1
-    DifferentialEnthalpy = 2
-
-
-class MechVentMode(IntEnum):
-    Off = 0
-    AllOn = 1
-    OccupancySchedule = 2
-
-
-class BooleanParam(IntEnum):
-    false = 0
-    true = 1
-
-
-TIMESERIES_OUTPUTS = [
-    TimeSeriesOutput(
-        name="Heating",
-        key="OUTPUT:VARIABLE",
-        var_name="Zone Ideal Loads Supply Air Total Heating Energy",
-        freq="Hourly",
-        store_output=True,
-    ),
-    TimeSeriesOutput(
-        name="Cooling",
-        key="OUTPUT:VARIABLE",
-        var_name="Zone Ideal Loads Supply Air Total Cooling Energy",
-        freq="Hourly",
-        store_output=True,
-    ),
-    TimeSeriesOutput(
-        name="Lighting",
-        key="OUTPUT:VARIABLE",
-        var_name="Lights Total Heating Energy",
-        freq="Hourly",
-        store_output=False,
-    ),
-    TimeSeriesOutput(
-        name="TransmittedSolar",
-        key="OUTPUT:VARIABLE",
-        var_name="Zone Windows Total Transmitted Solar Radiation Energy",
-        freq="Hourly",
-        store_output=False,
-    ),
-]
-
-SCHEDULE_PATHS = [
-    ["Loads", "EquipmentAvailabilitySchedule"],
-    ["Loads", "LightsAvailabilitySchedule"],
-    ["Loads", "OccupancySchedule"],
-    # ["Conditioning", "MechVentSchedule"],
-    # ["Conditioning", "CoolingSchedule"],
-    # ["Conditioning", "HeatingSchedule"],
-    # ["Conditioning", "HeatingSetpointSchedule"],
-    # ["Conditioning", "HeatingSetpointSchedule"],
-    # ["DomesticHotWater", "WaterSchedule"],
-    # ["Ventilation", "NatVentSchedule"],
-    # ["Ventilation", "ScheduledVentilationSchedule"],
-    # ["Windows", "ZoneMixingAvailabilitySchedule"],
-    # ["Windows", "ShadingSystemAvailabilitySchedule"],
-    # ["Windows", "AfnWindowAvailabilitySchedule"],
-]
-
-sched_type_limits = dict(
-    key="SCHEDULETYPELIMITS",
-    Name="Fraction",
-    Lower_Limit_Value=0.0,
-    Upper_Limit_Value=1.0,
-    Numeric_Type="Continuous",
-    Unit_Type="Dimensionless",
-)
 
 
 def day_to_epbunch(dsched, idx=0, sched_lim=sched_type_limits):
@@ -234,14 +155,6 @@ def template_dict(
     )
 
 
-def get_template_dict_from_archetypal(template):
-    pass  # TODO make class function
-
-
-def get_template_dict_from_vector(template):
-    pass  # TODO
-
-
 class ShoeBox:
     def __init__(
         self,
@@ -259,7 +172,6 @@ class ShoeBox:
         self.epw = epw
         self.hourly = None
         self.monthly = None
-
         perim_depth = shoebox_config.floor_2_facade * shoebox_config.height
         core_depth = shoebox_config.core_2_perim * perim_depth
         length = perim_depth + core_depth
@@ -278,6 +190,83 @@ class ShoeBox:
         self.ep_json_path = fname
         self.save_json()
         self.update_epjson(template_dict, change_summary=change_summary)
+
+    @classmethod
+    def from_archetypal(cls, template):
+        pass  # TODO make class function
+
+    @classmethod
+    def from_vector(cls, name, schema, shoebox_config, vector, schedules, **kwargs):
+        # from schema import Schema - assert schema is schema
+        epw = os.listdir(EPW_PATH)[
+            int(schema["base_epw"].extract_storage_values(vector))
+        ]
+        # shoebox_config = ShoeboxConfiguration()
+        # shoebox_config.width = schema["width"].extract_storage_values(vector)
+        # shoebox_config.height = schema["height"].extract_storage_values(vector)
+        # shoebox_config.floor_2_facade = schema["floor_2_facade"].extract_storage_values(
+        #     vector
+        # )
+        # shoebox_config.core_2_perim = schema["core_2_perim"].extract_storage_values(
+        #     vector
+        # )
+        # shoebox_config.roof_2_footprint = schema[
+        #     "roof_2_footprint"
+        # ].extract_storage_values(vector)
+        # shoebox_config.ground_2_footprint = schema[
+        #     "ground_2_footprint"
+        # ].extract_storage_values(vector)
+        # shoebox_config.wwr = schema["wwr"].extract_storage_values(vector)
+        # shoebox_config.orientation = schema["orientation"].extract_storage_values(
+        #     vector
+        # )
+        seed = int(schema["shading_seed"].extract_storage_values(vector))
+        np.random.seed(seed)
+        shoebox_config.shading_vect = (
+            np.random.random(SHADING_DIV_SIZE) * math.pi / 2.5
+        )  # TODO how to divide this? Do this in schema
+        window_settings = schema["WindowSettings"].extract_storage_values(vector)
+        td = template_dict(
+            schedules,  # TODO
+            people_density=schema["PeopleDensity"].extract_storage_values(vector),
+            lighting_power_density=schema[
+                "LightingPowerDensity"
+            ].extract_storage_values(vector),
+            equipment_power_density=schema[
+                "EquipmentPowerDensity"
+            ].extract_storage_values(vector),
+            infiltration_per_area=schema["Infiltration"].extract_storage_values(vector),
+            ventilation_per_floor_area=schema[
+                "VentilationPerArea"
+            ].extract_storage_values(vector),
+            ventilation_per_person=schema[
+                "VentilationPerPerson"
+            ].extract_storage_values(vector),
+            ventilation_mode=schema["VentilationMode"].extract_storage_values(vector),
+            heating_sp=schema["HeatingSetpoint"].extract_storage_values(vector),
+            cooling_sp=schema["CoolingSetpoint"].extract_storage_values(vector),
+            # humid_max=81, #TODO?
+            # humid_min=21,
+            # sat_max=28,
+            # sat_min=17,
+            heat_recovery=schema["RecoverySettings"].extract_storage_values(vector),
+            economizer=schema["EconomizerSettings"].extract_storage_values(vector),
+            wall_r_val=schema["FacadeRValue"].extract_storage_values(vector),
+            wall_mass=schema["FacadeMass"].extract_storage_values(vector),
+            roof_r_val=schema["RoofRValue"].extract_storage_values(vector),
+            roof_mass=schema["RoofMass"].extract_storage_values(vector),
+            slab_r_val=schema["SlabRValue"].extract_storage_values(vector),
+            shgc=window_settings[1],
+            window_u_val=window_settings[0],
+            # visible_transmittance=0.8,  # TODO?
+        )
+        return cls(
+            name=name,
+            shoebox_config=shoebox_config,
+            epw=Path(EPW_PATH, epw),
+            template_dict=td,
+            **kwargs,
+        )
 
     def save_json(self):
         with open(self.ep_json_path, "w") as f:
@@ -316,7 +305,7 @@ class ShoeBox:
 
     def rotate_relative_north(self, orient):
         self.epjson["Building"]["Building"]["north_axis"] = int(orient)
-        logger.info(
+        logger.debug(
             f"Changed orientation of relative north to {self.epjson['Building']['Building']['north_axis']}"
         )
 
@@ -365,9 +354,7 @@ class ShoeBox:
             r_vals.append((layer_name, r_val, material_def))
         return r_vals
 
-    def change_construction_r(
-        self, construction, new_r
-    ):  # TODO: why is slab not working???
+    def change_construction_r(self, construction, new_r):
         """
         Change a Construction's insulation layer to reach a target u
         """
@@ -388,7 +375,7 @@ class ShoeBox:
             )
         insulator_def["thickness"] = round(new_thickness, 3)
         new_r_vals = self.calculate_r(construction)
-        logger.info(
+        logger.debug(
             f"New R-val = {sum(r for _, r, _ in new_r_vals)} compared to desired {new_r}"
         )
 
@@ -410,44 +397,59 @@ class ShoeBox:
         thermal mass is in J/Km2 TM = c * density * thickness
         """
         # TODO: assuming that the roof cannot have concrete entirely removed - only floor gets wood
-        if (
-            new_thermal_mass < 40000
-            and "ExteriorWall" in list(construction.values())[0]
-        ):
+        # if (
+        #     new_thermal_mass < 90000
+        #     and "ExteriorWall" in list(construction.values())[0]
+        # ):
+        #     logger.info(
+        #         "Light mass wall condition, replacing high-mass stucco with wood siding."
+        #     )
+        #     construction["outside_layer"] = "ExteriorWallWoodSiding"
+        #     del construction["layer_4"]
+        #     logger.debug("Recalculating r-values...")
+        #     self.change_construction_r(construction, new_r_val)
+
+        def calc_needed_tm(construction):
+            tm_vals = self.calculate_tm(construction)
+            current_tm_val = sum(tm for _, tm, _ in tm_vals)
+            sorted_layers = sorted(tm_vals, key=lambda x: -x[1])
+            mass_layer = sorted_layers[0]
+            mass_layer_tm = mass_layer[1]
+            mass_layer_def = mass_layer[2]
+            mass_without_concrete = current_tm_val - mass_layer_tm
+            needed_tm = new_thermal_mass - mass_without_concrete
+            logger.debug(f"Current mass: {current_tm_val}")
+            logger.debug(f"Needed mass: {new_thermal_mass}")
+            logger.debug(f"Needed mass of concrete: {needed_tm}")
+            logger.debug(f"mass_without_concrete: {mass_without_concrete}")
+            return mass_layer, mass_layer_def, needed_tm
+
+        mass_layer, mass_layer_def, needed_tm = calc_needed_tm(construction)
+
+        # Check if mass/rvalue combo is possible
+        if needed_tm < 0 and "ExteriorWall" in list(construction.values())[0]:
             logger.info(
                 "Light mass wall condition, replacing high-mass stucco with wood siding."
             )
             construction["outside_layer"] = "ExteriorWallWoodSiding"
             del construction["layer_4"]
-            logger.info("Recalculating r-values...")
+            logger.debug("Recalculating r-values...")
             self.change_construction_r(construction, new_r_val)
+            mass_layer, mass_layer_def, needed_tm = calc_needed_tm(construction)
 
-        tm_vals = self.calculate_tm(construction)
-        current_tm_val = sum(tm for _, tm, _ in tm_vals)
-        sorted_layers = sorted(tm_vals, key=lambda x: -x[1])
-        mass_layer = sorted_layers[0]
-        mass_layer_tm = mass_layer[1]
-        mass_layer_def = mass_layer[2]
-        mass_without_concrete = current_tm_val - mass_layer_tm
-        needed_tm = new_thermal_mass - mass_without_concrete
-        # logger.info(f"Current mass: {current_tm_val}")
-        # logger.info(f"Needed mass: {new_thermal_mass}")
-        # logger.info(f"Needed mass of concrete: {needed_tm}")
-        # logger.info(f"mass_without_concrete: {mass_without_concrete}")
-        # Check if mass/rvalue combo is possible
-        assert needed_tm > 0, "Desired mass is not possible with given r-value"
         new_thickness = (
             needed_tm / mass_layer_def["specific_heat"] / mass_layer_def["density"]
         )
         new_thickness = round(new_thickness, 3)
+        assert new_thickness > 0, "Desired mass is not possible with given r-value"
         if new_thickness < 0.003:
             logger.warning(
-                f"Thickness of insulation is less than 0.003, at {new_thickness}. This will raise a warning in EnergyPlus."  # TODO delete??
+                f"Thickness of insulation is less than 0.003, at {new_thickness}. This will raise a warning in EnergyPlus."  # TODO delete layer??
             )
-        logger.info(f"New thickness of {new_thickness} for {mass_layer[0]}")
+        logger.debug(f"New thickness of {new_thickness} for {mass_layer[0]}")
         mass_layer_def["thickness"] = new_thickness
         new_tm_vals = self.calculate_tm(construction)
-        logger.info(
+        logger.debug(
             f"New thermal mass = {sum(tm for _, tm, _ in new_tm_vals)} compared to desired {new_thermal_mass}"
         )
 
@@ -576,7 +578,7 @@ class ShoeBox:
         """
         Update Basic HVAC stuff
         # TODO: Should we also be updating the Sizing:Zone object?
-        # TODO: limits are needed to avoid overheating - no limits, no stress (esp. for large shoeboxes) - cooling had large numbers, heating has no limit
+        # limits are needed to avoid overheating - no limits, no stress (esp. for large shoeboxes) - cooling had large numbers, heating has no limit
         # OR look at sizing options for ideal loads?? Ask ben
         """
         for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
@@ -648,7 +650,7 @@ class ShoeBox:
 
         mech_vent_sched_mode = MechVentMode(template_dict["ventilation_mode"]).name
 
-        logger.info(f"Mechanical ventilation schedule: {mech_vent_sched_mode}")
+        logger.debug(f"Mechanical ventilation schedule: {mech_vent_sched_mode}")
         # TODO: check outputs of when ventilation is on
         self.epjson["DesignSpecification:OutdoorAir"]["SharedDesignSpecOutdoorAir"] = {
             "outdoor_air_flow_per_person": template_dict["ventilation_per_person"],
@@ -706,12 +708,13 @@ class ShoeBox:
         )
 
     def idf(self, run_simulation=True):
+        logger.info(f"Building idf for {self.ep_json_path}")
         idf_path = self.convert(path=self.ep_json_path)
         idf = IDF(idf_path, epw=self.epw)
         if run_simulation:
-            self.hourly, self.monthly = self.simulate(idf)
+            hourly, monthly = self.simulate(idf)
             logger.info("HEATING/COOLING EUI")
-            logger.info(sb.monthly.sum() / sb.floor_area * 2.77e-07)
+            logger.info(monthly.sum() / self.floor_area * 2.77e-07)
         return idf
 
     @classmethod
@@ -748,7 +751,7 @@ class ShoeBox:
         return ep_df_hourly, ep_df_monthly
 
     def convert(self, path, file_type="idf"):
-        logger.info(f"Converting {path} to {file_type}")
+        logger.debug(f"Converting {path} to {file_type}")
         # Define the command and its arguments
         cmd = settings.energyplus_location / "energyplus.exe"
         args = ["--convert-only", "--output-directory", self.output_directory, path]
@@ -796,7 +799,7 @@ if __name__ == "__main__":
     shoebox_config.ground_2_footprint = 0.2
     shoebox_config.wwr = 0.2
     shoebox_config.orientation = 0
-    shoebox_config.shading_vect = np.random.random(12) * math.pi / 3
+    shoebox_config.shading_vect = np.random.random(SHADING_DIV_SIZE) * math.pi / 3
 
     # MAKE FAKE SCHEDULES
     schedules = np.zeros((3, 21))

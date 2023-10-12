@@ -16,11 +16,9 @@ from schema import (
     WhiteboxSimulation,
     WindowParameter,
     SchedulesParameters,
-    WINDOW_TYPES,
-    ECONOMIZER_TYPES,
-    RECOVERY_TYPES,
 )
 from utils.nrel_uitls import ResStockConfiguration, CLIMATEZONES, RESTYPES
+from utils.constants import *
 import logging
 
 import wandb
@@ -545,16 +543,12 @@ def sample(sample_name, GCS_UPLOAD_DIR):
             schema.update_storage_batch(
                 storage_batch,
                 parameter="EconomizerSettings",
-                value=np.random.randint(
-                    0, len(ECONOMIZER_TYPES), size=(window_vals.shape)
-                ),
+                value=np.random.randint(0, len(Econ), size=(window_vals.shape)),
             )
             schema.update_storage_batch(
                 storage_batch,
                 parameter="RecoverySettings",
-                value=np.random.randint(
-                    0, len(RECOVERY_TYPES), size=(window_vals.shape)
-                ),
+                value=np.random.randint(0, len(HRV), size=(window_vals.shape)),
             )
 
             # Set Variation ID
