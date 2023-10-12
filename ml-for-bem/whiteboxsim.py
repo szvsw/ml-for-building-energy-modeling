@@ -7,8 +7,11 @@ import math
 import matplotlib.pyplot as plt
 import logging
 
-module_path = os.path.abspath(os.path.join(".."))
-module_path = Path(module_path, "ml-for-building-energy-modeling", "ml-for-bem")
+module_path = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), ".")
+)
+# module_path = os.path.abspath(os.path.join("."))
+# module_path = Path(module_path, "ml-for-bem")
 if module_path not in sys.path:
     sys.path.append(str(module_path))
 

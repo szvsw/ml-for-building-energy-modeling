@@ -11,8 +11,8 @@ import copy
 import math
 import calendar
 
-module_path = os.path.abspath(os.path.join(".."))
-module_path = Path(module_path, "ml-for-building-energy-modeling", "ml-for-bem")
+module_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+# module_path = Path(module_path, "ml-for-bem")
 if module_path not in sys.path:
     sys.path.append(str(module_path))
 
@@ -205,7 +205,7 @@ class ShoeBox:
         ]
         seed = int(schema["shading_seed"].extract_storage_values(vector))
         np.random.seed(seed)
-        if shoebox_config.shading_vect is None:
+        if hasattr(shoebox_config, "shading_vect") == False:
             logger.debug("Creating shading from seed.")
             shoebox_config.shading_vect = (
                 np.random.random(SHADING_DIV_SIZE) * math.pi / 2.5
