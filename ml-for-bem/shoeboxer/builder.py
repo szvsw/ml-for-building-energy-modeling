@@ -205,9 +205,11 @@ class ShoeBox:
         ]
         seed = int(schema["shading_seed"].extract_storage_values(vector))
         np.random.seed(seed)
-        shoebox_config.shading_vect = (
-            np.random.random(SHADING_DIV_SIZE) * math.pi / 2.5
-        )  # TODO how to divide this? Do this in schema
+        if shoebox_config.shading_vect is None:
+            logger.debug("Creating shading from seed.")
+            shoebox_config.shading_vect = (
+                np.random.random(SHADING_DIV_SIZE) * math.pi / 2.5
+            )  # TODO how to divide this? Do this in schema
         window_settings = schema["WindowSettings"].extract_storage_values(vector)
         td = template_dict(
             schedules,  # TODO

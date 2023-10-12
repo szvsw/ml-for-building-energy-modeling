@@ -316,22 +316,23 @@ def build_shading(sb_json, angles, radius=10, override=True):
     shading_coords[:, 1] += center_pt[1]
     shading_epbunches = {}
     for i, h in enumerate(heights):
-        name = f"SHADER_{i}"
-        base_coords = shading_coords[i : i + 2, :]
-        coords = []
-        coords.append((base_coords[0, 0], base_coords[0, 1], h))
-        coords.append((base_coords[0, 0], base_coords[0, 1], 0.0))
-        coords.append((base_coords[1, 0], base_coords[1, 1], 0.0))
-        coords.append((base_coords[1, 0], base_coords[1, 1], h))
-        shading_epbunch = dict(
-            # name=name,
-            number_of_vertices=4,
-            vertices=[
-                {f"vertex_{j}_coordinate": c[k] for k, j in enumerate(["x", "y", "z"])}
-                for c in coords
-            ],
-        )
-        shading_epbunches[name] = shading_epbunch
+        if h > 0:
+            name = f"SHADER_{i}"
+            base_coords = shading_coords[i : i + 2, :]
+            coords = []
+            coords.append((base_coords[0, 0], base_coords[0, 1], h))
+            coords.append((base_coords[0, 0], base_coords[0, 1], 0.0))
+            coords.append((base_coords[1, 0], base_coords[1, 1], 0.0))
+            coords.append((base_coords[1, 0], base_coords[1, 1], h))
+            shading_epbunch = dict(
+                # name=name,
+                number_of_vertices=4,
+                vertices=[
+                    {f"vertex_{j}_coordinate": c[k] for k, j in enumerate(["x", "y", "z"])}
+                    for c in coords
+                ],
+            )
+            shading_epbunches[name] = shading_epbunch
     sb_json["Shading:Building:Detailed"] = shading_epbunches
     return sb_json
 
