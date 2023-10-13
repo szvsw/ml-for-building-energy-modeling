@@ -154,3 +154,5 @@ wandb/
 artifacts/
 ml-for-bem/data/sim_results/
 ml-for-bem/data/batch_results/
+
+ml-for-bem/data/hdf5/single-climate-zone/
