@@ -203,12 +203,12 @@ def sample_and_simulate():
     logger.info(f"WARNING COUNT: {warnings}")
     logger.info(f"ERROR COUNT:   {severe_errors}")
     err = None
-    if warnings > (19 if os.name == "nt" else 20) or severe_errors > 0:
+    if warnings > (19 if os.name == "nt" else 22) or severe_errors > 0:
         with open(idf.simulation_dir / "eplusout.err", "r") as f:
             err = f.read()
 
     shutil.rmtree(output_dir)
-    return sb_name, simple_dict, monthly_df, err
+    return sb_name, simple_dict, monthly_df, err, space_config
 
 
 def batch_sim(n: int):
@@ -221,7 +221,7 @@ def batch_sim(n: int):
             logger.error("Too many failed simulations! Exiting.")
             exit()
         try:
-            id, simple_dict, monthly_results, err = sample_and_simulate()
+            id, simple_dict, monthly_results, err, space_config = sample_and_simulate()
         except BaseException as e:
             logger.error("Error during simulation! Continuing.\n\n\n", exc_info=e)
         else:
@@ -241,10 +241,10 @@ def batch_sim(n: int):
                 logger.info(f"Successfully Saved Results! {len(results)}\n\n")
             if err != None:
                 err_list.append((id, err))
-    return results, err_list
+    return results, err_list, space_config
 
 
-def save_and_upload_batch(batch_dataframe, errs, bucket, experiment_name):
+def save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experiment_name):
     run_name = str(uuid4())
     output_folder = data_root / "batch_results"
     os.makedirs(output_folder, exist_ok=True)
@@ -278,6 +278,18 @@ def save_and_upload_batch(batch_dataframe, errs, bucket, experiment_name):
             )
         logger.info("Uploading Errors Complete")
 
+    # check the aws batch array index
+    array_batch_index = os.environ.get("AWS_BATCH_JOB_ARRAY_INDEX", None)
+    if array_batch_index == 1 or True:
+        logger.info("Uploading Space Config...")
+        with open(data_root / "space_definition.json", "w") as f:
+            json.dump(space_config, f, indent=4)
+        client.upload_file(
+            Filename=str(data_root / "space_definition.json"),
+            Bucket=bucket,
+            Key=f"{experiment_name}/space_definition.json",
+        )
+
 
 # make a click function which accepts a number of simulations to run, a bucket name, and an experiment name
 @click.command()
@@ -287,8 +299,8 @@ def save_and_upload_batch(batch_dataframe, errs, bucket, experiment_name):
     "--experiment_name", default="single_climate_zone/test", help="Experiment name"
 )
 def main(n, bucket, experiment_name):
-    batch_dataframe, errs = batch_sim(n)
-    save_and_upload_batch(batch_dataframe, errs, bucket, experiment_name)
+    batch_dataframe, errs, space_config = batch_sim(n)
+    save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experiment_name)
 
 
 if __name__ == "__main__":
