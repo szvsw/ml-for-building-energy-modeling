@@ -35,8 +35,6 @@ import shoeboxer.geometry_utils as gu
 import numpy as np
 import pandas as pd
 
-settings.energyplus_location = Path("D:\EnergyPlusV22-2-0")
-settings.ep_version = "22.2.0"
 
 EPW_PATH = Path(module_path, EPW_RELATIVE_PATH)
 
@@ -694,7 +692,7 @@ class ShoeBox:
     def idf(self, run_simulation=True):
         logger.info(f"Building idf for {self.ep_json_path}")
         idf_path = self.convert(path=self.ep_json_path)
-        idf = IDF(idf_path, epw=self.epw)
+        idf = IDF(idf_path, epw=self.epw, output_directory=self.output_directory)
         if run_simulation:
             hourly, monthly = self.simulate(idf)
             logger.info("HEATING/COOLING EUI")
@@ -774,6 +772,8 @@ class ShoeBox:
 
 
 if __name__ == "__main__":
+    settings.energyplus_location = Path("D:\EnergyPlusV22-2-0")
+    settings.ep_version = "22.2.0"
     shoebox_config = ShoeboxConfiguration()
     shoebox_config.width = 10
     shoebox_config.height = 10
