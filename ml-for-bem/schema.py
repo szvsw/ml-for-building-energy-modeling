@@ -419,14 +419,19 @@ class RValueParameter(BuildingTemplateParameter):
         return self.to_ml(value=val.r_value)
 
 
-class TMassParameter(BuildingTemplateParameter):
+class TMassParameter(OneHotParameter):
+    __slots__ = "path"
+
     def __init__(self, path, **kwargs):
-        super().__init__(path, **kwargs)
+        super().__init__(count=4, **kwargs)
+        self.path = path.split(".")
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        desired_heat_capacity_per_wall_area = self.extract_storage_values(
-            whitebox_sim.storage_vector
-        )
+        hot_bin = self.extract_storage_values(whitebox_sim.storage_vector)
+        # hot_bin = self.get_tmas_idx(value)
+        desired_heat_capacity_per_wall_area = ThermalMassCapacities[
+            ThermalMassConstructions(hot_bin).name
+        ].value
         for zone in ["Perimeter", "Core"]:
             zone_obj = getattr(whitebox_sim.template, zone)
             constructions = zone_obj.Constructions
@@ -444,7 +449,6 @@ class TMassParameter(BuildingTemplateParameter):
             thickness = (
                 desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
             ) / volumetric_cp
-            # thickness = desired_heat_capacity_per_wall_area / (cp * rho)
             if thickness < 0.004:
                 all_layers_except_mass = [a for a in construction.Layers]
                 all_layers_except_mass.pop(0)
@@ -453,14 +457,6 @@ class TMassParameter(BuildingTemplateParameter):
                 concrete_layer.Thickness = thickness
 
     def extract_from_template(self, building_template):
-        """
-        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
-        Works as the reverse of mutate_simulation_object
-        Args:
-            whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
-        """
-        zone = "Perimeter"
         if "Facade" in self.name:
             surface = "Facade"
         elif "Roof" in self.name:
@@ -471,7 +467,78 @@ class TMassParameter(BuildingTemplateParameter):
         val = building_template.Perimeter
         for attr in path:
             val = getattr(val, attr)
-        return self.to_ml(value=val)
+        hot_bin = self.get_tmas_idx(val)
+        return self.to_ml(value=hot_bin)
+
+    def get_tmas_idx(self, val):
+        if val >= ThermalMassCapacities.Concrete:
+            hot_bin = ThermalMassConstructions.Concrete.value
+        elif (
+            val < ThermalMassCapacities.Concrete and val >= ThermalMassCapacities.Brick
+        ):
+            hot_bin = ThermalMassConstructions.Brick.value
+        elif (
+            val < ThermalMassCapacities.Brick and val >= ThermalMassCapacities.WoodFrame
+        ):
+            hot_bin = ThermalMassConstructions.WoodFrame.value
+        elif val < ThermalMassCapacities.WoodFrame:
+            hot_bin = ThermalMassConstructions.SteelFrame.value
+        return hot_bin
+
+
+# class TMassParameter(BuildingTemplateParameter):
+#     def __init__(self, path, **kwargs):
+#         super().__init__(path, **kwargs)
+
+#     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+#         desired_heat_capacity_per_wall_area = self.extract_storage_values(
+#             whitebox_sim.storage_vector
+#         )
+#         for zone in ["Perimeter", "Core"]:
+#             zone_obj = getattr(whitebox_sim.template, zone)
+#             constructions = zone_obj.Constructions
+#             construction = getattr(constructions, self.path[0])
+
+#             concrete_layer = construction.Layers[0]  # concrete
+#             material = concrete_layer.Material
+#             cp = material.SpecificHeat
+#             rho = material.Density
+#             volumetric_cp = cp * rho
+#             old_thermal_mass = construction.heat_capacity_per_unit_wall_area
+#             thermal_mass_without_concrete = (
+#                 old_thermal_mass - concrete_layer.heat_capacity
+#             )
+#             thickness = (
+#                 desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
+#             ) / volumetric_cp
+#             # thickness = desired_heat_capacity_per_wall_area / (cp * rho)
+#             if thickness < 0.004:
+#                 all_layers_except_mass = [a for a in construction.Layers]
+#                 all_layers_except_mass.pop(0)
+#                 construction.Layers = all_layers_except_mass
+#             else:
+#                 concrete_layer.Thickness = thickness
+
+#     def extract_from_template(self, building_template):
+#         """
+#         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+#         Works as the reverse of mutate_simulation_object
+#         Args:
+#             whitebox_sim: WhiteboxSimulation
+#             building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+#         """
+#         zone = "Perimeter"
+#         if "Facade" in self.name:
+#             surface = "Facade"
+#         elif "Roof" in self.name:
+#             surface = "Roof"
+#         elif "Slab" in self.name:
+#             surface = "Slab"
+#         path = ["Constructions", surface, "heat_capacity_per_unit_wall_area"]
+#         val = building_template.Perimeter
+#         for attr in path:
+#             val = getattr(val, attr)
+#         return self.to_ml(value=val)
 
 
 # class WindowParameter(OneHotParameter):
@@ -499,7 +566,7 @@ class WindowParameter(NumericParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        pass
+        pass # TODO
         # logger.info(
         #     "Skipping update of window parameters - will build simple window in build_shoebox"
         # )
@@ -943,23 +1010,35 @@ class Schema:
                 TMassParameter(
                     name="FacadeMass",
                     path="Facade",
-                    min=13000,  # TODO need to revisit minimums of all thermal mass
-                    max=800000,  # TODO: reduce a bit?
-                    mean=80000,
-                    std=20000,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior wall thermal mass (J/Km2)",
                 ),
                 TMassParameter(
                     name="RoofMass",
                     path="Roof",
-                    min=13000,
-                    max=1500000,
-                    mean=200000,
-                    std=200000,
                     source="https://www.designingbuildings.co.uk/",
-                    info="Exterior roof thermal mass (J/Km2)",
+                    info="Exterior wall thermal mass (J/Km2)",
                 ),
+                # TMassParameter(
+                #     name="FacadeMass",
+                #     path="Facade",
+                #     min=13000,  # TODO need to revisit minimums of all thermal mass
+                #     max=800000,  # TODO: reduce a bit?
+                #     mean=80000,
+                #     std=20000,
+                #     source="https://www.designingbuildings.co.uk/",
+                #     info="Exterior wall thermal mass (J/Km2)",
+                # ),
+                # TMassParameter(
+                #     name="RoofMass",
+                #     path="Roof",
+                #     min=13000,
+                #     max=1500000,
+                #     mean=200000,
+                #     std=200000,
+                #     source="https://www.designingbuildings.co.uk/",
+                #     info="Exterior roof thermal mass (J/Km2)",
+                # ),
                 RValueParameter(
                     name="FacadeRValue",
                     path="Facade",
@@ -1005,7 +1084,7 @@ class Schema:
                 # ),
                 OneHotParameter(
                     name="EconomizerSettings",
-                    count=3,
+                    count=2,
                     info="Flag for economizer use.",
                 ),
                 OneHotParameter(

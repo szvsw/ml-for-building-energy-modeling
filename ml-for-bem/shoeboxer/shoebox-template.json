@@ -661,12 +661,42 @@
         },
         "ExteriorRoofConcrete": {
             "conductivity": 2,
-            "density": 2400,
+            "density": 2100,
             "roughness": "Rough",
             "solar_absorptance": 0.7,
-            "specific_heat": 950,
+            "specific_heat": 1040,
             "thermal_absorptance": 0.9,
             "thickness": 0.203,
+            "visible_absorptance": 0.7
+        },
+        "ExteriorRoofBrick": {
+            "conductivity": 0.41,
+            "density": 1171,
+            "roughness": "Rough",
+            "solar_absorptance": 0.5,
+            "specific_heat": 880,
+            "thermal_absorptance": 0.9,
+            "thickness": 0.1,
+            "visible_absorptance": 0.5
+        },
+        "ExteriorRoofWoodFrame": {
+            "conductivity": 0.13,
+            "density": 530,
+            "roughness": "Rough",
+            "solar_absorptance": 0.6,
+            "specific_heat": 900,
+            "thermal_absorptance": 0.9,
+            "thickness": 0.1,
+            "visible_absorptance": 0.7
+        },
+        "ExteriorRoofSteelFrame": {
+            "conductivity": 45.3,
+            "density": 7830,
+            "roughness": "Rough",
+            "solar_absorptance": 0.4,
+            "specific_heat": 500,
+            "thermal_absorptance": 0.9,
+            "thickness": 0.005,
             "visible_absorptance": 0.7
         },
         "ExteriorRoofVaporpermeableFelt": {
@@ -699,6 +729,36 @@
             "thickness": 0.203,
             "visible_absorptance": 0.7
         },
+        "ExteriorWallBrick": {
+            "conductivity": 0.41,
+            "density": 1171,
+            "roughness": "Rough",
+            "solar_absorptance": 0.5,
+            "specific_heat": 880,
+            "thermal_absorptance": 0.9,
+            "thickness": 0.1,
+            "visible_absorptance": 0.5
+        },
+        "ExteriorWallWoodFrame": {
+            "conductivity": 0.13,
+            "density": 530,
+            "roughness": "Rough",
+            "solar_absorptance": 0.6,
+            "specific_heat": 900,
+            "thermal_absorptance": 0.9,
+            "thickness": 0.1,
+            "visible_absorptance": 0.6
+        },
+        "ExteriorWallSteelFrame": {
+            "conductivity": 45.3,
+            "density": 7830,
+            "roughness": "Rough",
+            "solar_absorptance": 0.4,
+            "specific_heat": 500,
+            "thermal_absorptance": 0.9,
+            "thickness": 0.005,
+            "visible_absorptance": 0.7
+        },
         "ExteriorWallMineralWool": {
             "conductivity": 0.041,
             "density": 155,
@@ -728,16 +788,6 @@
             "thermal_absorptance": 0.9,
             "thickness": 0.025,
             "visible_absorptance": 0.7
-        },
-        "ExteriorWallWoodSiding": {
-            "conductivity": 0.13,
-            "density": 530,
-            "roughness": "Rough",
-            "solar_absorptance": 0.6,
-            "specific_heat": 900,
-            "thermal_absorptance": 0.9,
-            "thickness": 0.009,
-            "visible_absorptance": 0.6
         },
         "GroundSlabCarpet": {
             "conductivity": 0.06,
