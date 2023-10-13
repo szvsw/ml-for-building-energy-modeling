@@ -19,6 +19,20 @@ WINDOW_TYPES = {
 }
 
 
+class ThermalMassConstructions(IntEnum):
+    Concrete = 0
+    Brick = 1
+    WoodFrame = 2
+    SteelFrame = 3
+
+
+class ThermalMassCapacities(IntEnum):  # TODO
+    Concrete = 450000
+    Brick = 100000
+    WoodFrame = 50000
+    SteelFrame = 20000
+
+
 class HRV(IntEnum):
     NoHRV = 0
     Sensible = 1

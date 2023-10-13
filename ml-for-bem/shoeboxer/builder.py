@@ -11,7 +11,9 @@ import copy
 import math
 import calendar
 
-module_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+module_path = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+)
 # module_path = Path(module_path, "ml-for-bem")
 if module_path not in sys.path:
     sys.path.append(str(module_path))
@@ -121,7 +123,7 @@ def template_dict(
     heat_recovery=0,
     economizer=1,
     wall_r_val=2,
-    wall_mass=30000,  # need to revisit minimums
+    wall_mass=2,  # need to revisit minimums
     roof_r_val=6,
     roof_mass=200000,
     slab_r_val=4,
@@ -212,7 +214,7 @@ class ShoeBox:
             )  # TODO how to divide this? Do this in schema
         window_settings = schema["WindowSettings"].extract_storage_values(vector)
         td = template_dict(
-            schedules,  # TODO
+            schedules,
             people_density=schema["PeopleDensity"].extract_storage_values(vector),
             lighting_power_density=schema[
                 "LightingPowerDensity"
@@ -230,7 +232,7 @@ class ShoeBox:
             ventilation_mode=schema["VentilationMode"].extract_storage_values(vector),
             heating_sp=schema["HeatingSetpoint"].extract_storage_values(vector),
             cooling_sp=schema["CoolingSetpoint"].extract_storage_values(vector),
-            # humid_max=81, #TODO?
+            # humid_max=81,
             # humid_min=21,
             # sat_max=28,
             # sat_min=17,
@@ -375,68 +377,65 @@ class ShoeBox:
             tm_vals.append((layer_name, tm_val, material_def))
         return tm_vals
 
-    def change_construction_mass(self, construction, new_thermal_mass, new_r_val):
+    def change_construction_mass(self, construction, tm_idx, new_r_val):
         """
         specific heat (c) of the material layer from template is in units of J/(kg-K)
         density is in kg/m3
         thermal mass is in J/Km2 TM = c * density * thickness
         """
-        # TODO: assuming that the roof cannot have concrete entirely removed - only floor gets wood
-        # if (
-        #     new_thermal_mass < 90000
-        #     and "ExteriorWall" in list(construction.values())[0]
-        # ):
+        new_thermal_mass_type = ThermalMassConstructions(tm_idx).name
+        if "ExteriorWall" in list(construction.values())[0]:
+            construction["layer_2"] = f"ExteriorWall{new_thermal_mass_type}"
+        elif "ExteriorRoof" in list(construction.values())[0]:
+            construction["layer_3"] = f"ExteriorRoof{new_thermal_mass_type}"
+        # Check if mass/rvalue combo is possible
+        logger.debug("Recalculating r-values...")
+        self.change_construction_r(construction, new_r_val)
+
+        # new_thermal_mass = ThermalMassCapacities[new_thermal_mass_type].value
+        # def calc_needed_tm(construction):
+        #     tm_vals = self.calculate_tm(construction)
+        #     current_tm_val = sum(tm for _, tm, _ in tm_vals)
+        #     sorted_layers = sorted(tm_vals, key=lambda x: -x[1])
+        #     mass_layer = sorted_layers[0]
+        #     mass_layer_tm = mass_layer[1]
+        #     mass_layer_def = mass_layer[2]
+        #     mass_without_concrete = current_tm_val - mass_layer_tm
+        #     needed_tm = new_thermal_mass - mass_without_concrete
+        #     logger.debug(f"Current mass: {current_tm_val}")
+        #     logger.debug(f"Needed mass: {new_thermal_mass}")
+        #     logger.debug(f"Needed mass of concrete: {needed_tm}")
+        #     logger.debug(f"mass_without_concrete: {mass_without_concrete}")
+        #     return mass_layer, mass_layer_def, needed_tm
+
+        # mass_layer, mass_layer_def, needed_tm = calc_needed_tm(construction)
+
+        # # Check if mass/rvalue combo is possible
+        # if needed_tm < 0 and "ExteriorWall" in list(construction.values())[0]:
         #     logger.info(
         #         "Light mass wall condition, replacing high-mass stucco with wood siding."
         #     )
-        #     construction["outside_layer"] = "ExteriorWallWoodSiding"
+        #     construction["outside_layer"] = "ExteriorWallWoodFrame"
         #     del construction["layer_4"]
         #     logger.debug("Recalculating r-values...")
         #     self.change_construction_r(construction, new_r_val)
+        #     mass_layer, mass_layer_def, needed_tm = calc_needed_tm(construction)
 
-        def calc_needed_tm(construction):
-            tm_vals = self.calculate_tm(construction)
-            current_tm_val = sum(tm for _, tm, _ in tm_vals)
-            sorted_layers = sorted(tm_vals, key=lambda x: -x[1])
-            mass_layer = sorted_layers[0]
-            mass_layer_tm = mass_layer[1]
-            mass_layer_def = mass_layer[2]
-            mass_without_concrete = current_tm_val - mass_layer_tm
-            needed_tm = new_thermal_mass - mass_without_concrete
-            logger.debug(f"Current mass: {current_tm_val}")
-            logger.debug(f"Needed mass: {new_thermal_mass}")
-            logger.debug(f"Needed mass of concrete: {needed_tm}")
-            logger.debug(f"mass_without_concrete: {mass_without_concrete}")
-            return mass_layer, mass_layer_def, needed_tm
-
-        mass_layer, mass_layer_def, needed_tm = calc_needed_tm(construction)
-
-        # Check if mass/rvalue combo is possible
-        if needed_tm < 0 and "ExteriorWall" in list(construction.values())[0]:
-            logger.info(
-                "Light mass wall condition, replacing high-mass stucco with wood siding."
-            )
-            construction["outside_layer"] = "ExteriorWallWoodSiding"
-            del construction["layer_4"]
-            logger.debug("Recalculating r-values...")
-            self.change_construction_r(construction, new_r_val)
-            mass_layer, mass_layer_def, needed_tm = calc_needed_tm(construction)
-
-        new_thickness = (
-            needed_tm / mass_layer_def["specific_heat"] / mass_layer_def["density"]
-        )
-        new_thickness = round(new_thickness, 3)
-        assert new_thickness > 0, "Desired mass is not possible with given r-value"
-        if new_thickness < 0.003:
-            logger.warning(
-                f"Thickness of insulation is less than 0.003, at {new_thickness}. This will raise a warning in EnergyPlus."  # TODO delete layer??
-            )
-        logger.debug(f"New thickness of {new_thickness} for {mass_layer[0]}")
-        mass_layer_def["thickness"] = new_thickness
-        new_tm_vals = self.calculate_tm(construction)
-        logger.debug(
-            f"New thermal mass = {sum(tm for _, tm, _ in new_tm_vals)} compared to desired {new_thermal_mass}"
-        )
+        # new_thickness = (
+        #     needed_tm / mass_layer_def["specific_heat"] / mass_layer_def["density"]
+        # )
+        # new_thickness = round(new_thickness, 3)
+        # assert new_thickness > 0, "Desired mass is not possible with given r-value"
+        # if new_thickness < 0.003:
+        #     logger.warning(
+        #         f"Thickness of insulation is less than 0.003, at {new_thickness}. This will raise a warning in EnergyPlus." 
+        #     )
+        # logger.debug(f"New thickness of {new_thickness} for {mass_layer[0]}")
+        # mass_layer_def["thickness"] = new_thickness
+        # new_tm_vals = self.calculate_tm(construction)
+        # logger.debug(
+        #     f"New thermal mass = {sum(tm for _, tm, _ in new_tm_vals)} compared to desired {new_thermal_mass}"
+        # )
 
     def handle_windows(self, template_dict):
         """
