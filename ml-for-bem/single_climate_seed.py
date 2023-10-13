@@ -146,14 +146,16 @@ def sample_and_simulate():
                 "max": wparam.max[0],
                 "mode": "Continuous",
             }
+            space_config["WindowU"] = param_data
         elif key == "WindowSHGC":
             wparam: WindowParameter = schema["WindowSettings"]
             param_data = {
-                "name": "WindowU",
+                "name": "WindowSHGC",
                 "min": wparam.min[1],
                 "max": wparam.max[1],
                 "mode": "Continuous",
             }
+            space_config["WindowSHGC"] = param_data
         else:
             param = schema[key]
             param_data = {"name": param.name}
@@ -164,7 +166,7 @@ def sample_and_simulate():
             elif isinstance(param, OneHotParameter):
                 param_data["option_count"] = param.count
                 param_data["mode"] = "Onehot"
-        space_config[param.name] = param_data
+            space_config[param.name] = param_data
 
     sb_name = str(uuid4())
     output_dir = data_root / "sim_results" / sb_name
