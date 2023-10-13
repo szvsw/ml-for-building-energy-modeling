@@ -203,7 +203,7 @@ def sample_and_simulate():
     logger.info(f"WARNING COUNT: {warnings}")
     logger.info(f"ERROR COUNT:   {severe_errors}")
     err = None
-    if warnings > 19 or severe_errors > 0:
+    if warnings > (19 if os.name == "nt" else 20) or severe_errors > 0:
         with open(idf.simulation_dir / "eplusout.err", "r") as f:
             err = f.read()
 
@@ -214,7 +214,12 @@ def sample_and_simulate():
 def batch_sim(n: int):
     results = pd.DataFrame()
     err_list = []
+    try_count = 0
     while len(results) < n:
+        try_count = try_count + 1
+        if try_count > 2 * n:
+            logger.error("Too many failed simulations! Exiting.")
+            exit()
         try:
             id, simple_dict, monthly_results, err = sample_and_simulate()
         except BaseException as e:
