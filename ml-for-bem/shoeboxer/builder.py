@@ -426,7 +426,7 @@ class ShoeBox:
         # assert new_thickness > 0, "Desired mass is not possible with given r-value"
         # if new_thickness < 0.003:
         #     logger.warning(
-        #         f"Thickness of insulation is less than 0.003, at {new_thickness}. This will raise a warning in EnergyPlus." 
+        #         f"Thickness of insulation is less than 0.003, at {new_thickness}. This will raise a warning in EnergyPlus."
         #     )
         # logger.debug(f"New thickness of {new_thickness} for {mass_layer[0]}")
         # mass_layer_def["thickness"] = new_thickness
@@ -735,7 +735,10 @@ class ShoeBox:
     def convert(self, path, file_type="idf"):
         logger.debug(f"Converting {path} to {file_type}")
         # Define the command and its arguments
-        cmd = settings.energyplus_location / "energyplus.exe"
+        cmd = (
+            settings.energyplus_location
+            / f"energyplus{'.exe' if os.name == 'nt' else ''}"
+        )
         args = ["--convert-only", "--output-directory", self.output_directory, path]
 
         # TODO change location of idf
