@@ -4,13 +4,16 @@ import logging
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 BASE_PERIM_DEPTH = 5  # TODO make dynamic
 BASE_CORE_DEPTH = 10
 BASE_WIDTH = 3
 BASE_HEIGHT = 4
 BASE_ADIABATIC_FRAC = 0.5
+ZONE_DEPTH_LIMIT = 0.3
+SURF_DEPTH_LIMIT = 0.1
 
 
 def scale_shoebox(
@@ -24,6 +27,10 @@ def scale_shoebox(
     core_depth = core_2_perim * perim_depth
     logger.info(f"New perimeter depth: {perim_depth}")
     logger.info(f"New core depth: {core_depth}")
+
+    if core_depth < ZONE_DEPTH_LIMIT or perim_depth < ZONE_DEPTH_LIMIT:
+        logger.error(f"Depth is too small. Dropping shoebox.")
+        raise ValueError("Depth is too small.")
 
     perim_idxs = [
         i
@@ -88,18 +95,21 @@ def set_adiabatic_surfaces(
     roof_2_footprint,
     ground_2_footprint,
 ):
-    # TODO: remove if zero
     logger.info("Updating adiabatic surfaces.")
     perim_depth = floor_2_facade * height
     core_depth = core_2_perim * perim_depth
 
-    perim_roof_depth = roof_2_footprint * perim_depth
-    perim_ground_depth = ground_2_footprint * perim_depth
-    core_roof_depth = roof_2_footprint * core_depth
-    core_ground_depth = ground_2_footprint * core_depth
-
-    perim_roof_idxs = [
-        i
+    perim_roof_exposed_depth = (
+        roof_2_footprint * perim_depth
+    )  # TODO: check that this is true
+    perim_ground_exposed_depth = ground_2_footprint * perim_depth
+    core_roof_exposed_depth = roof_2_footprint * core_depth
+    core_ground_exposed_depth = ground_2_footprint * core_depth
+    logger.debug(
+        f"Core depth of adiabatic and non-adiabatic: {core_roof_exposed_depth}, {core_depth-core_roof_exposed_depth}"
+    )
+    perim_roof_lookups = [
+        (i, x)
         for i, (x, y) in enumerate(sb["BuildingSurface:Detailed"].items())
         if (
             "PERIM" in x.upper()
@@ -109,8 +119,8 @@ def set_adiabatic_surfaces(
             )
         )
     ]
-    core_roof_idxs = [
-        i
+    core_roof_lookups = [
+        (i, x)
         for i, (x, y) in enumerate(sb["BuildingSurface:Detailed"].items())
         if (
             "CORE" in x.upper()
@@ -120,45 +130,194 @@ def set_adiabatic_surfaces(
             )
         )
     ]
-    perim_ground_idxs = [
-        i
+    perim_ground_lookups = [
+        (i, x)
         for i, (x, y) in enumerate(sb["BuildingSurface:Detailed"].items())
         if ("PERIM" in x.upper() and "FLOOR" in y["surface_type"].upper())
     ]
-    core_ground_idxs = [
-        i
+    core_ground_lookups = [
+        (i, x)
         for i, (x, y) in enumerate(sb["BuildingSurface:Detailed"].items())
         if ("CORE" in x.upper() and "FLOOR" in y["surface_type"].upper())
     ]
+    perim_roof_idxs = [i[0] for i in perim_roof_lookups]
+    perim_roof_names = [x[1] for x in perim_roof_lookups]
+    perim_ground_idxs = [i[0] for i in perim_ground_lookups]
+    perim_ground_names = [x[1] for x in perim_ground_lookups]
+    core_roof_idxs = [i[0] for i in core_roof_lookups]
+    core_roof_names = [x[1] for x in core_roof_lookups]
+    core_ground_idxs = [i[0] for i in core_ground_lookups]
+    core_ground_names = [x[1] for x in core_ground_lookups]
 
-    all_coords = get_all_coords(sb["BuildingSurface:Detailed"])
+    uniform_exterior_condition_roof_c = False
+    uniform_exterior_condition_roof_p = False
+    uniform_exterior_condition_ground_c = False
+    uniform_exterior_condition_ground_p = False
 
-    old_roof_perim_depth = old_ground_perim_depth = (
-        zone_depth(all_coords[perim_roof_idxs]) * BASE_ADIABATIC_FRAC
-    )
-    old_roof_core_depth = old_ground_core_depth = old_roof_perim_depth * core_2_perim
-    core_origin = min(all_coords[core_roof_idxs, :, 1].flatten())
+    if perim_roof_exposed_depth < SURF_DEPTH_LIMIT:
+        # make adiabatic
+        logger.warning(f"Perim exposed depth is too small. Making adiabatic.")
+        for name in perim_roof_names:
+            data = {
+                "construction_name": "Interior Slab",
+                "outside_boundary_condition": "Adiabatic",
+                "sun_exposure": "NoSun",
+                "surface_type": "Ceiling",
+                "wind_exposure": "NoWind",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_roof_p = True
 
-    # move perim adiabatic line for roof
-    pr = all_coords[perim_roof_idxs]
-    pr[pr == old_roof_perim_depth] = perim_roof_depth
-    all_coords[perim_roof_idxs] = pr
-    # move perim adiabatic line for floor
-    pf = all_coords[perim_ground_idxs]
-    pf[pf == old_ground_perim_depth] = perim_ground_depth
-    all_coords[perim_ground_idxs] = pf
-    # move core adiabatic line for roof
-    cr = all_coords[core_roof_idxs]
-    cr[cr == old_roof_core_depth + core_origin] = core_roof_depth + core_origin
-    all_coords[core_roof_idxs] = cr
-    # move core adiabatic line for floor
-    cf = all_coords[core_ground_idxs]
-    cf[cf == old_ground_core_depth + core_origin] = core_ground_depth + core_origin
-    all_coords[core_ground_idxs] = cf
+    if core_roof_exposed_depth < SURF_DEPTH_LIMIT:
+        # make outdoor
+        logger.warning(f"Core exposed depth is too small. Making adiabatic.")
+        for name in core_roof_names:
+            data = {
+                "construction_name": "Interior Slab",
+                "outside_boundary_condition": "Adiabatic",
+                "sun_exposure": "NoSun",
+                "surface_type": "Ceiling",
+                "wind_exposure": "NoWind",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_roof_c = True
 
-    sb["BuildingSurface:Detailed"] = replace_all_coords(
-        sb["BuildingSurface:Detailed"], all_coords
-    )
+    if perim_ground_exposed_depth < SURF_DEPTH_LIMIT:
+        logger.warning(f"Perim ground exposed depth is too small. Making adiabatic.")
+        for name in perim_ground_names:
+            data = {
+                "construction_name": "Interior Slab_FLIPPED",
+                "outside_boundary_condition": "Adiabatic",
+                "sun_exposure": "NoSun",
+                "surface_type": "Floor",
+                "wind_exposure": "NoWind",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_ground_p = True
+
+    if core_ground_exposed_depth < SURF_DEPTH_LIMIT:
+        logger.warning(f"Core ground exposed depth is too small. Making adiabatic.")
+        for name in core_ground_names:
+            data = {
+                "construction_name": "Interior Slab_FLIPPED",
+                "outside_boundary_condition": "Adiabatic",
+                "sun_exposure": "NoSun",
+                "surface_type": "Floor",
+                "wind_exposure": "NoWind",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_ground_c = True
+
+    if perim_depth - perim_roof_exposed_depth < SURF_DEPTH_LIMIT:
+        logger.warning(f"Perim roof adiabatic depth is too small. Dropping adiabatic.")
+        for name in perim_roof_names:
+            data = {
+                "construction_name": "Exterior Roof",
+                "outside_boundary_condition": "Outdoors",
+                "sun_exposure": "SunExposed",
+                "surface_type": "Roof",
+                "wind_exposure": "WindExposed",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_roof_p = True
+
+    if core_depth - core_roof_exposed_depth < SURF_DEPTH_LIMIT:
+        logger.warning(f"Core roof adiabatic depth is too small. Dropping adiabatic.")
+        for name in core_roof_names:
+            data = {
+                "construction_name": "Exterior Roof",
+                "outside_boundary_condition": "Outdoors",
+                "sun_exposure": "SunExposed",
+                "surface_type": "Roof",
+                "wind_exposure": "WindExposed",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_roof_c = True
+
+    if perim_depth - perim_ground_exposed_depth < SURF_DEPTH_LIMIT:
+        logger.warning(
+            f"Perim adiabatic ground depth is too small. Dropping adiabatic."
+        )
+        for name in perim_ground_names:
+            data = {
+                "construction_name": "Ground Slab",
+                "outside_boundary_condition": "Ground",
+                "sun_exposure": "NoSun",
+                "surface_type": "Floor",
+                "wind_exposure": "NoWind",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_ground_p = True
+
+    if core_depth - core_ground_exposed_depth < SURF_DEPTH_LIMIT:
+        logger.warning(f"Core adiabatic ground depth is too small. Dropping adiabatic.")
+        for name in core_ground_names:
+            data = {
+                "construction_name": "Ground Slab",
+                "outside_boundary_condition": "Ground",
+                "sun_exposure": "NoSun",
+                "surface_type": "Floor",
+                "wind_exposure": "NoWind",
+            }
+            sb["BuildingSurface:Detailed"][name].update(data)
+        uniform_exterior_condition_ground_c = True
+
+    # SHIFTING OF ADIABATIC LINE
+    if not all(
+        (
+            uniform_exterior_condition_roof_p,
+            uniform_exterior_condition_ground_p,
+            uniform_exterior_condition_roof_c,
+            uniform_exterior_condition_ground_c,
+        )
+    ):
+        logger.debug("Shifting adiabatic lines")
+        all_coords = get_all_coords(sb["BuildingSurface:Detailed"])
+        core_origin = min(all_coords[core_roof_idxs, :, 1].flatten())
+
+        if not all(
+            (uniform_exterior_condition_roof_p, uniform_exterior_condition_ground_p)
+        ):
+            old_roof_perim_depth = old_ground_perim_depth = (
+                zone_depth(all_coords[perim_roof_idxs]) * BASE_ADIABATIC_FRAC
+            )
+            if not uniform_exterior_condition_roof_p:
+                # move perim adiabatic line for roof
+                pr = all_coords[perim_roof_idxs]
+                pr[pr == old_roof_perim_depth] = perim_roof_exposed_depth
+                all_coords[perim_roof_idxs] = pr
+            if not uniform_exterior_condition_ground_p:
+                # move perim adiabatic line for floor
+                pf = all_coords[perim_ground_idxs]
+                pf[pf == old_ground_perim_depth] = perim_ground_exposed_depth
+                all_coords[perim_ground_idxs] = pf
+
+        if not all(
+            (uniform_exterior_condition_roof_c, uniform_exterior_condition_ground_c)
+        ):
+            logger.debug("Shifting core adiabatic lines")
+            old_roof_core_depth = old_ground_core_depth = (
+                old_roof_perim_depth * core_2_perim
+            )
+            if not uniform_exterior_condition_roof_c:
+                # move core adiabatic line for roof
+                cr = all_coords[core_roof_idxs]
+                cr[cr == old_roof_core_depth + core_origin] = (
+                    core_roof_exposed_depth + core_origin
+                )
+                all_coords[core_roof_idxs] = cr
+            if not uniform_exterior_condition_ground_c:
+                logger.debug("Shifting core ground adiabatic lines")
+                # move core adiabatic line for floor
+                cf = all_coords[core_ground_idxs]
+                cf[cf == old_ground_core_depth + core_origin] = (
+                    core_ground_exposed_depth + core_origin
+                )
+                all_coords[core_ground_idxs] = cf
+
+        sb["BuildingSurface:Detailed"] = replace_all_coords(
+            sb["BuildingSurface:Detailed"], all_coords
+        )
 
     return sb
 
@@ -219,6 +378,62 @@ def move_1D(coords, distance, axis):
     return coords
 
 
+def remove_surf(sb, surface_to_remove, all_coords=None):
+    logger.info("REMOVING SURFACE")
+    # get index of surface to remove
+    keys = sb["BuildingSurface:Detailed"].keys()
+    idx = keys.index(surface_to_remove)
+
+    if all_coords is None:
+        all_coords = get_all_coords(sb["BuildingSurface:Detailed"])
+    logger.debug(all_coords.shape)
+    normals = get_normals(all_coords)
+    logger.debug(normals)
+    working_normal = normals[idx]
+
+    logger.debug(
+        f"Removing {surface_to_remove} from {len(sb['BuildingSurface:Detailed'])} surfaces"
+    )
+    del sb["BuildingSurface:Detailed"][surface_to_remove]
+    # drop from normals list and all_coords list
+    normals = normals.pop(idx)
+    all_coords = np.delete(all_coords, idx, 0)
+    logger.debug(normals)
+    logger.debug(all_coords.shape)
+    logger.debug(f"Now, {len(sb['BuildingSurface:Detailed'])} surfaces")
+
+    for i, normal in enumerate(normals):
+        if np.cross(normal, working_normal) == 0:
+            logger.debug(
+                f"{sb['BuildingSurface:Detailed'][keys[i]]} is a normal surface."
+            )
+    # for name, surface_data in sb["BuildingSurface:Detailed"].items():
+    # Get all parallel surfaces
+
+
+def plane_normal(points):
+    if len(points) < 3:
+        raise ValueError("At least three points are required to calculate the normal.")
+
+    v1 = np.array(points[1]) - np.array(points[0])
+    v2 = np.array(points[2]) - np.array(points[0])
+
+    # Calculate the cross product of v1 and v2 to get the normal vector
+    normal = np.cross(v1, v2)
+
+    # Normalize the normal vector to get a unit vector
+    normal /= np.linalg.norm(normal)
+
+    return normal
+
+
+def get_normals(coords):
+    normals = []
+    for points in coords:
+        normals.append(plane_normal(points))
+    return normals
+
+
 def get_window_coords(window):
     coords_all = []
     for i in range(1, 5):
@@ -245,12 +460,12 @@ def update_wwr(epjson, wwr_frac):
         curr_window_h = max_h - min_h
         all_coords = get_all_coords(epjson["BuildingSurface:Detailed"])
         curr_h = max(all_coords[:, :, 2].flatten())
-        logger.info(
+        logger.debug(
             f"Current window to wall ratio is {curr_window_h/curr_h} with height {curr_window_h}"
         )
         # Scale window to needed height - assuming window spans entire width of wall
         new_window_h = wwr_frac * curr_h
-        logger.info(f"New window height will be {new_window_h}")
+        logger.debug(f"New window height will be {new_window_h}")
         change = (new_window_h - curr_window_h) / 2  # negative if new window is smaller
         # move max down
         coords_all[:, 2][coords_all[:, 2] == max_h] = max_h + change
@@ -261,7 +476,7 @@ def update_wwr(epjson, wwr_frac):
     return epjson
 
 
-def build_shading(sb_json, angles, radius=10, override=True):
+def build_shading(sb_json, angles, radius=10, override=True):  # TODO: is 12 too much?
     """
     Adds shading objects to a shoebox idf according to a list of heights (m)
     of equal width divided between 180 degrees at a given radius (m).
@@ -328,7 +543,10 @@ def build_shading(sb_json, angles, radius=10, override=True):
                 # name=name,
                 number_of_vertices=4,
                 vertices=[
-                    {f"vertex_{j}_coordinate": c[k] for k, j in enumerate(["x", "y", "z"])}
+                    {
+                        f"vertex_{j}_coordinate": c[k]
+                        for k, j in enumerate(["x", "y", "z"])
+                    }
                     for c in coords
                 ],
             )

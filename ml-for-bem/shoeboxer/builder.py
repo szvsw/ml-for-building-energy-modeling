@@ -40,8 +40,8 @@ EPW_PATH = Path(module_path, EPW_RELATIVE_PATH)
 
 logging.basicConfig()
 logger = logging.getLogger("ShoeBox")
-# logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.INFO)
 
 
 def day_to_epbunch(dsched, idx=0, sched_lim=sched_type_limits):
@@ -123,7 +123,7 @@ def template_dict(
     wall_r_val=2,
     wall_mass=2,  # need to revisit minimums
     roof_r_val=6,
-    roof_mass=200000,
+    roof_mass=1,
     slab_r_val=4,
     shgc=0.5,
     window_u_val=1.0,
@@ -732,6 +732,24 @@ class ShoeBox:
         )
         return ep_df_hourly, ep_df_monthly
 
+    @classmethod
+    def error_report(cls, idf):
+        SEVERE = "** Severe  **"
+        FATAL = "**  Fatal  **"
+        WARNING = "** Warning **"
+        NEXTLINE = "**   ~~~   **"
+        filepath, *_ = idf.simulation_dir.files("*.err")
+        errors = []
+        warnings = []
+        with open(filepath, "r") as f:
+            for line in f:
+                l = line.strip()
+                if l.startswith(SEVERE) or l.startswith(FATAL):
+                    errors.append(l)
+                elif l.startswith(WARNING):
+                    warnings.append(l)
+        return (errors, warnings)
+
     def convert(self, path, file_type="idf"):
         logger.debug(f"Converting {path} to {file_type}")
         # Define the command and its arguments
@@ -781,9 +799,9 @@ if __name__ == "__main__":
     shoebox_config.width = 10
     shoebox_config.height = 10
     shoebox_config.floor_2_facade = 0.9
-    shoebox_config.core_2_perim = 1.5
-    shoebox_config.roof_2_footprint = 0.8
-    shoebox_config.ground_2_footprint = 0.2
+    shoebox_config.core_2_perim = 0.4
+    shoebox_config.roof_2_footprint = 0.25
+    shoebox_config.ground_2_footprint = 0.99
     shoebox_config.wwr = 0.2
     shoebox_config.orientation = 0
     shoebox_config.shading_vect = np.random.random(SHADING_DIV_SIZE) * math.pi / 3
