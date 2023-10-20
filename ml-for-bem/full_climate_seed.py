@@ -93,7 +93,7 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
     """
 
     df_epw = training_epw_df if train_or_test == "train" else testing_epw_df
-    cz = np.random.choice(df_epw.CZ.unique())
+    cz = np.random.choice([cz for cz in df_epw.CZ.unique() if cz != "6C"])
     epw_options = df_epw[df_epw.CZ == cz]
     epw_idx = int(np.random.choice(epw_options.index))
 
@@ -220,6 +220,7 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
     # TODO: use idf error fetcher from ZLH's work
     """
     errors, warnings = sb.error_report(idf)
+    # filter out warnings which we do not care about
     warnings = [
         w
         for w in warnings
@@ -227,11 +228,27 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
         and "CheckUsedConstructions" not in w
         and "GetPurchasedAir" not in w
         and "The following Report Variables" not in w
-        and "psysatfntemp" not in w.lower()
+        and "psypsatfntemp" not in w.lower()
         and "gpu" not in w.lower()
+        and "SizingPeriod:WeatherFileConditionType: object=" not in w
+        and "GetSimpleAirModelInputs" not in w
+        and "fixviewfactors" not in w.lower()
     ]
     logger.info(f"WARNING COUNT: {len(warnings)}")
     logger.info(f"ERROR COUNT:   {len(errors)}")
+    for warning in warnings:
+        # these warnnings should be considered hard errors which we want to fully fail on
+        if (
+            "Standard Time Meridian" in warning
+            or "supply humidity ratio" in warning.lower()
+            or "not converged" in warning.lower()
+        ):
+            raise ValueError(warning)
+        # other warnings we pass through but will be marked as errors
+        logger.warning(warning)
+    for error in errors:
+        # all errors are hard fails.
+        raise ValueError(error)
     err = None
     if len(warnings) > 0 or len(errors) > 0:
         with open(idf.simulation_dir / "eplusout.err", "r") as f:
