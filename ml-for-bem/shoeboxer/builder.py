@@ -41,15 +41,15 @@ SCHEDULES_ARR_PATH = Path(module_path, DEFAULT_SCHEDULES_PATH)
 
 logging.basicConfig()
 logger = logging.getLogger("ShoeBox")
-logger.setLevel(logging.DEBUG)
-# logger.setLevel(logging.INFO)
+# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 default_schedules = np.load(SCHEDULES_ARR_PATH)
 
 
 def schedules_from_seed(seed: int):
     # step 1: load the seedo
-    np.random.seed(seed)
+    np.random.seed(int(seed))
 
     # step 2: decide whether or not to use random or schedules
     is_fully_rand = np.random.choice([True, False], size=1, p=[0.8, 0.2])
@@ -64,7 +64,7 @@ def schedules_from_seed(seed: int):
         scheds = default_schedules[sched_type]
         # Step 3c. mutate schedules with nosie
         noise_amp = np.random.rand(3) * 0.25
-        noise = np.random.rand(3, 8760) * noise_amp
+        noise = np.random.rand(3, 8760) * noise_amp.reshape(3, 1)
         scheds = scheds + noise
         # step 3d. clip to 0-1
         scheds = np.clip(scheds, 0, 1)
@@ -230,15 +230,16 @@ class ShoeBox:
         # from schema import Schema - assert schema is schema
         epw_map = pd.read_csv(EPW_MAP_PATH, index_col=0)
         epw_idx = int(schema["base_epw"].extract_storage_values(vector))
+        logger.info(f"Simulating in {epw_map.loc[epw_idx, 'city']}")
         epw = epw_map.loc[epw_idx, "slug"]
 
-        seed = int(schema["shading_seed"].extract_storage_values(vector))
-        np.random.seed(seed)
-        if hasattr(shoebox_config, "shading_vect") == False:
-            logger.debug("Creating shading from seed.")
-            shoebox_config.shading_vect = (
-                np.random.random(SHADING_DIV_SIZE) * math.pi / 2.5
-            )  # TODO how to divide this? Do this in schema
+        # seed = int(schema["shading_seed"].extract_storage_values(vector))
+        # np.random.seed(seed)
+        # if hasattr(shoebox_config, "shading_vect") == False:
+        #     logger.debug("Creating shading from seed.")
+        #     shoebox_config.shading_vect = (
+        #         np.random.random(SHADING_DIV_SIZE) * math.pi / 2.5
+        #     )  # TODO how to divide this? Do this in schema
         td = template_dict(
             schedules,
             people_density=schema["PeopleDensity"].extract_storage_values(vector),
