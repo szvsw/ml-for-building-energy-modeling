@@ -200,9 +200,10 @@ class ShoeBox:
     @classmethod
     def from_vector(cls, name, schema, shoebox_config, vector, schedules, **kwargs):
         # from schema import Schema - assert schema is schema
-        epw = os.listdir(EPW_PATH)[
-            int(schema["base_epw"].extract_storage_values(vector))
-        ]
+        epw_map = pd.read_csv(EPW_MAP_PATH, index_col=0)
+        epw_idx = int(schema["base_epw"].extract_storage_values(vector))
+        epw = epw_map.loc[epw_idx, "slug"]
+
         seed = int(schema["shading_seed"].extract_storage_values(vector))
         np.random.seed(seed)
         if hasattr(shoebox_config, "shading_vect") == False:
@@ -354,7 +355,7 @@ class ShoeBox:
         assert needed_r > 0
         new_thickness = needed_r * insulator_def["conductivity"]
         if new_thickness < 0:
-            raise ValueError ("Desired R-value and TM combo is not possible.")
+            raise ValueError("Desired R-value and TM combo is not possible.")
         if new_thickness < 0.003:
             logger.warning(
                 "Thickness of insulation is less than 0.003. This will create a warning in EnergyPlus."

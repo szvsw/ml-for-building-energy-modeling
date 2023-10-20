@@ -6,9 +6,9 @@ from enum import IntEnum
 JOULES_TO_KWH = 2.777e-7
 SHADING_DIV_SIZE = 12
 
-EPW_RELATIVE_PATH = "data/epws/city_epws_indexed"
+EPW_RELATIVE_PATH = "data/epws/global_epws_indexed"
+EPW_MAP_PATH = "data/global_epws_indexed.csv"
 SHOEBOX_RELATIVE_PATH = "shoeboxer/cache"
-HIGH_LOW_MASS_THRESH = 00000  # J/m2K # TODO why is this zero
 
 WINDOW_TYPES = {
     0: "single_clr",
