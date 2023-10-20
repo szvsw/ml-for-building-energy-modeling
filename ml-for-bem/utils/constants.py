@@ -8,6 +8,8 @@ SHADING_DIV_SIZE = 12
 
 EPW_RELATIVE_PATH = "data/epws/global_epws_indexed"
 EPW_MAP_PATH = "data/global_epws_indexed.csv"
+EPW_TRAINING_LIST_PATH = "data/epws/global_training_epw_meta.csv"
+EPW_TESTING_LIST_PATH = "data/epws/global_testing_epw_meta.csv"
 SHOEBOX_RELATIVE_PATH = "shoeboxer/cache"
 
 WINDOW_TYPES = {
