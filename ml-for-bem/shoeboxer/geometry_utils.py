@@ -4,8 +4,7 @@ import logging
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 BASE_PERIM_DEPTH = 5  # TODO make dynamic
 BASE_CORE_DEPTH = 10
@@ -52,20 +51,38 @@ def scale_shoebox(
 
     # Scale width
     new_coords = scale_1D(all_coords, width / BASE_WIDTH, axis=0)
-    # Scale window width
-    window_coords = scale_1D(window_coords, width / BASE_WIDTH, axis=0)
     # Scale height
     new_coords = scale_1D(new_coords, height / BASE_HEIGHT, axis=2)
-    # Move window centerline
-    window_coords = move_1D(window_coords, (height - BASE_HEIGHT) / 4, axis=2)
-    # Scale window height
-    window_coords = scale_1D(window_coords, height / BASE_HEIGHT, axis=2)
+
+    # Recenter the window on the new x-centerline
+    original_window_xcenter = BASE_WIDTH / 2
+    new_window_xcenter = width / 2
+    window_move_distance = new_window_xcenter - original_window_xcenter
+    window_coords = move_1D(window_coords, window_move_distance, axis=0)
+
+    # Scale window width, keeping the x-centerline anchored
+    window_coords = scale_1D(
+        window_coords, width / BASE_WIDTH, axis=0, anchor=new_window_xcenter
+    )
+
+    # Recenter the window on the new z-centerline
+    old_window_zcenter = BASE_HEIGHT / 2
+    new_window_zcenter = height / 2
+    window_move_distance = new_window_zcenter - old_window_zcenter
+    window_coords = move_1D(window_coords, window_move_distance, axis=2)
+    # Scale window height, keeping the z-centerline anchored
+    window_coords = scale_1D(
+        window_coords, height / BASE_HEIGHT, axis=2, anchor=new_window_zcenter
+    )
+
     # Scale perimeter
     new_coords[perim_idxs, :, :] = scale_1D(
         new_coords[perim_idxs, :, :], perim_depth / BASE_PERIM_DEPTH, axis=1
     )
     # Move core
-    logger.info(f"Shifting core to perimeter {perim_depth - BASE_PERIM_DEPTH} m")
+    logger.info(
+        f"Shifting core origin to perimeter edge; moving {perim_depth - BASE_PERIM_DEPTH} m in y axis"
+    )
     new_coords[core_idxs, :, :] = move_1D(
         new_coords[core_idxs, :, :], perim_depth - BASE_PERIM_DEPTH, axis=1
     )
@@ -273,46 +290,54 @@ def set_adiabatic_surfaces(
     ):
         logger.debug("Shifting adiabatic lines")
         all_coords = get_all_coords(sb["BuildingSurface:Detailed"])
-        core_origin = min(all_coords[core_roof_idxs, :, 1].flatten())
+        core_y_origin = min(all_coords[core_roof_idxs, :, 1].flatten())
+        original_perim_adiabatic_y_coord = (
+            zone_depth(all_coords[perim_roof_idxs]) * BASE_ADIABATIC_FRAC
+        )
+        original_core_adiabatic_y_coord = (
+            core_y_origin + zone_depth(all_coords[core_roof_idxs]) * BASE_ADIABATIC_FRAC
+        )
 
         if not all(
             (uniform_exterior_condition_roof_p, uniform_exterior_condition_ground_p)
         ):
-            old_roof_perim_depth = old_ground_perim_depth = (
-                zone_depth(all_coords[perim_roof_idxs]) * BASE_ADIABATIC_FRAC
-            )
             if not uniform_exterior_condition_roof_p:
                 # move perim adiabatic line for roof
                 pr = all_coords[perim_roof_idxs]
-                pr[pr == old_roof_perim_depth] = perim_roof_exposed_depth
+                mask = np.abs((pr - original_perim_adiabatic_y_coord)) < 0.0001
+                mask[:, :, 0] = False  # we are only interested in y coords
+                mask[:, :, 2] = False
+                pr[mask] = perim_roof_exposed_depth
                 all_coords[perim_roof_idxs] = pr
             if not uniform_exterior_condition_ground_p:
                 # move perim adiabatic line for floor
                 pf = all_coords[perim_ground_idxs]
-                pf[pf == old_ground_perim_depth] = perim_ground_exposed_depth
+                mask = np.abs((pf - original_perim_adiabatic_y_coord)) < 0.0001
+                mask[:, :, 0] = False  # we are only interested in y coords
+                mask[:, :, 2] = False
+                pf[mask] = perim_ground_exposed_depth
                 all_coords[perim_ground_idxs] = pf
 
         if not all(
             (uniform_exterior_condition_roof_c, uniform_exterior_condition_ground_c)
         ):
             logger.debug("Shifting core adiabatic lines")
-            old_roof_core_depth = old_ground_core_depth = (
-                old_roof_perim_depth * core_2_perim
-            )
             if not uniform_exterior_condition_roof_c:
                 # move core adiabatic line for roof
                 cr = all_coords[core_roof_idxs]
-                cr[cr == old_roof_core_depth + core_origin] = (
-                    core_roof_exposed_depth + core_origin
-                )
+                mask = np.abs((cr - original_core_adiabatic_y_coord)) < 0.0001
+                mask[:, :, 0] = False  # we are only interested in y coords
+                mask[:, :, 2] = False
+                cr[mask] = core_roof_exposed_depth + core_y_origin
                 all_coords[core_roof_idxs] = cr
             if not uniform_exterior_condition_ground_c:
                 logger.debug("Shifting core ground adiabatic lines")
                 # move core adiabatic line for floor
                 cf = all_coords[core_ground_idxs]
-                cf[cf == old_ground_core_depth + core_origin] = (
-                    core_ground_exposed_depth + core_origin
-                )
+                mask = np.abs((cf - original_core_adiabatic_y_coord)) < 0.0001
+                mask[:, :, 0] = False  # we are only interested in y coords
+                mask[:, :, 2] = False
+                cf[mask] = core_ground_exposed_depth + core_y_origin
                 all_coords[core_ground_idxs] = cf
 
         sb["BuildingSurface:Detailed"] = replace_all_coords(
@@ -360,13 +385,15 @@ def replace_all_coords(surfaces, all_coords):
     return surfaces
 
 
-def scale_1D(all_coords, scale, axis):
-    min_dim = min(all_coords[:, :, axis].flatten())
-    move_1D(all_coords, -min_dim, axis)
+def scale_1D(all_coords, scale, axis, anchor=None):
+    if anchor is None:
+        anchor = min(all_coords[:, :, axis].flatten())
+
+    move_1D(all_coords, -anchor, axis)
     for coords in all_coords:
         max_dim = max(coords[:, axis].flatten())
         coords[:, axis] *= scale
-    move_1D(all_coords, min_dim, axis)
+    move_1D(all_coords, anchor, axis)
     return all_coords
 
 
