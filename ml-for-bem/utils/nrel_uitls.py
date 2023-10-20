@@ -103,6 +103,8 @@ CLIMATEZONES = {
     "7A": 17,
     "8A": 18,
     "6C": 19,
+    "7": 20,
+    "8": 21,
 }
 
 CLIMATEZONES_LIST = list(CLIMATEZONES.keys())
