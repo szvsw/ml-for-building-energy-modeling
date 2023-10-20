@@ -354,6 +354,8 @@ class ShoeBox:
         needed_r = new_r - r_val_without_insulator
         assert needed_r > 0
         new_thickness = needed_r * insulator_def["conductivity"]
+        if new_thickness < 0:
+            raise ValueError ("Desired R-value and TM combo is not possible.")
         if new_thickness < 0.003:
             logger.warning(
                 "Thickness of insulation is less than 0.003. This will create a warning in EnergyPlus."
