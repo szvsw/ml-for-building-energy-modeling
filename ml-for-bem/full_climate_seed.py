@@ -13,7 +13,7 @@ import numpy as np
 from archetypal import UmiTemplateLibrary
 from schema import Schema, NumericParameter, OneHotParameter, WindowParameter
 from shoeboxer.shoebox_config import ShoeboxConfiguration
-from shoeboxer.builder import ShoeBox, template_dict
+from shoeboxer.builder import ShoeBox, template_dict, schedules_from_seed
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -24,9 +24,6 @@ data_root = Path("data")
 
 schema = Schema()
 
-# TODO:
-# Shading
-# Schedules
 
 testing_epw_df = pd.read_csv(EPW_TESTING_LIST_PATH, index_col=0)
 training_epw_df = pd.read_csv(EPW_TRAINING_LIST_PATH, index_col=0)
@@ -70,6 +67,15 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
             schema.update_storage_vector(
                 storage_vector, parameter=param.name, value=val
             )
+    schedules_seed = np.random.randint(1, 2**24 - 1)
+    schema.update_storage_vector(
+        storage_vector, parameter="schedules_seed", value=schedules_seed
+    )
+
+    """
+    Sample Shading Vector
+    """
+    shading_vect = np.random.uniform(0, np.pi / 2 - np.pi / 72, (12,))
 
     # Check setpoints
     hsp = schema["HeatingSetpoint"].extract_storage_values(storage_vector)
@@ -109,13 +115,9 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
     shoebox_config = ShoeboxConfiguration()
 
     """
-    Sample Shading
-    """
-    shoebox_config.shading_vect = np.zeros((12,))
-
-    """
     Build the Shoebox
     """
+    shoebox_config.shading_vect = shading_vect
     shoebox_config.width = schema["width"].extract_storage_values(storage_vector)
     shoebox_config.height = schema["height"].extract_storage_values(storage_vector)
     shoebox_config.floor_2_facade = schema["floor_2_facade"].extract_storage_values(
@@ -138,36 +140,14 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
     """
     Sample/Set Schedules
     """
-    # UNCOMMENT TO GET .npy FILE OF RESIDENTIAL TEMPLATE SCHEDULES
-    # template_lib_idx = CLIMATEZONES["4A"]
-
-    # cz_value = int(cz_value)
-
-    # template_lib_path = Path(os.getcwd(), "ml-for-bem", "data", "template_libs", "cz_libs", "residential",f"CZ{cz_string}.json")
-
-    # n_masses = 2
-    # n_vintages = 4
-    # template_idx = (
-    #     n_masses * n_vintages * int(RESTYPES["Single-Family Detached"]) + n_masses * 2 + 0
-    # )
-
-    # lib = UmiTemplateLibrary.open(template_lib_path)
-    # template = lib.BuildingTemplates[template_idx]
-    # schedules = schema.parameters[-1].extract_from_template(template)
-    # # Save schedules as npy file
-    # np.save(Path(os.getcwd(), "ml-for-bem", "data", "residential_schedules.npy"), schedules)
-
-    schedules = np.load(data_root / "residential_schedules.npy")
-
+    schedules_seed = schema["schedules_seed"].extract_storage_values(storage_vector)
+    schedules = schedules_from_seed(schedules_seed)
     """
     Make dictionary of parameters for space_config.json
     """
     skip = [
         "batch_id",
         "variation_id",
-        "climate_zone",
-        "base_epw",
-        "schedules_seed",
         "schedules",
         "shading_seed",
     ]
@@ -177,19 +157,30 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
         simple_dict[param_name] = schema[param_name].extract_storage_values(
             storage_vector
         )
+    for shading_ix in range(shading_vect.shape[0]):
+        simple_dict[f"shading_{shading_ix}"] = shading_vect[shading_ix]
+
     space_config = {}
     for key in simple_dict:
         param_data = {}
-        param = schema[key]
-        param_data = {"name": param.name}
-        if isinstance(param, NumericParameter):
-            param_data["min"] = param.min
-            param_data["max"] = param.max
+        if "shading" in key:
+            param_data["min"] = 0
+            param_data["max"] = np.pi / 2
             param_data["mode"] = "Continuous"
-        elif isinstance(param, OneHotParameter):
-            param_data["option_count"] = param.count
-            param_data["mode"] = "Onehot"
-        space_config[param.name] = param_data
+            param_data["name"] = key
+        elif key in ["schedules_seed", "base_epw", "climate_zone"]:
+            continue
+        else:
+            param = schema[key]
+            param_data = {"name": param.name}
+            if isinstance(param, NumericParameter):
+                param_data["min"] = param.min
+                param_data["max"] = param.max
+                param_data["mode"] = "Continuous"
+            elif isinstance(param, OneHotParameter):
+                param_data["option_count"] = param.count
+                param_data["mode"] = "Onehot"
+        space_config[param_data["name"]] = param_data
 
     """
     Setup Simulation
@@ -228,25 +219,42 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
     Check For Errors
     # TODO: use idf error fetcher from ZLH's work
     """
-    # check for errors
-    with open(idf.simulation_dir / "eplusout.end", "r") as f:
-        summary = f.read()
-        # Summary format is EnergyPlus Completed Successfully-- 0 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  0.33sec
-        # We want to extract the number of warnings and severe errors
-    warnings = int(summary.split("--")[1].split(" ")[1])
-    severe_errors = int(summary.split("--")[1].split(" ")[3])
-    logger.info(f"WARNING COUNT: {warnings}")
-    logger.info(f"ERROR COUNT:   {severe_errors}")
+    errors, warnings = sb.error_report(idf)
+    warnings = [
+        w
+        for w in warnings
+        if "Output:Meter: invalid Key Name" not in w
+        and "CheckUsedConstructions" not in w
+        and "GetPurchasedAir" not in w
+        and "The following Report Variables" not in w
+        and "psysatfntemp" not in w.lower()
+        and "GPU" not in w.lower()
+    ]
+    logger.info(f"WARNING COUNT: {len(warnings)}")
+    logger.info(f"ERROR COUNT:   {len(errors)}")
     err = None
-    if warnings > (19 if os.name == "nt" else 22) or severe_errors > 0:
+    if len(warnings) > 0 or len(errors) > 0:
         with open(idf.simulation_dir / "eplusout.err", "r") as f:
             err = f.read()
+    # # check for errors
+    # with open(idf.simulation_dir / "eplusout.end", "r") as f:
+    #     summary = f.read()
+    #     # Summary format is EnergyPlus Completed Successfully-- 0 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  0.33sec
+    #     # We want to extract the number of warnings and severe errors
+    # warnings = int(summary.split("--")[1].split(" ")[1])
+    # severe_errors = int(summary.split("--")[1].split(" ")[3])
+    # logger.info(f"WARNING COUNT: {warnings}")
+    # logger.info(f"ERROR COUNT:   {severe_errors}")
+    # err = None
+    # if warnings > (19 if os.name == "nt" else 22) or severe_errors > 0:
+    #     with open(idf.simulation_dir / "eplusout.err", "r") as f:
+    #         err = f.read()
 
     shutil.rmtree(output_dir)
     return sb_name, simple_dict, monthly_df, err, space_config
 
 
-def batch_sim(n: int):
+def batch_sim(n: int, train_or_test: Literal["train", "test"] = "train"):
     """
     Run N simulations and save results to dataframes
 
@@ -281,7 +289,9 @@ def batch_sim(n: int):
 
         # run the sim
         try:
-            id, simple_dict, monthly_results, err, space_config = sample_and_simulate()
+            id, simple_dict, monthly_results, err, space_config = sample_and_simulate(
+                train_or_test=train_or_test
+            )
         except BaseException as e:
             logger.error("Error during simulation! Continuing.\n\n\n", exc_info=e)
         else:
@@ -376,8 +386,10 @@ def save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experimen
 @click.option(
     "--experiment_name", default="single_climate_zone/test", help="Experiment name"
 )
-def main(n, bucket, experiment_name):
-    batch_dataframe, errs, space_config = batch_sim(n)
+# add a click option for train_or_test which must be either "train" or "test"
+@click.option("--train_or_test", default="train", help="Train or test")
+def main(n, bucket, experiment_name, train_or_test):
+    batch_dataframe, errs, space_config = batch_sim(n, train_or_test)
     save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experiment_name)
 
 
