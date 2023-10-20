@@ -27,9 +27,27 @@ schema = Schema()
 
 
 def sample_and_simulate():
+    """
+    Sample a building and run a simulation
+
+    Returns:
+        sb_name (str): name of shoebox
+        simple_dict (dict): dictionary of parameters for space_config.json
+        monthly_df (pd.DataFrame): dataframe of monthly results
+        err (str): error string
+        space_config (dict): dictionary of space config
+    """
+
+    """
+    Setup
+    """
     storage_vector = schema.generate_empty_storage_vector()
     # reset numpy seed
     np.random.seed()
+
+    """
+    Sample Building Parameters
+    """
     # Choose random values for storage vector
     for param in schema.parameters:
         val = None
@@ -57,6 +75,9 @@ def sample_and_simulate():
             storage_vector, parameter="HeatingSetpoint", value=csp
         )
 
+    """
+    Sample/Set Weather/Context Params
+    """
     cz_string = "4A"
     cz_value = CLIMATEZONES[cz_string]
     schema.update_storage_vector(
@@ -73,6 +94,11 @@ def sample_and_simulate():
         value=city_map["NY, New York"]["idx"],
     )
     shoebox_config = ShoeboxConfiguration()
+    shoebox_config.shading_vect = np.zeros((12,))
+
+    """
+    Build the Shoebox
+    """
     shoebox_config.width = schema["width"].extract_storage_values(storage_vector)
     shoebox_config.height = schema["height"].extract_storage_values(storage_vector)
     shoebox_config.floor_2_facade = schema["floor_2_facade"].extract_storage_values(
@@ -91,8 +117,10 @@ def sample_and_simulate():
     shoebox_config.orientation = schema["orientation"].extract_storage_values(
         storage_vector
     )
-    shoebox_config.shading_vect = np.zeros((12,))
 
+    """
+    Sample/Set Schedules
+    """
     # UNCOMMENT TO GET .npy FILE OF RESIDENTIAL TEMPLATE SCHEDULES
     # template_lib_idx = CLIMATEZONES["4A"]
 
@@ -114,6 +142,9 @@ def sample_and_simulate():
 
     schedules = np.load(data_root / "residential_schedules.npy")
 
+    """
+    Make dictionary of parameters for space_config.json
+    """
     skip = [
         "batch_id",
         "variation_id",
@@ -168,6 +199,9 @@ def sample_and_simulate():
                 param_data["mode"] = "Onehot"
             space_config[param.name] = param_data
 
+    """
+    Setup Simulation
+    """
     sb_name = str(uuid4())
     output_dir = data_root / "sim_results" / sb_name
     os.makedirs(output_dir, exist_ok=True)
@@ -181,8 +215,11 @@ def sample_and_simulate():
         output_directory=output_dir,
     )
 
-    # RUNNING TO GET DATAFRAME OF RESULTS
     idf = sb.idf(run_simulation=False)
+
+    """
+    Run Simulation
+    """
     hourly_df, monthly_df = sb.simulate(idf)
     monthly_df: pd.DataFrame = monthly_df["System"]
     monthly_df = monthly_df.rename(
@@ -195,6 +232,10 @@ def sample_and_simulate():
     )
     monthly_df = monthly_df.unstack()
 
+    """
+    Check For Errors
+    # TODO: use idf error fetcher from ZLH's work
+    """
     # check for errors
     with open(idf.simulation_dir / "eplusout.end", "r") as f:
         summary = f.read()
@@ -214,21 +255,49 @@ def sample_and_simulate():
 
 
 def batch_sim(n: int):
+    """
+    Run N simulations and save results to dataframes
+
+    Args:
+        n (int): number of simulations to run
+
+    Returns:
+        results (pd.DataFrame): dataframe of results
+        err_list (list): list of errors
+        space_config (dict): dictionary of space config
+
+    """
+
+    # make a dataframe to store results
     results = pd.DataFrame()
+
+    # make a list to store errors
     err_list = []
+
+    # try_count is used to prevent infinite loops so that we don't
+    # blow up our AWS bill if we somehow start failing
+    # though we also have a max timeout on the fargate tasks so it's nbd
     try_count = 0
+
+    # run simulations until we have n results
     while len(results) < n:
+        # Bail out if needed
         try_count = try_count + 1
         if try_count > 2 * n:
             logger.error("Too many failed simulations! Exiting.")
             exit()
+
+        # run the sim
         try:
             id, simple_dict, monthly_results, err, space_config = sample_and_simulate()
         except BaseException as e:
             logger.error("Error during simulation! Continuing.\n\n\n", exc_info=e)
         else:
             logger.info("Finished Simulation!\n\n\n")
+
+            # if we have no results, make a new dataframe
             if len(results) == 0:
+                # set the result
                 results = pd.DataFrame(monthly_results)
                 results = results.T
                 # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
@@ -238,15 +307,29 @@ def batch_sim(n: int):
                     names=["id"] + list(simple_dict.keys()),
                 )
             else:
+                # make the multi-index of features
                 index = (id, *(v for v in simple_dict.values()))
+                # set the result
                 results.loc[index] = monthly_results
                 logger.info(f"Successfully Saved Results! {len(results)}\n\n")
             if err != None:
+                # cache any errors
                 err_list.append((id, err))
+
     return results, err_list, space_config
 
 
 def save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experiment_name):
+    """
+    Save the batch results to a file and upload to S3
+
+    Args:
+        batch_dataframe (pd.DataFrame): dataframe of batch results
+        errs (list): list of errors
+        bucket (str): S3 bucket name
+        experiment_name (str): name of experiment
+    """
+    # this fargate/batch task has its own id
     run_name = str(uuid4())
     output_folder = data_root / "batch_results"
     os.makedirs(output_folder, exist_ok=True)
@@ -281,6 +364,7 @@ def save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experimen
         logger.info("Uploading Errors Complete")
 
     # check the aws batch array index
+    # only job #1 needs to upload the space config
     array_batch_index = os.environ.get("AWS_BATCH_JOB_ARRAY_INDEX", None)
     if array_batch_index == 1 or True:
         logger.info("Uploading Space Config...")
