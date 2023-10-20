@@ -486,74 +486,9 @@ class TMassParameter(OneHotParameter):
         return hot_bin
 
 
-# class TMassParameter(BuildingTemplateParameter):
-#     def __init__(self, path, **kwargs):
-#         super().__init__(path, **kwargs)
-
-#     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-#         desired_heat_capacity_per_wall_area = self.extract_storage_values(
-#             whitebox_sim.storage_vector
-#         )
-#         for zone in ["Perimeter", "Core"]:
-#             zone_obj = getattr(whitebox_sim.template, zone)
-#             constructions = zone_obj.Constructions
-#             construction = getattr(constructions, self.path[0])
-
-#             concrete_layer = construction.Layers[0]  # concrete
-#             material = concrete_layer.Material
-#             cp = material.SpecificHeat
-#             rho = material.Density
-#             volumetric_cp = cp * rho
-#             old_thermal_mass = construction.heat_capacity_per_unit_wall_area
-#             thermal_mass_without_concrete = (
-#                 old_thermal_mass - concrete_layer.heat_capacity
-#             )
-#             thickness = (
-#                 desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
-#             ) / volumetric_cp
-#             # thickness = desired_heat_capacity_per_wall_area / (cp * rho)
-#             if thickness < 0.004:
-#                 all_layers_except_mass = [a for a in construction.Layers]
-#                 all_layers_except_mass.pop(0)
-#                 construction.Layers = all_layers_except_mass
-#             else:
-#                 concrete_layer.Thickness = thickness
-
-#     def extract_from_template(self, building_template):
-#         """
-#         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
-#         Works as the reverse of mutate_simulation_object
-#         Args:
-#             whitebox_sim: WhiteboxSimulation
-#             building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
-#         """
-#         zone = "Perimeter"
-#         if "Facade" in self.name:
-#             surface = "Facade"
-#         elif "Roof" in self.name:
-#             surface = "Roof"
-#         elif "Slab" in self.name:
-#             surface = "Slab"
-#         path = ["Constructions", surface, "heat_capacity_per_unit_wall_area"]
-#         val = building_template.Perimeter
-#         for attr in path:
-#             val = getattr(val, attr)
-#         return self.to_ml(value=val)
-
-
-# class WindowParameter(OneHotParameter):
-# __slots__ = ()
-
-# def __init__(self, **kwargs):
-#     super().__init__(count=5, **kwargs)
-
-
 class WindowParameter(NumericParameter):
     def __init__(self, min, max, **kwargs):
-        super().__init__(shape_storage=(2,), shape_ml=(2,), **kwargs)
-        self.min = np.array(min)
-        self.max = np.array(max)
-        self.range = self.max - self.min
+        super().__init__(shape_storage=(1,), shape_ml=(1,), **kwargs)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
@@ -612,7 +547,7 @@ class WindowParameter(NumericParameter):
 
     def extract_from_template(
         self, building_template
-    ):  # TODO: Categorize window based on values
+    ):  # TODO: for umi later
         """
         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
         Works as the reverse of mutate_simulation_object
@@ -630,6 +565,7 @@ class WindowParameter(NumericParameter):
                 0.7 < Uval < 1.0 LOE Uval < 0.7
 
         """
+        logging.warning("WINDOW extract_from_template IS NOT DONE YET.")
         window = building_template.Windows.Construction
         uval = window.u_value
         if window.glazing_count == 2:
@@ -659,7 +595,7 @@ class WindowParameter(NumericParameter):
         #     type = 0
         # return type
 
-        return self.to_ml(value=np.array([uval, shgc]))
+        # return self.to_ml(value=np.array([uval, shgc]))
 
     @classmethod
     def single_pane_shgc_estimation(cls, tsol, uval):
@@ -1070,13 +1006,22 @@ class Schema:
                     info="Slab R-value",
                 ),
                 WindowParameter(
-                    name="WindowSettings",
-                    min=(0.3, 0.05),
-                    max=(7.0, 0.99),
-                    mean=np.array([5, 0.5]),
-                    std=np.array([2, 0.1]),
+                    name="WindowUValue",
+                    min=0.3,
+                    max=7.0,
+                    mean=5.0,
+                    std=2.0,
                     source="climate studio",
-                    info="U-value (m2K/W), shgc, visible transmittance",
+                    info="U-value (m2K/W)",
+                ),
+                WindowParameter(
+                    name="WindowShgc",
+                    min=0.05,
+                    max=0.99,
+                    mean=0.5,
+                    std=0.1,
+                    source="climate studio",
+                    info="",
                 ),
                 # WindowParameter(
                 #     name="WindowSettings",

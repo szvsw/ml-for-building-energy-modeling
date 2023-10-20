@@ -210,7 +210,6 @@ class ShoeBox:
             shoebox_config.shading_vect = (
                 np.random.random(SHADING_DIV_SIZE) * math.pi / 2.5
             )  # TODO how to divide this? Do this in schema
-        window_settings = schema["WindowSettings"].extract_storage_values(vector)
         td = template_dict(
             schedules,
             people_density=schema["PeopleDensity"].extract_storage_values(vector),
@@ -241,8 +240,8 @@ class ShoeBox:
             roof_r_val=schema["RoofRValue"].extract_storage_values(vector),
             roof_mass=schema["RoofMass"].extract_storage_values(vector),
             slab_r_val=schema["SlabRValue"].extract_storage_values(vector),
-            shgc=window_settings[1],
-            window_u_val=window_settings[0],
+            shgc=schema["WindowUValue"].extract_storage_values(vector),
+            window_u_val=schema["WindowShgc"].extract_storage_values(vector),
             # visible_transmittance=0.8,  # TODO?
         )
         return cls(
