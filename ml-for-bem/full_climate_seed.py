@@ -228,7 +228,7 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
         and "GetPurchasedAir" not in w
         and "The following Report Variables" not in w
         and "psysatfntemp" not in w.lower()
-        and "GPU" not in w.lower()
+        and "gpu" not in w.lower()
     ]
     logger.info(f"WARNING COUNT: {len(warnings)}")
     logger.info(f"ERROR COUNT:   {len(errors)}")

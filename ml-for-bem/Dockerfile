@@ -32,8 +32,12 @@ RUN pip install -U energy-pandas
 # Copy the current directory contents into the container at /app
 COPY data/template_libs data/template_libs
 COPY data/*.json data/
-COPY data/epws/city_epws_indexed/*.epw data/epws/city_epws_indexed/
+# COPY data/epws/city_epws_indexed/*.epw data/epws/city_epws_indexed/
+COPY data/epws/global_epws_indexed/*.epw data/epws/global_epws_indexed/ 
+COPY data/*.csv data/
+COPY data/epws/*.csv data/epws/
 COPY data/epws/*.npy data/epws/
+COPY data/schedules.npy data/schedules.npy
 COPY data/residential_schedules.npy data/residential_schedules.npy
 COPY *.py .
 COPY utils/*.py utils/
@@ -47,4 +51,4 @@ WORKDIR /usr/src/ml-for-bem
 
 
 # Run app.py when the container launches
-CMD ["python", "single_climate_seed.py", "--n", "10", "--bucket", "ml-for-bem", "--experiment_name", "single_climate_zone/test"]
+CMD ["python", "full_climate_seed.py", "--n", "10", "--bucket", "ml-for-bem", "--experiment_name", "full_climate_zone/docker-test/train", "--train_or_test","train"]
