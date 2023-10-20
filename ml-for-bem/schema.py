@@ -319,13 +319,14 @@ class BuildingTemplateParameter(NumericParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        value = self.extract_storage_values(whitebox_sim.storage_vector)
-        template_param = self.path[-1]
-        for zone in ["Perimeter", "Core"]:
-            path = [whitebox_sim.template, zone, *self.path]
-            path = path[:-1]
-            object_to_update = reduce(lambda a, b: a[b], path)
-            setattr(object_to_update, template_param, value)
+        pass
+        # value = self.extract_storage_values(whitebox_sim.storage_vector)
+        # template_param = self.path[-1]
+        # for zone in ["Perimeter", "Core"]:
+        #     path = [whitebox_sim.template, zone, *self.path]
+        #     path = path[:-1]
+        #     object_to_update = reduce(lambda a, b: a[b], path)
+        #     setattr(object_to_update, template_param, value)
 
     def extract_from_template(self, building_template):
         """
@@ -356,47 +357,48 @@ class RValueParameter(BuildingTemplateParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        desired_r_value = self.extract_storage_values(whitebox_sim.storage_vector)
-        for zone in ["Perimeter", "Core"]:
-            zone_obj = getattr(whitebox_sim.template, zone)
-            constructions = zone_obj.Constructions
-            construction = getattr(constructions, self.path[0])
-            # TODO: make sure units are correct!!!
-            # = self.infer_insulation_layer()
-            layers = construction.Layers
-            insulation_layer_ix = None
-            k_min = 999999
-            for i, layer in enumerate(layers):
-                if layer.Material.Conductivity < k_min:
-                    k_min = layer.Material.Conductivity
-                    insulation_layer_ix = i
+        pass
+        # desired_r_value = self.extract_storage_values(whitebox_sim.storage_vector)
+        # for zone in ["Perimeter", "Core"]:
+        #     zone_obj = getattr(whitebox_sim.template, zone)
+        #     constructions = zone_obj.Constructions
+        #     construction = getattr(constructions, self.path[0])
+        #     # TODO: make sure units are correct!!!
+        #     # = self.infer_insulation_layer()
+        #     layers = construction.Layers
+        #     insulation_layer_ix = None
+        #     k_min = 999999
+        #     for i, layer in enumerate(layers):
+        #         if layer.Material.Conductivity < k_min:
+        #             k_min = layer.Material.Conductivity
+        #             insulation_layer_ix = i
 
-            i = insulation_layer_ix
-            all_layers_except_insulation_layer = [a for a in layers]
-            all_layers_except_insulation_layer.pop(i)
-            insulation_layer: MaterialLayer = layers[i]
+        #     i = insulation_layer_ix
+        #     all_layers_except_insulation_layer = [a for a in layers]
+        #     all_layers_except_insulation_layer.pop(i)
+        #     insulation_layer: MaterialLayer = layers[i]
 
-            if desired_r_value <= sum(
-                [a.r_value for a in all_layers_except_insulation_layer]
-            ):
-                raise ValueError(
-                    f"Cannot set assembly r-value smaller than "
-                    f"{sum([a.r_value for a in all_layers_except_insulation_layer])} "
-                    f"because it would result in an insulation of a "
-                    f"negative thickness. Try a higher value or changing the material "
-                    f"layers instead."
-                )
+        #     if desired_r_value <= sum(
+        #         [a.r_value for a in all_layers_except_insulation_layer]
+        #     ):
+        #         raise ValueError(
+        #             f"Cannot set assembly r-value smaller than "
+        #             f"{sum([a.r_value for a in all_layers_except_insulation_layer])} "
+        #             f"because it would result in an insulation of a "
+        #             f"negative thickness. Try a higher value or changing the material "
+        #             f"layers instead."
+        #         )
 
-            alpha = float(desired_r_value) / construction.r_value
-            new_r_value = (
-                (
-                    (alpha - 1)
-                    * sum([a.r_value for a in all_layers_except_insulation_layer])
-                )
-            ) + alpha * insulation_layer.r_value
-            insulation_layer.r_value = new_r_value
-            if insulation_layer.Thickness <= 0.003:
-                construction.Layers = all_layers_except_insulation_layer
+        #     alpha = float(desired_r_value) / construction.r_value
+        #     new_r_value = (
+        #         (
+        #             (alpha - 1)
+        #             * sum([a.r_value for a in all_layers_except_insulation_layer])
+        #         )
+        #     ) + alpha * insulation_layer.r_value
+        #     insulation_layer.r_value = new_r_value
+        #     if insulation_layer.Thickness <= 0.003:
+        #         construction.Layers = all_layers_except_insulation_layer
 
     def extract_from_template(self, building_template):
         """
@@ -427,34 +429,35 @@ class TMassParameter(OneHotParameter):
         self.path = path.split(".")
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        hot_bin = self.extract_storage_values(whitebox_sim.storage_vector)
-        # hot_bin = self.get_tmas_idx(value)
-        desired_heat_capacity_per_wall_area = ThermalMassCapacities[
-            ThermalMassConstructions(hot_bin).name
-        ].value
-        for zone in ["Perimeter", "Core"]:
-            zone_obj = getattr(whitebox_sim.template, zone)
-            constructions = zone_obj.Constructions
-            construction = getattr(constructions, self.path[0])
+        pass
+        # hot_bin = self.extract_storage_values(whitebox_sim.storage_vector)
+        # # hot_bin = self.get_tmas_idx(value)
+        # desired_heat_capacity_per_wall_area = ThermalMassCapacities[
+        #     ThermalMassConstructions(hot_bin).name
+        # ].value
+        # for zone in ["Perimeter", "Core"]:
+        #     zone_obj = getattr(whitebox_sim.template, zone)
+        #     constructions = zone_obj.Constructions
+        #     construction = getattr(constructions, self.path[0])
 
-            concrete_layer = construction.Layers[0]  # concrete
-            material = concrete_layer.Material
-            cp = material.SpecificHeat
-            rho = material.Density
-            volumetric_cp = cp * rho
-            old_thermal_mass = construction.heat_capacity_per_unit_wall_area
-            thermal_mass_without_concrete = (
-                old_thermal_mass - concrete_layer.heat_capacity
-            )
-            thickness = (
-                desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
-            ) / volumetric_cp
-            if thickness < 0.004:
-                all_layers_except_mass = [a for a in construction.Layers]
-                all_layers_except_mass.pop(0)
-                construction.Layers = all_layers_except_mass
-            else:
-                concrete_layer.Thickness = thickness
+        #     concrete_layer = construction.Layers[0]  # concrete
+        #     material = concrete_layer.Material
+        #     cp = material.SpecificHeat
+        #     rho = material.Density
+        #     volumetric_cp = cp * rho
+        #     old_thermal_mass = construction.heat_capacity_per_unit_wall_area
+        #     thermal_mass_without_concrete = (
+        #         old_thermal_mass - concrete_layer.heat_capacity
+        #     )
+        #     thickness = (
+        #         desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
+        #     ) / volumetric_cp
+        #     if thickness < 0.004:
+        #         all_layers_except_mass = [a for a in construction.Layers]
+        #         all_layers_except_mass.pop(0)
+        #         construction.Layers = all_layers_except_mass
+        #     else:
+        #         concrete_layer.Thickness = thickness
 
     def extract_from_template(self, building_template):
         if "Facade" in self.name:
@@ -661,32 +664,32 @@ class SchedulesParameters(SchemaParameter):
         Args:
             whitebox_sim (WhiteboxSimulation): the simulation object with template to configure.
         """
-
+        pass
         # # TODO: avoid double mutation of recycled schedule - i think this is fixed, should confirm.
-        seed = int(
-            whitebox_sim.schema["schedules_seed"].extract_storage_values(
-                whitebox_sim.storage_vector
-            )
-        )
-        schedules = get_schedules(
-            whitebox_sim.template, zones=["Core"], paths=self.paths
-        )
-        operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
-        new_schedules = mutate_timeseries(schedules, operations_map, seed)
-        update_schedule_objects(
-            whitebox_sim.template,
-            timeseries=new_schedules,
-            zones=["Core"],
-            paths=self.paths,
-            id=seed,
-        )
-        update_schedule_objects(
-            whitebox_sim.template,
-            timeseries=new_schedules,
-            zones=["Perimeter"],
-            paths=self.paths,
-            id=seed,
-        )
+        # seed = int(
+        #     whitebox_sim.schema["schedules_seed"].extract_storage_values(
+        #         whitebox_sim.storage_vector
+        #     )
+        # )
+        # schedules = get_schedules(
+        #     whitebox_sim.template, zones=["Core"], paths=self.paths
+        # )
+        # operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
+        # new_schedules = mutate_timeseries(schedules, operations_map, seed)
+        # update_schedule_objects(
+        #     whitebox_sim.template,
+        #     timeseries=new_schedules,
+        #     zones=["Core"],
+        #     paths=self.paths,
+        #     id=seed,
+        # )
+        # update_schedule_objects(
+        #     whitebox_sim.template,
+        #     timeseries=new_schedules,
+        #     zones=["Perimeter"],
+        #     paths=self.paths,
+        #     id=seed,
+        # )
         # whitebox_sim.template.Perimeter.Conditioning.MechVentSchedule = (
         #     whitebox_sim.template.Perimeter.Loads.OccupancySchedule
         # )
@@ -737,21 +740,6 @@ class Schema:
                     dtype="index",
                     shape_ml=(0,),
                     info="variation_id of design",
-                ),
-                OneHotParameter(
-                    name="program_type",
-                    count=19,
-                    info="Indicator of program type",
-                    shape_ml=(0,),
-                ),
-                NumericParameter(
-                    name="vintage",
-                    info="The year of construction",
-                    min=1920,
-                    max=2020,
-                    mean=1980,
-                    std=20,
-                    shape_ml=(0,),
                 ),
                 OneHotParameter(
                     name="climate_zone",
@@ -955,26 +943,6 @@ class Schema:
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior wall thermal mass (J/Km2)",
                 ),
-                # TMassParameter(
-                #     name="FacadeMass",
-                #     path="Facade",
-                #     min=13000,  # TODO need to revisit minimums of all thermal mass
-                #     max=800000,  # TODO: reduce a bit?
-                #     mean=80000,
-                #     std=20000,
-                #     source="https://www.designingbuildings.co.uk/",
-                #     info="Exterior wall thermal mass (J/Km2)",
-                # ),
-                # TMassParameter(
-                #     name="RoofMass",
-                #     path="Roof",
-                #     min=13000,
-                #     max=1500000,
-                #     mean=200000,
-                #     std=200000,
-                #     source="https://www.designingbuildings.co.uk/",
-                #     info="Exterior roof thermal mass (J/Km2)",
-                # ),
                 RValueParameter(
                     name="FacadeRValue",
                     path="Facade",
@@ -1023,10 +991,6 @@ class Schema:
                     source="climate studio",
                     info="",
                 ),
-                # WindowParameter(
-                #     name="WindowSettings",
-                #     info="Lookup index of window type.",
-                # ),
                 OneHotParameter(
                     name="EconomizerSettings",
                     count=2,
