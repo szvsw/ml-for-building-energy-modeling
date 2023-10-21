@@ -302,7 +302,7 @@ def batch_sim(n: int, train_or_test: Literal["train", "test"] = "train"):
         try_count = try_count + 1
         if try_count > 2 * n:
             logger.error("Too many failed simulations! Exiting.")
-            exit()
+            break
 
         # run the sim
         try:
