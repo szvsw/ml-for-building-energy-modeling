@@ -1,10 +1,11 @@
-import os
 from pathlib import Path
 import pandas as pd
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from tqdm.notebook import tqdm
+from typing import Literal, Union
 
 from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
 from shoeboxer.builder import schedules_from_seed
@@ -38,12 +39,39 @@ def transform_dataframe(space_config, features):
     return df
 
 
+class MinMaxTransform(nn.Module):
+    def __init__(self, targets: pd.DataFrame, mode: Literal["columnwise", "global"]):
+        super().__init__()
+        self.mode = mode
+        if self.mode == "global":
+            self.max_val = nn.parameter.Parameter(torch.tensor(targets.max().values))
+            self.min_val = nn.parameter.Parameter(torch.tensor(targets.min().values))
+        elif self.mode == "columnwise":
+            self.max_val = nn.parameter.Parameter(
+                torch.tensor(targets.max(axis=0).values).reshape(1, -1)
+            )
+            self.min_val = nn.parameter.Parameter(
+                torch.tensor(targets.min(axis=0).values).reshape(1, -1)
+            )
+        self.columns = targets.columns
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.min_val) / (self.max_val - self.min_val)
+
+    def inverse_transform(self, x: torch.Tensor, as_df: bool = False) -> torch.Tensor:
+        vals = x * (self.max_val - self.min_val) + self.min_val
+        if as_df:
+            return pd.DataFrame(vals.detach().cpu().numpy(), columns=self.columns)
+        else:
+            return vals
+
+
 class BuildingDataset(Dataset):
     def __init__(
         self,
         space_config,
         climate_array,
-        path,
+        path=None,
         key="batch_results",
     ):
         df = pd.read_hdf(path, key=key)
@@ -52,6 +80,7 @@ class BuildingDataset(Dataset):
         mask = ~features["error"]
         features = features[mask]
         targets = targets[mask]
+        self.targets_untransformed = targets
         self.climate_zones = features["climate_zone"].apply(
             lambda x: CLIMATEZONES_LIST[int(x)]
         )
@@ -70,6 +99,40 @@ class BuildingDataset(Dataset):
         self.space_config = space_config
         self.climate_array = climate_array
 
+    def fit_target_transform(self, mode: Literal["columnwise", "global"]):
+        self.target_transform = MinMaxTransform(
+            self.targets_untransformed, mode=mode
+        ).cpu()
+        with torch.no_grad():
+            self.targets = (
+                self.target_transform(
+                    torch.tensor(
+                        self.targets_untransformed.values,
+                        device=next(self.target_transform.parameters()).device,
+                        dtype=torch.float32,
+                    )
+                )
+                .cpu()
+                .numpy()
+            )
+        return self.target_transform
+
+    def load_target_transform(self, transform: nn.Module):
+        self.target_transform = transform
+        with torch.no_grad():
+            self.targets = (
+                self.target_transform(
+                    torch.tensor(
+                        self.targets_untransformed.values,
+                        device=next(transform.parameters()).device,
+                        dtype=torch.float32,
+                    )
+                )
+                .cpu()
+                .numpy()
+            )
+        return self.target_transform
+
     def __len__(self):
         return len(self.features)
 
@@ -79,4 +142,45 @@ class BuildingDataset(Dataset):
         cz = self.climate_zones.iloc[index]
         epw_ix = self.epw_ixs.iloc[index]
         climate_data = self.climate_array[epw_ix]
-        return self.features.iloc[index].values, schedules, climate_data, cz
+        targets = self.targets[index]
+        return self.features.iloc[index].values, schedules, climate_data, cz, targets
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+    import time
+    import json
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader
+    from tqdm import tqdm
+
+    with open("data/space_definition.json", "r") as f:
+        space_config = json.load(f)
+
+    climate_array = np.load(Path("data") / "epws" / "global_climate_array.npy")
+
+    data = BuildingDataset(
+        space_config,
+        climate_array,
+        "data/hdf5/full_climate_zone/v3/train/monthly.hdf",
+        key="batch_results",
+    )
+    target_transform = data.fit_target_transform(mode="columnwise")
+
+    # make a dataloader
+    dataloader = DataLoader(data, batch_size=128, shuffle=True)
+
+    i = 0
+    s = time.time()
+    for features, schedules, climate_data, cz, targets in tqdm(dataloader):
+        # print(features.shape, schedules.shape)
+        features: torch.Tensor = features.float().to("cuda")
+        schedules: torch.Tensor = schedules.float().to("cuda")
+        climate_data: torch.Tensor = climate_data.float().to("cuda")
+        targets: torch.Tensor = targets.float().to("cuda")
+        timeseries: torch.Tensor = torch.concat([climate_data, schedules], dim=1)
+        i += 1
+    e = time.time()
+    print(f"{i} batches in {e-s:0.2f} seconds, {(e-s)/i:0.3f} seconds per batch")
+    data.features.head()
