@@ -504,7 +504,7 @@ class WindowParameter(NumericParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        pass # TODO
+        pass  # TODO
         # logger.info(
         #     "Skipping update of window parameters - will build simple window in build_shoebox"
         # )
@@ -548,9 +548,7 @@ class WindowParameter(NumericParameter):
         # # Update the window
         # whitebox_sim.template.Windows.Construction = (window_construction)
 
-    def extract_from_template(
-        self, building_template
-    ):  # TODO: for umi later
+    def extract_from_template(self, building_template):  # TODO: for umi later
         """
         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
         Works as the reverse of mutate_simulation_object
@@ -832,18 +830,18 @@ class Schema:
                     name="HeatingSetpoint",
                     path="Conditioning.HeatingSetpoint",
                     min=14,
-                    max=30,
+                    max=24,
                     mean=21,
-                    std=4,
+                    std=2,
                     info="Heating setpoint",
                 ),
                 BuildingTemplateParameter(
                     name="CoolingSetpoint",
                     path="Conditioning.CoolingSetpoint",
-                    min=14,
+                    min=22,
                     max=30,
-                    mean=22,
-                    std=4,
+                    mean=24,
+                    std=1,
                     info="Cooling setpoint",
                 ),
                 # BuildingTemplateParameter(
@@ -899,32 +897,32 @@ class Schema:
                 BuildingTemplateParameter(
                     name="Infiltration",
                     path="Ventilation.Infiltration",
-                    min=0.1,
-                    max=4,
-                    mean=2,
-                    std=1,
+                    min=0.0,
+                    max=0.001,
+                    mean=0.0006,
+                    std=0.0002,
                     source="tacit",
-                    info="Infiltration rate [ach]",
+                    info="Infiltration rate [m3/s/m2 ext area]",
                 ),
                 BuildingTemplateParameter(
                     name="VentilationPerArea",
                     path="Conditioning.MinFreshAirPerArea",  # TODO check & set max and min
-                    min=0.1,
-                    max=4,
-                    mean=2,
-                    std=1,
+                    min=0.0,
+                    max=0.005,
+                    mean=0.0004,
+                    std=0.0002,
                     source="tacit",
-                    info="Outdoor air flow per floor area, minimum",
+                    info="Outdoor air flow per floor area, minimum (m3/s/m2)",
                 ),
                 BuildingTemplateParameter(
                     name="VentilationPerPerson",
                     path="Conditioning.MinFreshAirPerPerson",  # TODO check & set max and min
-                    min=0.1,
-                    max=4,
-                    mean=2,
-                    std=1,
+                    min=0,
+                    max=0.015,
+                    mean=0.002,
+                    std=0.001,
                     source="tacit",
-                    info="Outdoor air flow per person, minimum",
+                    info="Outdoor air flow per person, minimum (m3/s/person)",
                 ),
                 OneHotParameter(
                     name="VentilationMode",
