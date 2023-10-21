@@ -10,6 +10,8 @@ from typing import Literal, Union
 from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
 from shoeboxer.builder import schedules_from_seed
 
+# TODO: add a transform for weather data
+
 
 def transform_dataframe(space_config, features):
     df = pd.DataFrame()
@@ -44,14 +46,30 @@ class MinMaxTransform(nn.Module):
         super().__init__()
         self.mode = mode
         if self.mode == "global":
-            self.max_val = nn.parameter.Parameter(torch.tensor(targets.max().values))
-            self.min_val = nn.parameter.Parameter(torch.tensor(targets.min().values))
-        elif self.mode == "columnwise":
             self.max_val = nn.parameter.Parameter(
-                torch.tensor(targets.max(axis=0).values).reshape(1, -1)
+                torch.tensor(
+                    targets.max().values,
+                    dtype=torch.float32,
+                )
             )
             self.min_val = nn.parameter.Parameter(
-                torch.tensor(targets.min(axis=0).values).reshape(1, -1)
+                torch.tensor(
+                    targets.min().values,
+                    dtype=torch.float32,
+                )
+            )
+        elif self.mode == "columnwise":
+            self.max_val = nn.parameter.Parameter(
+                torch.tensor(
+                    targets.max(axis=0).values,
+                    dtype=torch.float32,
+                ).reshape(1, -1),
+            )
+            self.min_val = nn.parameter.Parameter(
+                torch.tensor(
+                    targets.min(axis=0).values,
+                    dtype=torch.float32,
+                ).reshape(1, -1),
             )
         self.columns = targets.columns
 
@@ -66,11 +84,33 @@ class MinMaxTransform(nn.Module):
             return vals
 
 
+class WeatherStdNormalTransform(nn.Module):
+    def __init__(self, climate_array: np.ndarray):
+        super().__init__()
+        self.means = nn.parameter.Parameter(
+            torch.tensor(
+                climate_array,
+                dtype=torch.float32,
+            )
+            .mean(dim=[0, 2])
+            .reshape(1, -1, 1),
+        )
+        self.stds = nn.parameter.Parameter(
+            torch.tensor(climate_array, dtype=torch.float32)
+            .std(dim=[0, 2])
+            .reshape(1, -1, 1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.means) / self.stds
+
+
 class BuildingDataset(Dataset):
     def __init__(
         self,
         space_config,
         climate_array,
+        weather_transform: nn.Module,
         path=None,
         key="batch_results",
     ):
@@ -97,7 +137,20 @@ class BuildingDataset(Dataset):
         self.features_untransformed = features
         self.features = transform_dataframe(space_config, features)
         self.space_config = space_config
-        self.climate_array = climate_array
+        self.climate_array_untransformed = climate_array
+        self.weather_transform = weather_transform
+        self.climate_array = (
+            weather_transform(
+                torch.tensor(
+                    climate_array,
+                    dtype=torch.float32,
+                    device=next(weather_transform.parameters()).device,
+                )
+            )
+            .detach()
+            .cpu()
+            .numpy()
+        )
 
     def fit_target_transform(self, mode: Literal["columnwise", "global"]):
         self.target_transform = MinMaxTransform(
@@ -139,11 +192,11 @@ class BuildingDataset(Dataset):
     def __getitem__(self, index):
         schedule_seed = self.schedules_seed.iloc[index]
         schedules = schedules_from_seed(schedule_seed)
-        cz = self.climate_zones.iloc[index]
+        # cz = self.climate_zones.iloc[index]
         epw_ix = self.epw_ixs.iloc[index]
         climate_data = self.climate_array[epw_ix]
         targets = self.targets[index]
-        return self.features.iloc[index].values, schedules, climate_data, cz, targets
+        return self.features.iloc[index].values, schedules, climate_data, targets
 
 
 if __name__ == "__main__":
@@ -159,10 +212,12 @@ if __name__ == "__main__":
         space_config = json.load(f)
 
     climate_array = np.load(Path("data") / "epws" / "global_climate_array.npy")
+    weather_transform = WeatherStdNormalTransform(climate_array)
 
     data = BuildingDataset(
         space_config,
         climate_array,
+        weather_transform,
         "data/hdf5/full_climate_zone/v3/train/monthly.hdf",
         key="batch_results",
     )
@@ -173,7 +228,7 @@ if __name__ == "__main__":
 
     i = 0
     s = time.time()
-    for features, schedules, climate_data, cz, targets in tqdm(dataloader):
+    for features, schedules, climate_data, targets in tqdm(dataloader):
         # print(features.shape, schedules.shape)
         features: torch.Tensor = features.float().to("cuda")
         schedules: torch.Tensor = schedules.float().to("cuda")
@@ -181,6 +236,8 @@ if __name__ == "__main__":
         targets: torch.Tensor = targets.float().to("cuda")
         timeseries: torch.Tensor = torch.concat([climate_data, schedules], dim=1)
         i += 1
+        if i > 100:
+            break
     e = time.time()
     print(f"{i} batches in {e-s:0.2f} seconds, {(e-s)/i:0.3f} seconds per batch")
     data.features.head()
