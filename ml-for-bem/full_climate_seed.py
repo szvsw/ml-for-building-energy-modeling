@@ -6,7 +6,12 @@ import boto3
 import pandas as pd
 from uuid import uuid4
 from utils.nrel_uitls import CLIMATEZONES, RESTYPES
-from utils.constants import EPW_MAP_PATH, EPW_TESTING_LIST_PATH, EPW_TRAINING_LIST_PATH
+from utils.constants import (
+    EPW_MAP_PATH,
+    EPW_TESTING_LIST_PATH,
+    EPW_TRAINING_LIST_PATH,
+    JOULES_TO_KWH,
+)
 import json
 from pathlib import Path
 import numpy as np
@@ -214,6 +219,13 @@ def sample_and_simulate(train_or_test: Literal["train", "test"]):
         },
     )
     monthly_df = monthly_df.unstack()
+    monthly_df = monthly_df * JOULES_TO_KWH
+    perimeter_area = (
+        shoebox_config.width * shoebox_config.height * shoebox_config.floor_2_facade
+    )
+    core_area = perimeter_area * shoebox_config.core_2_perim
+    monthly_df["Perimeter"] = monthly_df.loc["Perimeter"] / perimeter_area
+    monthly_df["Core"] = monthly_df.loc["Core"] / core_area
 
     """
     Check For Errors
