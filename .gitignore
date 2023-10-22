@@ -142,6 +142,7 @@ ml-for-bem/data/epws/global_epws_indexed/**.epw
 ml-for-bem/data/epws/global_epws_indexed.zip
 ml-for-bem/data/template_libs/cz_libs/residential/epresults
 ml-for-bem/data/**/*.npy
+ml-for-bem/data/runs
 ml-for-bem/checkpoints/**/*.pt
 ml-for-bem/checkpoints/**/*.pth
 
