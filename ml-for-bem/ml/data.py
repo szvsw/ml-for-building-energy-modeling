@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import pandas as pd
 import numpy as np
 import torch
@@ -136,6 +137,7 @@ class BuildingDataset(Dataset):
 
         self.features_untransformed = features
         self.features = transform_dataframe(space_config, features)
+        self.features = self.features.astype(np.float32)
         self.space_config = space_config
         self.climate_array = climate_array
 
@@ -178,7 +180,7 @@ class BuildingDataset(Dataset):
 
     def __getitem__(self, index):
         schedule_seed = self.schedules_seed.iloc[index]
-        schedules = schedules_from_seed(schedule_seed)
+        schedules = schedules_from_seed(schedule_seed).astype(np.float32)
         # cz = self.climate_zones.iloc[index]
         epw_ix = self.epw_ixs.iloc[index]
         climate_data = self.climate_array[epw_ix]
@@ -211,7 +213,7 @@ class BuildingDataModule(pl.LightningDataModule):
 
         climate_array = np.load(self.climate_array_path)
         weather_transform = WeatherStdNormalTransform(climate_array)
-        climate_array = (
+        self.climate_array = (
             weather_transform(
                 torch.tensor(
                     climate_array,
@@ -223,9 +225,10 @@ class BuildingDataModule(pl.LightningDataModule):
             .cpu()
             .numpy()
         )
+        self.climate_array = self.climate_array.astype(np.float32)
         seen_epw_buiding_dataset = BuildingDataset(
             space_config,
-            climate_array,
+            self.climate_array,
             self.train_data_path,
             key="batch_results",
         )
@@ -234,24 +237,24 @@ class BuildingDataModule(pl.LightningDataModule):
             mode="columnwise"
         )
 
-        self.seen_epw_train, self.seen_epw_val = random_split(
+        self.seen_epw_training_set, self.seen_epw_validation_set = random_split(
             seen_epw_buiding_dataset,
             [0.9, 0.1],
             generator=torch.Generator().manual_seed(42),
         )
         # building_data_unseen = BuildingDataset(
         #     space_config,
-        #     climate_array,
+        #     self.climate_array,
         #     self.test_data_dir,
         #     key="batch_results",
         # )
         # building_data_unseen.load_target_transform(target_transform)
 
     def train_dataloader(self):
-        return DataLoader(self.seen_epw_train, batch_size=self.batch_size)
+        return DataLoader(self.seen_epw_training_set, batch_size=self.batch_size)
 
     def val_dataloader(self):
-        return {"seen": DataLoader(self.seen_epw_val, batch_size=self.batch_size)}
+        return DataLoader(self.seen_epw_validation_set, batch_size=self.batch_size)
 
     # def test_dataloader(self):
     #     return DataLoader(self.mnist_test, batch_size=self.batch_size)
@@ -263,7 +266,6 @@ class BuildingDataModule(pl.LightningDataModule):
 if __name__ == "__main__":
     from pathlib import Path
     import time
-    import json
     import numpy as np
     import torch
     from torch.utils.data import DataLoader

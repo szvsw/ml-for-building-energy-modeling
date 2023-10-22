@@ -22,7 +22,8 @@ class MultiModalModel(nn.Module):
     ) -> torch.Tensor:
         timeseries = torch.cat([climates, schedules], dim=1)
         latent = self.timeseries_net(timeseries)
-        building_features = building_features.unsqueeze(1).repeat(1, latent.shape[-1])
+        building_features = building_features.unsqueeze(-1)
+        building_features = building_features.repeat(1, 1, latent.shape[-1])
         input = torch.cat([building_features, latent], dim=1)
         preds = self.energy_net(input)
         return preds
@@ -80,13 +81,15 @@ class Surrogate(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         building_features, schedules, climates, targets = batch
         preds = self.model(building_features, schedules, climates)
+        targets = targets.reshape(preds.shape)
         loss = F.mse_loss(preds, targets)
         self.log("Loss/Train", loss)
         return loss
 
-    def validation_step(self, batch, batch_idx, dataset_idx):
+    def validation_step(self, batch, batch_idx):
         building_features, schedules, climates, targets = batch
         preds = self.model(building_features, schedules, climates)
+        targets = targets.reshape(preds.shape)
         loss = F.mse_loss(preds, targets)
         self.log("Loss/Val", loss)
         # TODO: implement inverse transformed error calcs in energy space
@@ -98,7 +101,54 @@ if __name__ == "__main__":
 
     dm = BuildingDataModule(
         batch_size=32,
-        data_dir="data/hdf5/full_climate_zone/v3/train/monthly.hdf",
+        data_dir="data/hdf5/full_climate_zone/v3",
         climate_array_path=str(Path("data") / "epws" / "global_climate_array.npy"),
     )
-    # trainer = pl.Trainer(
+
+    # TODO: these should be inferred automatically from the datasets
+    n_climate_timeseries = 7
+    n_building_timeseries = 3
+    timeseries_channels_per_input = n_climate_timeseries + n_building_timeseries
+    static_features_per_input = 52
+    timeseries_channels_per_output = 4
+    timeseries_steps_per_output = 12
+
+    """
+    Hyperparameters:
+    """
+    lr = 1e-3
+    latent_factor = 4
+    energy_cnn_feature_maps = 128
+    energy_cnn_n_layers = 3
+
+    surrogate = Surrogate(
+        lr=lr,
+        latent_factor=latent_factor,
+        energy_cnn_feature_maps=energy_cnn_feature_maps,
+        energy_cnn_n_layers=energy_cnn_n_layers,
+        timeseries_channels_per_input=timeseries_channels_per_input,
+        static_features_per_input=static_features_per_input,
+        timeseries_channels_per_output=timeseries_channels_per_output,
+        timeseries_steps_per_output=timeseries_steps_per_output,
+    )
+
+    """
+    Trainer
+    """
+
+    trainer = pl.Trainer(
+        accelerator="auto",
+        devices="auto",
+        enable_progress_bar=True,
+        enable_checkpointing=False,
+        enable_model_summary=True,
+        num_sanity_val_steps=10,
+        max_steps=100,
+        val_check_interval=0.1,
+        precision=32,
+    )
+
+    trainer.fit(
+        model=surrogate,
+        datamodule=dm,
+    )
