@@ -159,3 +159,5 @@ ml-for-bem/data/batch_results/
 ml-for-bem/data/hdf5/single-climate-zone/
 ml-for-bem/lightning_logs/
 ml-for-bem/data/lightning/
+ml-for-bem/data/hdf5/full_climate_zone/
+ml-for-bem/scratch*
