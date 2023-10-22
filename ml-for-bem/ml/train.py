@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from ml.networks import EnergyCNN2, ConvNet, Conv1DStageConfig
+from ml.data import MinMaxTransform
 
 
 class MultiModalModel(nn.Module):
@@ -32,6 +33,7 @@ class MultiModalModel(nn.Module):
 class Surrogate(pl.LightningModule):
     def __init__(
         self,
+        target_transform: MinMaxTransform,
         lr: float = 1e-3,
         latent_factor: int = 4,
         energy_cnn_feature_maps: int = 128,
@@ -69,8 +71,9 @@ class Surrogate(pl.LightningModule):
             n_feature_maps=self.energy_cnn_feature_maps,
             n_layers=self.energy_cnn_n_layers,
         )
+        self.target_transform = target_transform
 
-        self.model = MultiModalModel(
+        self.model: MultiModalModel = MultiModalModel(
             timeseries_net=timeseries_net, energy_net=energy_net
         )
 
@@ -86,13 +89,52 @@ class Surrogate(pl.LightningModule):
         self.log("Loss/Train", loss)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
+        error_dict = {}
         building_features, schedules, climates, targets = batch
-        preds = self.model(building_features, schedules, climates)
-        targets = targets.reshape(preds.shape)
-        loss = F.mse_loss(preds, targets)
-        self.log("Loss/Val", loss)
-        # TODO: implement inverse transformed error calcs in energy space
+        # targets are shaped (batch_size, n_zones x n_end_uses x n_timesteps)
+        # preds are shaped (batch_size, n_zones x n_end_uses, n_timesteps)
+        # targets are typically (b, 48)
+        # preds are typically (b, 4, 12)
+        # so some reshaping is done when necessary
+        preds_hierarchical: torch.Tensor = self.model(
+            building_features, schedules, climates
+        )
+        targets_hierarchical: torch.Tensor = targets.reshape(preds_hierarchical.shape)
+        loss = F.mse_loss(preds_hierarchical, targets_hierarchical)
+        error_dict[f"Loss/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}"] = loss
+
+        # transform preds and targets to energy units
+        preds_energy = self.target_transform.inverse_transform(
+            preds_hierarchical.reshape(targets.shape)
+        ).reshape(preds_hierarchical.shape)
+        targets_energy = self.target_transform.inverse_transform(targets).reshape(
+            preds_hierarchical.shape
+        )
+        annual_preds = preds_energy.sum(dim=-1)
+        annual_targets = targets_energy.sum(dim=-1)
+        annual_errors = torch.abs(annual_preds - annual_targets).mean(dim=0)
+
+        for i in range(annual_errors.shape[0]):
+            slug = ""
+            if i == 0:
+                slug = "Core/Heating"
+            elif i == 1:
+                slug = "Core/Cooling"
+            elif i == 2:
+                slug = "Perimeter/Heating"
+            elif i == 3:
+                slug = "Perimeter/Cooling"
+            error_dict[
+                f"Error/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}/{slug}"
+            ] = annual_errors[i]
+
+        self.log_dict(error_dict, on_epoch=True)
+        self.log(
+            f"Loss/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}",
+            loss,
+            on_epoch=True,
+        )
 
 
 if __name__ == "__main__":
@@ -100,10 +142,12 @@ if __name__ == "__main__":
     from pathlib import Path
 
     dm = BuildingDataModule(
-        batch_size=32,
+        batch_size=64,
         data_dir="data/hdf5/full_climate_zone/v3",
         climate_array_path=str(Path("data") / "epws" / "global_climate_array.npy"),
     )
+    dm.setup(stage="fit")
+    target_transform = dm.target_transform
 
     # TODO: these should be inferred automatically from the datasets
     n_climate_timeseries = 7
@@ -116,13 +160,14 @@ if __name__ == "__main__":
     """
     Hyperparameters:
     """
-    lr = 1e-3
-    latent_factor = 4
-    energy_cnn_feature_maps = 128
-    energy_cnn_n_layers = 3
+    lr = 1e-4
+    latent_factor = 6
+    energy_cnn_feature_maps = 256
+    energy_cnn_n_layers = 6
 
     surrogate = Surrogate(
         lr=lr,
+        target_transform=target_transform,
         latent_factor=latent_factor,
         energy_cnn_feature_maps=energy_cnn_feature_maps,
         energy_cnn_n_layers=energy_cnn_n_layers,
@@ -136,16 +181,17 @@ if __name__ == "__main__":
     Trainer
     """
 
+    torch.set_float32_matmul_precision("medium")
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
         enable_progress_bar=True,
         enable_checkpointing=False,
         enable_model_summary=True,
-        num_sanity_val_steps=10,
-        max_steps=100,
         val_check_interval=0.1,
-        precision=32,
+        limit_val_batches=0.1,
+        num_sanity_val_steps=10,
+        precision="16-mixed",
     )
 
     trainer.fit(
