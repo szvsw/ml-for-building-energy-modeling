@@ -503,7 +503,7 @@ class EnergyCNN2(nn.Module):
                 in_channels=n_feature_maps,
                 out_channels=out_channels,
                 kernel_sizes=[1],
-                activation=nn.ReLU,
+                activation=nn.LeakyReLU,
             ),
         )
 
