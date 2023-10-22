@@ -142,10 +142,13 @@ if __name__ == "__main__":
     from pathlib import Path
 
     dm = BuildingDataModule(
-        batch_size=64,
-        data_dir="data/hdf5/full_climate_zone/v3",
+        bucket="ml-for-bem",
+        remote_experiment="full_climate_zone/v3",
+        data_dir="data/lightning",
         climate_array_path=str(Path("data") / "epws" / "global_climate_array.npy"),
+        batch_size=64,
     )
+    dm.prepare_data()
     dm.setup(stage="fit")
     target_transform = dm.target_transform
 
@@ -160,10 +163,10 @@ if __name__ == "__main__":
     """
     Hyperparameters:
     """
-    lr = 1e-4
-    latent_factor = 6
+    lr = 5e-5
+    latent_factor = 7
     energy_cnn_feature_maps = 256
-    energy_cnn_n_layers = 6
+    energy_cnn_n_layers = 10
 
     surrogate = Surrogate(
         lr=lr,

@@ -1,4 +1,6 @@
 from pathlib import Path
+import boto3
+import os
 import json
 import pandas as pd
 import numpy as np
@@ -191,21 +193,49 @@ class BuildingDataset(Dataset):
 class BuildingDataModule(pl.LightningDataModule):
     def __init__(
         self,
+        bucket: str = "ml-for-bem",
+        remote_experiment: str = "full_climate_zone/v3",
         data_dir: str = "path/to/dir",
         climate_array_path: str = "path/to/climate_array.npy",
         batch_size: int = 32,
     ):
         super().__init__()
         self.data_dir = data_dir
-        self.train_data_path = Path(data_dir) / "train" / "monthly.hdf"
-        self.test_data_dir = Path(data_dir) / "test" / "monthly.hdf"
-        self.space_config_path = Path(data_dir) / "train" / "space_definition.json"
+        self.bucket = bucket
+        self.remote_experiment = remote_experiment
+        self.experiment_root = Path(data_dir) / remote_experiment
+        self.train_data_path = Path(self.experiment_root) / "train" / "monthly.hdf"
+        self.test_data_dir = Path(self.experiment_root) / "test" / "monthly.hdf"
+        self.space_config_path = (
+            Path(self.experiment_root) / "train" / "space_definition.json"
+        )
         self.climate_array_path = climate_array_path
         self.batch_size = batch_size
 
-    # TODO: implement data fetching from aws via prepare data
-    # def prepare_data(self) -> None:
-    #     return super().prepare_data()
+    def prepare_data(self):
+        # TODO: download global_climate_array.npy
+        s3 = boto3.client("s3")
+        if not os.path.exists(self.train_data_path):
+            os.makedirs(self.train_data_path.parent, exist_ok=True)
+            s3.download_file(
+                self.bucket,
+                f"{self.remote_experiment}/train/monthly.hdf",
+                self.train_data_path,
+            )
+        if not os.path.exists(self.test_data_dir):
+            os.makedirs(self.test_data_dir.parent, exist_ok=True)
+            s3.download_file(
+                self.bucket,
+                f"{self.remote_experiment}/test/monthly.hdf",
+                self.test_data_dir,
+            )
+        if not os.path.exists(self.space_config_path):
+            os.makedirs(self.space_config_path.parent, exist_ok=True)
+            s3.download_file(
+                self.bucket,
+                f"{self.remote_experiment}/train/space_definition.json",
+                self.space_config_path,
+            )
 
     def setup(self, stage: str):
         with open(self.space_config_path, "r") as f:
