@@ -46,7 +46,11 @@ def transform_dataframe(space_config, features):
 
 
 class MinMaxTransform(nn.Module):
-    def __init__(self, targets: pd.DataFrame, mode: Literal["columnwise", "global"]):
+    def __init__(
+        self,
+        targets: pd.DataFrame,
+        mode: Literal["columnwise", "global"] = "columnwise",
+    ):
         super().__init__()
         self.mode = mode
         if self.mode == "global":
@@ -82,6 +86,36 @@ class MinMaxTransform(nn.Module):
 
     def inverse_transform(self, x: torch.Tensor, as_df: bool = False) -> torch.Tensor:
         vals = x * (self.max_val - self.min_val) + self.min_val
+        if as_df:
+            return pd.DataFrame(vals.detach().cpu().numpy(), columns=self.columns)
+        else:
+            return vals
+
+
+class StdNormalTransform(nn.Module):
+    def __init__(self, targets: pd.DataFrame):
+        super().__init__()
+        self.std = nn.parameter.Parameter(
+            torch.tensor(
+                targets.std(axis=0).values,
+                dtype=torch.float32,
+            ).reshape(1, -1),
+        )
+        self.mean = nn.parameter.Parameter(
+            torch.tensor(
+                targets.mean(axis=0).values,
+                dtype=torch.float32,
+            ).reshape(1, -1),
+        )
+        print(self.std.shape, self.mean.shape)
+
+        self.columns = targets.columns
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.mean) / self.std
+
+    def inverse_transform(self, x: torch.Tensor, as_df: bool = False) -> torch.Tensor:
+        vals = x * self.std + self.mean
         if as_df:
             return pd.DataFrame(vals.detach().cpu().numpy(), columns=self.columns)
         else:
@@ -143,10 +177,8 @@ class BuildingDataset(Dataset):
         self.space_config = space_config
         self.climate_array = climate_array
 
-    def fit_target_transform(self, mode: Literal["columnwise", "global"]):
-        self.target_transform = MinMaxTransform(
-            self.targets_untransformed, mode=mode
-        ).cpu()
+    def fit_target_transform(self):
+        self.target_transform = MinMaxTransform(self.targets_untransformed).cpu()
         with torch.no_grad():
             self.targets = (
                 self.target_transform(
@@ -263,9 +295,7 @@ class BuildingDataModule(pl.LightningDataModule):
             key="batch_results",
         )
 
-        target_transform = seen_epw_buiding_dataset.fit_target_transform(
-            mode="columnwise"
-        )
+        target_transform = seen_epw_buiding_dataset.fit_target_transform()
         self.target_transform = target_transform
 
         self.seen_epw_training_set, self.seen_epw_validation_set = random_split(
@@ -331,7 +361,7 @@ if __name__ == "__main__":
         "data/hdf5/full_climate_zone/v3/train/monthly.hdf",
         key="batch_results",
     )
-    target_transform = data.fit_target_transform(mode="columnwise")
+    target_transform = data.fit_target_transform()
 
     # make a dataloader
     dataloader = DataLoader(data, batch_size=128, shuffle=True)
