@@ -236,25 +236,30 @@ class BuildingDataModule(pl.LightningDataModule):
         target_transform = seen_epw_buiding_dataset.fit_target_transform(
             mode="columnwise"
         )
+        self.target_transform = target_transform
 
         self.seen_epw_training_set, self.seen_epw_validation_set = random_split(
             seen_epw_buiding_dataset,
             [0.9, 0.1],
             generator=torch.Generator().manual_seed(42),
         )
-        # building_data_unseen = BuildingDataset(
-        #     space_config,
-        #     self.climate_array,
-        #     self.test_data_dir,
-        #     key="batch_results",
-        # )
-        # building_data_unseen.load_target_transform(target_transform)
+        unseen_epw_validation_set = BuildingDataset(
+            space_config,
+            self.climate_array,
+            self.test_data_dir,
+            key="batch_results",
+        )
+        unseen_epw_validation_set.load_target_transform(target_transform)
+        self.unseen_epw_validation_set = unseen_epw_validation_set
 
     def train_dataloader(self):
         return DataLoader(self.seen_epw_training_set, batch_size=self.batch_size)
 
     def val_dataloader(self):
-        return DataLoader(self.seen_epw_validation_set, batch_size=self.batch_size)
+        return [
+            DataLoader(self.seen_epw_validation_set, batch_size=self.batch_size * 8),
+            DataLoader(self.unseen_epw_validation_set, batch_size=self.batch_size * 8),
+        ]
 
     # def test_dataloader(self):
     #     return DataLoader(self.mnist_test, batch_size=self.batch_size)
