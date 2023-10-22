@@ -3,9 +3,10 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from tqdm.notebook import tqdm
 from typing import Literal, Union
+import lightning.pytorch as pl
 
 from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
 from shoeboxer.builder import schedules_from_seed
@@ -110,7 +111,6 @@ class BuildingDataset(Dataset):
         self,
         space_config,
         climate_array,
-        weather_transform: nn.Module,
         path=None,
         key="batch_results",
     ):
@@ -137,20 +137,7 @@ class BuildingDataset(Dataset):
         self.features_untransformed = features
         self.features = transform_dataframe(space_config, features)
         self.space_config = space_config
-        self.climate_array_untransformed = climate_array
-        self.weather_transform = weather_transform
-        self.climate_array = (
-            weather_transform(
-                torch.tensor(
-                    climate_array,
-                    dtype=torch.float32,
-                    device=next(weather_transform.parameters()).device,
-                )
-            )
-            .detach()
-            .cpu()
-            .numpy()
-        )
+        self.climate_array = climate_array
 
     def fit_target_transform(self, mode: Literal["columnwise", "global"]):
         self.target_transform = MinMaxTransform(
@@ -199,6 +186,80 @@ class BuildingDataset(Dataset):
         return self.features.iloc[index].values, schedules, climate_data, targets
 
 
+class BuildingDataModule(pl.LightningDataModule):
+    def __init__(
+        self,
+        data_dir: str = "path/to/dir",
+        climate_array_path: str = "path/to/climate_array.npy",
+        batch_size: int = 32,
+    ):
+        super().__init__()
+        self.data_dir = data_dir
+        self.train_data_path = Path(data_dir) / "train" / "monthly.hdf"
+        self.test_data_dir = Path(data_dir) / "test" / "monthly.hdf"
+        self.space_config_path = Path(data_dir) / "train" / "space_definition.json"
+        self.climate_array_path = climate_array_path
+        self.batch_size = batch_size
+
+    # TODO: implement data fetching from aws via prepare data
+    # def prepare_data(self) -> None:
+    #     return super().prepare_data()
+
+    def setup(self, stage: str):
+        with open(self.space_config_path, "r") as f:
+            space_config = json.load(f)
+
+        climate_array = np.load(self.climate_array_path)
+        weather_transform = WeatherStdNormalTransform(climate_array)
+        climate_array = (
+            weather_transform(
+                torch.tensor(
+                    climate_array,
+                    dtype=torch.float32,
+                    device=next(weather_transform.parameters()).device,
+                )
+            )
+            .detach()
+            .cpu()
+            .numpy()
+        )
+        seen_epw_buiding_dataset = BuildingDataset(
+            space_config,
+            climate_array,
+            self.train_data_path,
+            key="batch_results",
+        )
+
+        target_transform = seen_epw_buiding_dataset.fit_target_transform(
+            mode="columnwise"
+        )
+
+        self.seen_epw_train, self.seen_epw_val = random_split(
+            seen_epw_buiding_dataset,
+            [0.9, 0.1],
+            generator=torch.Generator().manual_seed(42),
+        )
+        # building_data_unseen = BuildingDataset(
+        #     space_config,
+        #     climate_array,
+        #     self.test_data_dir,
+        #     key="batch_results",
+        # )
+        # building_data_unseen.load_target_transform(target_transform)
+
+    def train_dataloader(self):
+        return DataLoader(self.seen_epw_train, batch_size=self.batch_size)
+
+    def val_dataloader(self):
+        return {"seen": DataLoader(self.seen_epw_val, batch_size=self.batch_size)}
+
+    # def test_dataloader(self):
+    #     return DataLoader(self.mnist_test, batch_size=self.batch_size)
+
+    # def predict_dataloader(self):
+    #     return DataLoader(self.mnist_predict, batch_size=self.batch_size)
+
+
 if __name__ == "__main__":
     from pathlib import Path
     import time
@@ -212,12 +273,24 @@ if __name__ == "__main__":
         space_config = json.load(f)
 
     climate_array = np.load(Path("data") / "epws" / "global_climate_array.npy")
+
     weather_transform = WeatherStdNormalTransform(climate_array)
+    climate_array = (
+        weather_transform(
+            torch.tensor(
+                climate_array,
+                dtype=torch.float32,
+                device=next(weather_transform.parameters()).device,
+            )
+        )
+        .detach()
+        .cpu()
+        .numpy()
+    )
 
     data = BuildingDataset(
         space_config,
         climate_array,
-        weather_transform,
         "data/hdf5/full_climate_zone/v3/train/monthly.hdf",
         key="batch_results",
     )
@@ -234,7 +307,7 @@ if __name__ == "__main__":
         schedules: torch.Tensor = schedules.float().to("cuda")
         climate_data: torch.Tensor = climate_data.float().to("cuda")
         targets: torch.Tensor = targets.float().to("cuda")
-        timeseries: torch.Tensor = torch.concat([climate_data, schedules], dim=1)
+        timeseries: torch.Tensor = torch.cat([climate_data, schedules], dim=1)
         i += 1
         if i > 100:
             break
