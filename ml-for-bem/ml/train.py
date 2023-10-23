@@ -9,8 +9,19 @@ from ml.data import MinMaxTransform, StdNormalTransform
 
 
 class MultiModalModel(nn.Module):
+    """
+    A model that takes in building features, climate data, and schedules and predicts energy
+    """
+
     def __init__(self, timeseries_net: nn.Module, energy_net: nn.Module):
+        """
+        Args:
+            timeseries_net: a network that takes in timeseries data (batch_size, n_channels, n_timesteps) and outputs a latent representation
+            energy_net: a network that takes in a latent representation (batch_size, n_latent_channel, n_latent_steps) and outputs energy (batch_size, n_energy_channels, n_energy_steps)
+        """
         super().__init__()
+
+        # store the nets
         self.timeseries_net = timeseries_net
         self.energy_net = energy_net
 
@@ -20,21 +31,44 @@ class MultiModalModel(nn.Module):
         climates: torch.Tensor,
         schedules: torch.Tensor,
     ) -> torch.Tensor:
+        """
+        Predict energy from building features, climate data, and schedules
+        Args:
+            building_features: (batch_size, n_features)
+            climates: (batch_size, n_climate_channels, n_timesteps)
+            schedules: (batch_size, n_schedule_channels, n_timesteps)
+        """
+
+        # Combine the climate and schedules along the timeseries channel axis
         timeseries = torch.cat([climates, schedules], dim=1)
+
+        # Pass the timeseries through the timeseries net to get a latent representation
         latent = self.timeseries_net(timeseries)
+
+        # Repeat the building features along the latent timeseries axis
         building_features = building_features.unsqueeze(-1)
         building_features = building_features.repeat(1, 1, latent.shape[-1])
+
+        # Concatenate the building features and latent representation along the channel axis
         input = torch.cat([building_features, latent], dim=1)
+
+        # Pass the concatenated input through the energy net to get energy predictions
         preds = self.energy_net(input)
+
         return preds
 
 
 class Surrogate(pl.LightningModule):
+    """
+    A PyTorch Lightning abstraction for managing a surrogate model which can predict energy from building features, climate data, and schedules
+    """
+
     def __init__(
         self,
         target_transform: Union[MinMaxTransform, StdNormalTransform],
         net_config: Literal["Base", "Small"] = "Small",
         lr: float = 1e-3,
+        lr_gamma: float = 0.5,
         latent_factor: int = 4,
         energy_cnn_feature_maps: int = 128,
         energy_cnn_n_layers: int = 3,
@@ -44,10 +78,36 @@ class Surrogate(pl.LightningModule):
         timeseries_channels_per_output: int = 4,
         timeseries_steps_per_output: int = 12,
     ):
+        """
+        Create the Lighting Module for managing the surrogate
+
+        Args:
+            target_transform (nn.Module): a transform to apply to targets.  Should implement the `inverse_transform` method.
+            net_config (Literal["Base", "Small"], optional): the configuration of the timeseries net architecture.  Defaults to "Small".
+            lr (float, optional): the learning rate.  Defaults to 1e-3.
+            lr_gamma (float, optional): the learning rate decay.  Defaults to 0.5. Called after each epoch completes.
+            latent_factor (int, optional): The timeseries net will output a latent representation with `latent_factor * static_features_per_input` channels.  Defaults to 4.
+            energy_cnn_feature_maps (int, optional): The number of feature maps in the energy net.  Defaults to 128.
+            energy_cnn_n_layers (int, optional): The number of layers in each energy net block.  Defaults to 3.
+            energy_cnn_n_blocks (int, optional): The number of energy net blocks.  Defaults to 5.
+            timeseries_channels_per_input (int, optional): The number of timeseries channels in the input.  Defaults to 10.
+            static_features_per_input (int, optional): The number of static features in the input.  Defaults to 10.
+            timeseries_channels_per_output (int, optional): The number of timeseries channels in the output.  Defaults to 4.
+            timeseries_steps_per_output (int, optional): The number of timesteps in the output.  Defaults to 12.
+
+        Returns:
+            Surrogate: the PyTorch Lightning Module which manages the surrogate model
+
+        """
+
         # TODO: auto configure network dims
         # TODO: hyperparameters for configure block architectures
+        # TODO: store weather transform and feature transform, not just target transform
         super().__init__()
+
+        # Store all the hyperparameters
         self.lr = lr
+        self.lr_gamma = lr_gamma
         self.net_config = net_config
         self.timeseries_channels_per_input = timeseries_channels_per_input
         self.static_features_per_input = static_features_per_input
@@ -60,14 +120,18 @@ class Surrogate(pl.LightningModule):
         self.energy_cnn_n_blocks = energy_cnn_n_blocks
         self.energy_cnn_n_layers = energy_cnn_n_layers
 
+        # Create the configuration for the timeseries net
         conf = (
             Conv1DStageConfig.Base(self.timeseries_channels_per_input)
             if self.net_config == "Base"
             else Conv1DStageConfig.Small(self.timeseries_channels_per_input)
         )
         self.conf = conf
+
+        # Save hyperparameters
         self.save_hyperparameters()
 
+        # Create the timeseries net and energy net
         timeseries_net = ConvNet(
             stage_configs=conf,
             latent_channels=self.latent_channels,
@@ -81,15 +145,34 @@ class Surrogate(pl.LightningModule):
             n_blocks=self.energy_cnn_n_blocks,
             n_layers=self.energy_cnn_n_layers,
         )
-        self.target_transform = target_transform
 
-        self.model: MultiModalModel = MultiModalModel(
+        # Create and store the model
+        self.model = MultiModalModel(
             timeseries_net=timeseries_net, energy_net=energy_net
         )
 
+        # Store the target transform module
+        self.target_transform = target_transform
+
     def configure_optimizers(self):
-        opt = optim.Adam(self.model.parameters(), lr=self.lr)
-        return opt
+        optimizer = optim.Adam(
+            self.model.parameters(),
+            lr=self.lr,
+        )
+        lr_scheduler = optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=1,
+            gamma=self.lr_gamma,
+        )
+        lr_scheduler_config = {
+            "scheduler": lr_scheduler,
+            "interval": "epoch",
+            "frequency": 1,
+        }
+        return {
+            "lr_scheduler_config": lr_scheduler_config,
+            "optimizer": optimizer,
+        }
 
     def training_step(self, batch, batch_idx):
         building_features, schedules, climates, targets = batch
@@ -100,8 +183,12 @@ class Surrogate(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
+        # Create a dictionary for tracking different residuals/metrics
         error_dict = {}
+        seen_key = "SeenEPW" if dataloader_idx == 0 else "UnseenEPW"
+
         building_features, schedules, climates, targets = batch
+
         # targets are shaped (batch_size, n_zones x n_end_uses x n_timesteps)
         # preds are shaped (batch_size, n_zones x n_end_uses, n_timesteps)
         # targets are typically (b, 48)
@@ -111,16 +198,21 @@ class Surrogate(pl.LightningModule):
             building_features, schedules, climates
         )
         targets_hierarchical: torch.Tensor = targets.reshape(preds_hierarchical.shape)
+
         loss = F.mse_loss(preds_hierarchical, targets_hierarchical)
-        error_dict[f"Loss/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}"] = loss
+
+        error_dict[f"Loss/Val/{seen_key}"] = loss
 
         # transform preds and targets to energy units
         preds_energy = self.target_transform.inverse_transform(
             preds_hierarchical.reshape(targets.shape)
         ).reshape(preds_hierarchical.shape)
+
         targets_energy = self.target_transform.inverse_transform(targets).reshape(
             preds_hierarchical.shape
         )
+
+        # Compute annual metrics
         annual_preds = preds_energy.sum(dim=-1)
         annual_targets = targets_energy.sum(dim=-1)
         annual_errors = torch.abs(annual_preds - annual_targets).mean(dim=0)
@@ -128,6 +220,7 @@ class Surrogate(pl.LightningModule):
             torch.abs(annual_preds - annual_targets) / (annual_targets + 1)
         ).mean(dim=0) * 100
 
+        # Store error metrics
         for i in range(annual_errors.shape[0]):
             slug = ""
             if i == 0:
@@ -138,12 +231,8 @@ class Surrogate(pl.LightningModule):
                 slug = "Perimeter/Heating"
             elif i == 3:
                 slug = "Perimeter/Cooling"
-            error_dict[
-                f"Error/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}/{slug}"
-            ] = annual_errors[i]
-            error_dict[
-                f"PercentError/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}/{slug}"
-            ] = annual_percent_errors[i]
+            error_dict[f"Error/Val/{seen_key}/{slug}"] = annual_errors[i]
+            error_dict[f"PercentError/Val/{seen_key}/{slug}"] = annual_percent_errors[i]
 
         self.log_dict(error_dict, on_epoch=True)
         self.log(
@@ -164,8 +253,10 @@ if __name__ == "__main__":
         climate_array_path=str(Path("data") / "epws" / "global_climate_array.npy"),
         batch_size=32,
     )
+    # TODO: we should have a better workflow for first fitting the target transform
+    # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
     dm.prepare_data()
-    dm.setup(stage="fit")
+    dm.setup(stage=None)
     target_transform = dm.target_transform
 
     # TODO: these should be inferred automatically from the datasets
@@ -180,14 +271,16 @@ if __name__ == "__main__":
     Hyperparameters:
     """
     lr = 1e-3
+    lr_gamma = 0.5
     net_config = "Small"
-    latent_factor = 3
-    energy_cnn_feature_maps = 128
-    energy_cnn_n_layers = 2
-    energy_cnn_n_blocks = 3
+    latent_factor = 4
+    energy_cnn_feature_maps = 256
+    energy_cnn_n_layers = 3
+    energy_cnn_n_blocks = 6
 
     surrogate = Surrogate(
         lr=lr,
+        lr_gamma=lr_gamma,
         target_transform=target_transform,
         net_config=net_config,
         latent_factor=latent_factor,
