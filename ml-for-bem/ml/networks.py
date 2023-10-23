@@ -91,7 +91,7 @@ class Conv1DStage(nn.Module):
         in_channels,
         out_channels,
         kernel_sizes,
-        activation=nn.LeakyReLU,
+        activation=nn.SELU,
     ):
         super().__init__()
         layers: List[nn.Module] = []
@@ -147,6 +147,14 @@ class Conv1DStageConfig:
             cls(in_channels, 64, [49, 25, 9]),
             cls(64, 128, [49, 25, 9]),
             cls(128, 128, [49, 25, 9]),
+        ]
+
+    @classmethod
+    def Small(cls, in_channels):
+        return [
+            cls(in_channels, 16, [25, 16, 9]),
+            cls(16, 32, [25, 16, 9]),
+            cls(32, 64, [25, 16, 9]),
         ]
 
 
@@ -489,7 +497,9 @@ class MonthlyEnergyCNN(nn.Module):
 
 
 class EnergyCNN2(nn.Module):
-    def __init__(self, in_channels=30, n_feature_maps=128, n_layers=3, out_channels=4):
+    def __init__(
+        self, in_channels=30, n_feature_maps=128, n_layers=3, n_blocks=4, out_channels=4
+    ):
         super().__init__()
 
         self.blocks = nn.Sequential(
@@ -497,13 +507,22 @@ class EnergyCNN2(nn.Module):
                 in_channels=in_channels,
                 out_channels=n_feature_maps,
                 kernel_sizes=[1] * n_layers,
-                activation=nn.LeakyReLU,
+                activation=nn.SELU,
             ),
+            *[
+                Conv1DStage(
+                    in_channels=n_feature_maps,
+                    out_channels=n_feature_maps,
+                    kernel_sizes=[1] * n_layers,
+                    activation=nn.SELU,
+                )
+                for _ in range(n_blocks - 2)
+            ],
             Conv1DStage(
                 in_channels=n_feature_maps,
                 out_channels=out_channels,
                 kernel_sizes=[1],
-                activation=nn.LeakyReLU,
+                activation=nn.Identity,
             ),
         )
 

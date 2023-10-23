@@ -107,7 +107,6 @@ class StdNormalTransform(nn.Module):
                 dtype=torch.float32,
             ).reshape(1, -1),
         )
-        print(self.std.shape, self.mean.shape)
 
         self.columns = targets.columns
 
@@ -179,6 +178,7 @@ class BuildingDataset(Dataset):
 
     def fit_target_transform(self):
         self.target_transform = MinMaxTransform(self.targets_untransformed).cpu()
+        # self.target_transform = StdNormalTransform(self.targets_untransformed).cpu()
         with torch.no_grad():
             self.targets = (
                 self.target_transform(

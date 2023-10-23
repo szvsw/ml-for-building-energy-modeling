@@ -1,12 +1,11 @@
-from typing import Any
+from typing import Literal, Union
 import lightning.pytorch as pl
-from lightning.pytorch.utilities.types import STEP_OUTPUT, OptimizerLRScheduler
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from ml.networks import EnergyCNN2, ConvNet, Conv1DStageConfig
-from ml.data import MinMaxTransform
+from ml.data import MinMaxTransform, StdNormalTransform
 
 
 class MultiModalModel(nn.Module):
@@ -33,11 +32,13 @@ class MultiModalModel(nn.Module):
 class Surrogate(pl.LightningModule):
     def __init__(
         self,
-        target_transform: MinMaxTransform,
+        target_transform: Union[MinMaxTransform, StdNormalTransform],
+        net_config: Literal["Base", "Small"] = "Small",
         lr: float = 1e-3,
         latent_factor: int = 4,
         energy_cnn_feature_maps: int = 128,
         energy_cnn_n_layers: int = 3,
+        energy_cnn_n_blocks: int = 5,
         timeseries_channels_per_input: int = 10,
         static_features_per_input: int = 10,
         timeseries_channels_per_output: int = 4,
@@ -47,6 +48,7 @@ class Surrogate(pl.LightningModule):
         # TODO: hyperparameters for configure block architectures
         super().__init__()
         self.lr = lr
+        self.net_config = net_config
         self.timeseries_channels_per_input = timeseries_channels_per_input
         self.static_features_per_input = static_features_per_input
         self.latent_factor = latent_factor
@@ -55,9 +57,16 @@ class Surrogate(pl.LightningModule):
         self.timeseries_channels_per_output = timeseries_channels_per_output
         self.timeseries_steps_per_output = timeseries_steps_per_output
         self.energy_cnn_feature_maps = energy_cnn_feature_maps
+        self.energy_cnn_n_blocks = energy_cnn_n_blocks
         self.energy_cnn_n_layers = energy_cnn_n_layers
 
-        conf = Conv1DStageConfig.Base(self.timeseries_channels_per_input)
+        conf = (
+            Conv1DStageConfig.Base(self.timeseries_channels_per_input)
+            if self.net_config == "Base"
+            else Conv1DStageConfig.Small(self.timeseries_channels_per_input)
+        )
+        self.conf = conf
+        self.save_hyperparameters()
 
         timeseries_net = ConvNet(
             stage_configs=conf,
@@ -69,6 +78,7 @@ class Surrogate(pl.LightningModule):
             in_channels=self.energy_cnn_in_size,
             out_channels=self.timeseries_channels_per_output,
             n_feature_maps=self.energy_cnn_feature_maps,
+            n_blocks=self.energy_cnn_n_blocks,
             n_layers=self.energy_cnn_n_layers,
         )
         self.target_transform = target_transform
@@ -114,6 +124,9 @@ class Surrogate(pl.LightningModule):
         annual_preds = preds_energy.sum(dim=-1)
         annual_targets = targets_energy.sum(dim=-1)
         annual_errors = torch.abs(annual_preds - annual_targets).mean(dim=0)
+        annual_percent_errors = (
+            torch.abs(annual_preds - annual_targets) / (annual_targets + 1)
+        ).mean(dim=0) * 100
 
         for i in range(annual_errors.shape[0]):
             slug = ""
@@ -128,6 +141,9 @@ class Surrogate(pl.LightningModule):
             error_dict[
                 f"Error/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}/{slug}"
             ] = annual_errors[i]
+            error_dict[
+                f"PercentError/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}/{slug}"
+            ] = annual_percent_errors[i]
 
         self.log_dict(error_dict, on_epoch=True)
         self.log(
@@ -146,7 +162,7 @@ if __name__ == "__main__":
         remote_experiment="full_climate_zone/v3",
         data_dir="data/lightning",
         climate_array_path=str(Path("data") / "epws" / "global_climate_array.npy"),
-        batch_size=64,
+        batch_size=32,
     )
     dm.prepare_data()
     dm.setup(stage="fit")
@@ -163,17 +179,21 @@ if __name__ == "__main__":
     """
     Hyperparameters:
     """
-    lr = 5e-5
-    latent_factor = 7
-    energy_cnn_feature_maps = 256
-    energy_cnn_n_layers = 10
+    lr = 1e-3
+    net_config = "Base"
+    latent_factor = 4
+    energy_cnn_feature_maps = 128
+    energy_cnn_n_layers = 2
+    energy_cnn_n_blocks = 4
 
     surrogate = Surrogate(
         lr=lr,
         target_transform=target_transform,
+        net_config=net_config,
         latent_factor=latent_factor,
         energy_cnn_feature_maps=energy_cnn_feature_maps,
         energy_cnn_n_layers=energy_cnn_n_layers,
+        energy_cnn_n_blocks=energy_cnn_n_blocks,
         timeseries_channels_per_input=timeseries_channels_per_input,
         static_features_per_input=static_features_per_input,
         timeseries_channels_per_output=timeseries_channels_per_output,
@@ -189,10 +209,10 @@ if __name__ == "__main__":
         accelerator="auto",
         devices="auto",
         enable_progress_bar=True,
-        enable_checkpointing=False,
+        enable_checkpointing=True,
         enable_model_summary=True,
-        val_check_interval=0.1,
-        limit_val_batches=0.1,
+        val_check_interval=0.05,
+        limit_val_batches=0.3,
         num_sanity_val_steps=10,
         precision="16-mixed",
     )
