@@ -180,11 +180,11 @@ if __name__ == "__main__":
     Hyperparameters:
     """
     lr = 1e-3
-    net_config = "Base"
-    latent_factor = 4
+    net_config = "Small"
+    latent_factor = 3
     energy_cnn_feature_maps = 128
     energy_cnn_n_layers = 2
-    energy_cnn_n_blocks = 4
+    energy_cnn_n_blocks = 3
 
     surrogate = Surrogate(
         lr=lr,
