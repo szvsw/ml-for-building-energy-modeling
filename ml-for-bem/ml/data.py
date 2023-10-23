@@ -317,8 +317,8 @@ class BuildingDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return [
-            DataLoader(self.seen_epw_validation_set, batch_size=self.batch_size * 8),
-            DataLoader(self.unseen_epw_validation_set, batch_size=self.batch_size * 8),
+            DataLoader(self.seen_epw_validation_set, batch_size=self.batch_size * 32),
+            DataLoader(self.unseen_epw_validation_set, batch_size=self.batch_size * 32),
         ]
 
     # def test_dataloader(self):
