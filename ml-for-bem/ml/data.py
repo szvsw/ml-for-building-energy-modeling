@@ -297,6 +297,7 @@ class WeatherStdNormalTransform(nn.Module):
         return x_transformed
 
 
+# TODO: move thresh to config
 class BuildingDataset(Dataset):
     """
     A dataset of building features and targets
@@ -338,9 +339,11 @@ class BuildingDataset(Dataset):
 
         # Extract the targets
         targets = df.reset_index(drop=True)
+        target_thresh = 100
+        thresh_mask = (targets < target_thresh).all(axis=1)
 
         # Drop errored rows
-        mask = ~features["error"]
+        mask = (~features["error"]) & (thresh_mask)
         features = features[mask]
         targets = targets[mask]
 
@@ -470,6 +473,7 @@ class BuildingDataset(Dataset):
         return features, schedules, climate_data, targets
 
 
+# TODO: Shuffle the data?
 class BuildingDataModule(pl.LightningDataModule):
     """
     A LightningDataModule for the BuildingDataset, which abstracts loading
