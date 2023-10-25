@@ -297,7 +297,6 @@ class WeatherStdNormalTransform(nn.Module):
         return x_transformed
 
 
-# TODO: move thresh to config
 class BuildingDataset(Dataset):
     """
     A dataset of building features and targets
@@ -309,6 +308,7 @@ class BuildingDataset(Dataset):
         climate_array,
         path=None,
         key="batch_results",
+        target_thresh: int = 100,
     ):
         """
         Create a BuildingDataset
@@ -326,6 +326,7 @@ class BuildingDataset(Dataset):
             climate_array (np.ndarray): an array of climate data.  Assumed shape is (n_epws, n_weather_channels, n_timesteps)
             path (str, default None): the path to the hdf5 file containing the data
             key (str, default "batch_results"): the key in the hdf5 file containing the data
+            target_thresh (int, default 100): the threshold for targets.  If any target is above this value, the sample is dropped
 
         Returns:
             BuildingDataset: a dataset of building features and targets
@@ -339,8 +340,8 @@ class BuildingDataset(Dataset):
 
         # Extract the targets
         targets = df.reset_index(drop=True)
-        target_thresh = 100
-        thresh_mask = (targets < target_thresh).all(axis=1)
+        self.target_thresh = target_thresh
+        thresh_mask = (targets < self.target_thresh).all(axis=1)
 
         # Drop errored rows
         mask = (~features["error"]) & (thresh_mask)
