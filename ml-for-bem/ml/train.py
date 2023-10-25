@@ -58,6 +58,10 @@ class MultiModalModel(nn.Module):
         return preds
 
 
+# TODO: Surrogate should have a `forward`` method
+# TODO: Surrogate should have a `predict_step` method
+
+
 class Surrogate(pl.LightningModule):
     """
     A PyTorch Lightning abstraction for managing a surrogate model which can predict energy from building features, climate data, and schedules
@@ -170,7 +174,7 @@ class Surrogate(pl.LightningModule):
             "frequency": 1,
         }
         return {
-            "lr_scheduler_config": lr_scheduler_config,
+            "lr_scheduler": lr_scheduler_config,
             "optimizer": optimizer,
         }
 
@@ -240,16 +244,29 @@ class Surrogate(pl.LightningModule):
             loss,
             on_epoch=True,
         )
+        return loss
 
 
 if __name__ == "__main__":
     from ml.data import BuildingDataModule
     from pathlib import Path
+    import wandb
+    from lightning.pytorch.loggers import WandbLogger, TensorBoardLogger
+
+    # TODO: fiix window bounds
+    # TODO: batch size should be in config
+    # TODO: thresh should be in config
+    wandb.login()
+    bucket = "ml-for-bem"
+    remote_experiment = "full_climate_zone/v3"
+    local_data_dir = "data/lightning"
+    remote_data_dir = "full_climate_zone/v3/lightning"
+    remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
     dm = BuildingDataModule(
-        bucket="ml-for-bem",
-        remote_experiment="full_climate_zone/v3",
-        data_dir="data/lightning",
+        bucket=bucket,
+        remote_experiment=remote_experiment,
+        data_dir=local_data_dir,
         climate_array_path=str(Path("data") / "epws" / "global_climate_array.npy"),
         batch_size=32,
     )
@@ -271,12 +288,12 @@ if __name__ == "__main__":
     Hyperparameters:
     """
     lr = 1e-3
-    lr_gamma = 0.5
+    lr_gamma = 0.9
     net_config = "Small"
     latent_factor = 4
     energy_cnn_feature_maps = 256
     energy_cnn_n_layers = 3
-    energy_cnn_n_blocks = 6
+    energy_cnn_n_blocks = 8
 
     surrogate = Surrogate(
         lr=lr,
@@ -294,6 +311,17 @@ if __name__ == "__main__":
     )
 
     """
+    Loggers
+    """
+    wandb_logger = WandbLogger(
+        project="ml-for-bem",
+        name="Surrogate",
+        save_dir="wandb",
+        log_model="all",
+    )
+    # tb_logger = TensorBoardLogger(remote_data_path, name="Surrogate")
+
+    """
     Trainer
     """
 
@@ -301,13 +329,15 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
+        logger=wandb_logger,
+        default_root_dir=remote_data_path,
         enable_progress_bar=True,
         enable_checkpointing=True,
         enable_model_summary=True,
         val_check_interval=0.05,
         limit_val_batches=0.3,
         num_sanity_val_steps=10,
-        precision="16-mixed",
+        precision="bf16-mixed",  #
     )
 
     trainer.fit(
