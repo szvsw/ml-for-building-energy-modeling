@@ -488,6 +488,7 @@ class BuildingDataModule(pl.LightningDataModule):
         data_dir: str = "path/to/dir",
         climate_array_path: str = "path/to/climate_array.npy",
         batch_size: int = 32,
+        val_batch_mult: int = 16
     ):
         """
         Create a BuildingDataModule which can be used to load and prepare the data for training, validation, and testing.
@@ -498,7 +499,8 @@ class BuildingDataModule(pl.LightningDataModule):
             remote_experiment: the name of the experiment on s3
             data_dir: the local directory where the data should be stored
             climate_array_path: the path to the climate array on the local filesystem
-            batch_size (int): the batch size to use for training; validation and testing batch sizes are 32x this value
+            batch_size (int): the batch size to use for training
+            val_batch_mult (int): the multiplier to use on the training batch size to determine validation/testing batch size
 
         Returns:
             BuildingDataModule: a LightningDataModule which can be used to load and prepare the data for training, validation, and testing
@@ -510,6 +512,7 @@ class BuildingDataModule(pl.LightningDataModule):
         self.data_dir = data_dir
         self.bucket = bucket
         self.batch_size = batch_size
+        self.val_batch_mult = val_batch_mult
         self.remote_experiment = remote_experiment
 
         # Make the paths
@@ -584,9 +587,9 @@ class BuildingDataModule(pl.LightningDataModule):
         self.target_transform = target_transform
 
         # Split the dataset for seen weather data into training and validation
-        self.seen_epw_training_set, self.seen_epw_validation_set = random_split(
+        self.seen_epw_training_set, self.seen_epw_validation_set, self.seen_epw_testing_set = random_split(
             seen_epw_buiding_dataset,
-            [0.9, 0.1],
+            [0.9, 0.05, 0.05],
             generator=torch.Generator().manual_seed(42),
         )
 
@@ -598,19 +601,26 @@ class BuildingDataModule(pl.LightningDataModule):
             key="batch_results",
         )
         unseen_epw_validation_set.load_target_transform(target_transform)
-        self.unseen_epw_validation_set = unseen_epw_validation_set
+        self.unseen_epw_validation_set, self.unseen_epw_testing_set = random_split(
+            seen_epw_buiding_dataset,
+            [0.5,0.5],
+            generator=torch.Generator().manual_seed(42),
+        )
 
     def train_dataloader(self):
-        return DataLoader(self.seen_epw_training_set, batch_size=self.batch_size)
+        return DataLoader(self.seen_epw_training_set, batch_size=self.batch_size, shuffle=True, num_workers=16)
 
     def val_dataloader(self):
         return [
-            DataLoader(self.seen_epw_validation_set, batch_size=self.batch_size * 32),
-            DataLoader(self.unseen_epw_validation_set, batch_size=self.batch_size * 32),
+            DataLoader(self.seen_epw_validation_set, batch_size=self.batch_size * self.val_batch_mult,num_workers=16),
+            DataLoader(self.unseen_epw_validation_set, batch_size=self.batch_size * self.val_batch_mult, num_workers=16),
         ]
 
-    # def test_dataloader(self):
-    #     return DataLoader(self.mnist_test, batch_size=self.batch_size)
+    def test_dataloader(self):
+        return [
+            DataLoader(self.seen_epw_testing_set, batch_size=self.batch_size * self.val_batch_mult,num_workers=16),
+            DataLoader(self.unseen_epw_testing_set, batch_size=self.batch_size * self.val_batch_mult, num_workers=16),
+        ]
 
     # def predict_dataloader(self):
     #     return DataLoader(self.mnist_predict, batch_size=self.batch_size)
