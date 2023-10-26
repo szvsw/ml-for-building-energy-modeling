@@ -290,7 +290,7 @@ if __name__ == "__main__":
     """
     Hyperparameters:
     """
-    lr = 1e-3
+    lr = 1e-3 # TODO: larger learning rate for larger batch size on multi-gpu?
     lr_gamma = 0.95
     net_config = "Small"
     latent_factor = 4
