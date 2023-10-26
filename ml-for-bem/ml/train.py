@@ -237,12 +237,14 @@ class Surrogate(pl.LightningModule):
                 slug = "Perimeter/Cooling"
             error_dict[f"Error/Val/{seen_key}/{slug}"] = annual_errors[i]
             error_dict[f"PercentError/Val/{seen_key}/{slug}"] = annual_percent_errors[i]
-
-        self.log_dict(error_dict, on_epoch=True)
+        # TODO: don't add dataloader idx
+        self.log_dict(error_dict, on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             f"Loss/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}",
             loss,
+            on_step=False,
             on_epoch=True,
+            sync_dist=True,
         )
         return loss
 
@@ -268,8 +270,8 @@ if __name__ == "__main__":
         remote_experiment=remote_experiment,
         data_dir=local_data_dir,
         climate_array_path="/teamspace/s3_connections/ml-for-bem/weather/temp/global_climate_array.npy",
-        batch_size=64,
-        val_batch_mult=16
+        batch_size=128,
+        val_batch_mult=8
     )
     # TODO: we should have a better workflow for first fitting the target transform
     # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
@@ -292,9 +294,9 @@ if __name__ == "__main__":
     lr_gamma = 0.95
     net_config = "Small"
     latent_factor = 4
-    energy_cnn_feature_maps = 512
+    energy_cnn_feature_maps = 256
     energy_cnn_n_layers = 3
-    energy_cnn_n_blocks = 10
+    energy_cnn_n_blocks = 8
 
     surrogate = Surrogate(
         lr=lr,
@@ -330,15 +332,18 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
-        strategy="auto",
+        # strategy="auto",
+        strategy="ddp_find_unused_parameters_true",
         logger=wandb_logger,
         default_root_dir=remote_data_path,
         enable_progress_bar=True,
         enable_checkpointing=True,
         enable_model_summary=True,
-        val_check_interval=1,
+        # val_check_interval=0.5,
+        check_val_every_n_epoch=1,
         num_sanity_val_steps=3,
-        precision="bf16-mixed", 
+        # precision="bf16-mixed",
+        precision="16-mixed",  
         sync_batchnorm=True,
     )
 
