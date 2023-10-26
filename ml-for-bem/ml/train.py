@@ -252,14 +252,14 @@ if __name__ == "__main__":
     from pathlib import Path
     import wandb
     from lightning.pytorch.loggers import WandbLogger, TensorBoardLogger
-
+    
     # TODO: fiix window bounds
     # TODO: batch size should be in config
     # TODO: thresh should be in config
     wandb.login()
     bucket = "ml-for-bem"
     remote_experiment = "full_climate_zone/v3"
-    local_data_dir = "data/lightning"
+    local_data_dir = "/teamspace/s3_connections/ml-for-bem"
     remote_data_dir = "full_climate_zone/v3/lightning"
     remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
@@ -267,8 +267,9 @@ if __name__ == "__main__":
         bucket=bucket,
         remote_experiment=remote_experiment,
         data_dir=local_data_dir,
-        climate_array_path=str(Path("data") / "epws" / "global_climate_array.npy"),
-        batch_size=32,
+        climate_array_path="/teamspace/s3_connections/ml-for-bem/weather/temp/global_climate_array.npy",
+        batch_size=64,
+        val_batch_mult=16
     )
     # TODO: we should have a better workflow for first fitting the target transform
     # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
@@ -288,12 +289,12 @@ if __name__ == "__main__":
     Hyperparameters:
     """
     lr = 1e-3
-    lr_gamma = 0.9
+    lr_gamma = 0.95
     net_config = "Small"
     latent_factor = 4
-    energy_cnn_feature_maps = 256
+    energy_cnn_feature_maps = 512
     energy_cnn_n_layers = 3
-    energy_cnn_n_blocks = 8
+    energy_cnn_n_blocks = 10
 
     surrogate = Surrogate(
         lr=lr,
@@ -329,15 +330,16 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
+        strategy="auto",
         logger=wandb_logger,
         default_root_dir=remote_data_path,
         enable_progress_bar=True,
         enable_checkpointing=True,
         enable_model_summary=True,
-        val_check_interval=0.05,
-        limit_val_batches=0.3,
-        num_sanity_val_steps=10,
-        precision="bf16-mixed",  #
+        val_check_interval=1,
+        num_sanity_val_steps=3,
+        precision="bf16-mixed", 
+        sync_batchnorm=True,
     )
 
     trainer.fit(
