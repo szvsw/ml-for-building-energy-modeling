@@ -18,7 +18,8 @@ import numpy as np
 from archetypal import UmiTemplateLibrary
 from schema import Schema, NumericParameter, OneHotParameter, WindowParameter
 from shoeboxer.shoebox_config import ShoeboxConfiguration
-from shoeboxer.builder import ShoeBox, template_dict, schedules_from_seed
+from shoeboxer.builder import ShoeBox, template_dict
+from shoeboxer.schedules import schedules_from_seed
 import logging
 
 logging.basicConfig(level=logging.INFO)

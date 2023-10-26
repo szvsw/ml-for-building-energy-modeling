@@ -11,7 +11,7 @@ from typing import Literal, Union
 import lightning.pytorch as pl
 
 from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
-from shoeboxer.builder import schedules_from_seed
+from shoeboxer.schedules import schedules_from_seed
 
 # TODO: store and fetch weather data from s3
 # TODO: store and return the weather transform
