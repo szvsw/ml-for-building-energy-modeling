@@ -491,7 +491,7 @@ class TMassParameter(OneHotParameter):
 
 class WindowParameter(NumericParameter):
     def __init__(self, min, max, **kwargs):
-        super().__init__(shape_storage=(1,), shape_ml=(1,), **kwargs)
+        super().__init__(min=min, max=max, shape_storage=(1,), shape_ml=(1,), **kwargs)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
