@@ -219,13 +219,29 @@ class Surrogate(pl.LightningModule):
         # Compute annual metrics
         annual_preds = preds_energy.sum(dim=-1)
         annual_targets = targets_energy.sum(dim=-1)
-        annual_errors = torch.abs(annual_preds - annual_targets).mean(dim=0)
-        annual_percent_errors = (
-            torch.abs(annual_preds - annual_targets) / (annual_targets + 1)
+        annual_residuals = annual_preds - annual_targets
+        annual_mse = annual_residuals.pow(2).mean(dim=0)
+        annual_rmse = torch.sqrt(annual_mse)
+        annual_cvrmse = annual_rmse / annual_targets.mean(dim=0) * 100
+        annual_mae = torch.abs(annual_residuals).mean(dim=0)
+        annual_symmetric_mape = (
+            torch.abs(annual_residuals)
+            / ((torch.abs(annual_targets) + torch.abs(annual_preds) + 1e-3) / 2)
         ).mean(dim=0) * 100
+        annual_mape = (
+            torch.abs(annual_residuals) / (torch.abs(annual_targets) + 1e-3)
+        ).mean(dim=0) * 100
+        monthly_mse = F.mse_loss(preds_energy, targets_energy)
+        monthly_mae = torch.abs(preds_energy - targets_energy).mean()
+        monthly_rmse = torch.sqrt(monthly_mse)
+        monthly_cvrmse = monthly_rmse / targets_energy.mean() * 100
+        error_dict[f"MonthlyMAE/Val/{seen_key}"] = monthly_mae
+        error_dict[f"MonthlyMSE/Val/{seen_key}"] = monthly_mse
+        error_dict[f"MonthlyRMSE/Val/{seen_key}"] = monthly_rmse
+        error_dict[f"MonthlyCVRMSE/Val/{seen_key}"] = monthly_cvrmse
 
         # Store error metrics
-        for i in range(annual_errors.shape[0]):
+        for i in range(annual_mae.shape[0]):
             slug = ""
             if i == 0:
                 slug = "Core/Heating"
@@ -235,16 +251,29 @@ class Surrogate(pl.LightningModule):
                 slug = "Perimeter/Heating"
             elif i == 3:
                 slug = "Perimeter/Cooling"
-            error_dict[f"Error/Val/{seen_key}/{slug}"] = annual_errors[i]
-            error_dict[f"PercentError/Val/{seen_key}/{slug}"] = annual_percent_errors[i]
+            error_dict[f"AnnualMAE/Val/{seen_key}/{slug}"] = annual_mae[i]
+            error_dict[f"AnnualMSE/Val/{seen_key}/{slug}"] = annual_mae[i]
+            error_dict[f"AnnualMAPE/Val/{seen_key}/{slug}"] = annual_mape[i]
+            error_dict[f"AnnualMAPESYM/Val/{seen_key}/{slug}"] = annual_symmetric_mape[
+                i
+            ]
+            error_dict[f"AnnualRMSE/Val/{seen_key}/{slug}"] = annual_rmse[i]
+            error_dict[f"AnnualCVRMSE/Val/{seen_key}/{slug}"] = annual_cvrmse[i]
         # TODO: don't add dataloader idx
-        self.log_dict(error_dict, on_step=False, on_epoch=True, sync_dist=True)
+        self.log_dict(
+            error_dict,
+            on_step=False,
+            on_epoch=True,
+            # sync_dist=True,
+            add_dataloader_idx=False,
+        )
         self.log(
-            f"Loss/Val/{'SeenEPW' if dataloader_idx==0 else 'UnseenEPW'}",
+            f"Loss/Val/{seen_key}",
             loss,
             on_step=False,
             on_epoch=True,
-            sync_dist=True,
+            # sync_dist=True,
+            add_dataloader_idx=False,
         )
         return loss
 
@@ -254,24 +283,28 @@ if __name__ == "__main__":
     from pathlib import Path
     import wandb
     from lightning.pytorch.loggers import WandbLogger, TensorBoardLogger
-    
+
     # TODO: fiix window bounds
     # TODO: batch size should be in config
     # TODO: thresh should be in config
     wandb.login()
     bucket = "ml-for-bem"
-    remote_experiment = "full_climate_zone/v3"
+    remote_experiment = "full_climate_zone/v5"
     local_data_dir = "/teamspace/s3_connections/ml-for-bem"
-    remote_data_dir = "full_climate_zone/v3/lightning"
+    local_data_dir = "data/lightning"
+    remote_data_dir = "full_climate_zone/v5/lightning"
     remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
     dm = BuildingDataModule(
         bucket=bucket,
         remote_experiment=remote_experiment,
         data_dir=local_data_dir,
-        climate_array_path="/teamspace/s3_connections/ml-for-bem/weather/temp/global_climate_array.npy",
-        batch_size=128,
-        val_batch_mult=8
+        # climate_array_path="/teamspace/s3_connections/ml-for-bem/weather/temp/global_climate_array.npy",
+        climate_array_path="data/epws/global_climate_array.npy",
+        # batch_size=128,
+        batch_size=32,
+        # val_batch_mult=8,
+        val_batch_mult=32,
     )
     # TODO: we should have a better workflow for first fitting the target transform
     # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
@@ -290,7 +323,7 @@ if __name__ == "__main__":
     """
     Hyperparameters:
     """
-    lr = 1e-3 # TODO: larger learning rate for larger batch size on multi-gpu?
+    lr = 1e-3  # TODO: larger learning rate for larger batch size on multi-gpu?
     lr_gamma = 0.95
     net_config = "Small"
     latent_factor = 4
@@ -321,6 +354,8 @@ if __name__ == "__main__":
         name="Surrogate",
         save_dir="wandb",
         log_model="all",
+        job_type="train",
+        group="global-surrogate",
     )
     # tb_logger = TensorBoardLogger(remote_data_path, name="Surrogate")
 
@@ -332,8 +367,8 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
-        # strategy="auto",
-        strategy="ddp_find_unused_parameters_true",
+        strategy="auto",
+        # strategy="ddp_find_unused_parameters_true",
         logger=wandb_logger,
         default_root_dir=remote_data_path,
         enable_progress_bar=True,
@@ -342,9 +377,9 @@ if __name__ == "__main__":
         # val_check_interval=0.5,
         check_val_every_n_epoch=1,
         num_sanity_val_steps=3,
-        # precision="bf16-mixed",
-        precision="16-mixed",  
-        sync_batchnorm=True,
+        precision="bf16-mixed",
+        # precision="16-mixed",
+        # sync_batchnorm=True,
     )
 
     trainer.fit(
