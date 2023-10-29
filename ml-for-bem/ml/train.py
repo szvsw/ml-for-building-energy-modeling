@@ -289,16 +289,18 @@ if __name__ == "__main__":
     from ml.data import BuildingDataModule
     from pathlib import Path
     import wandb
+    import os
     from lightning.pytorch.loggers import WandbLogger, TensorBoardLogger
 
     # TODO: fiix window bounds
     # TODO: batch size should be in config
     # TODO: thresh should be in config
     wandb.login()
+    in_lightning_studio = True if os.environ.get("LIGHTNING_ORG",None) is not None else False
     bucket = "ml-for-bem"
     remote_experiment = "full_climate_zone/v5"
-    local_data_dir = "/teamspace/s3_connections/ml-for-bem"
-    local_data_dir = "data/lightning"
+    local_data_dir = "/teamspace/s3_connections/ml-for-bem" if in_lightning_studio else "data/lightning"
+    climate_array_path = f"{local_data_dir}/weather/temp/global_climate_array.npy" if in_lightning_studio else "data/epws/global_climate_array.npy"
     remote_data_dir = "full_climate_zone/v5/lightning"
     remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
@@ -306,12 +308,9 @@ if __name__ == "__main__":
         bucket=bucket,
         remote_experiment=remote_experiment,
         data_dir=local_data_dir,
-        # climate_array_path="/teamspace/s3_connections/ml-for-bem/weather/temp/global_climate_array.npy",
-        climate_array_path="data/epws/global_climate_array.npy",
-        # batch_size=128,
-        batch_size=32,
-        # val_batch_mult=8,
-        val_batch_mult=32,
+        climate_array_path=climate_array_path,
+        batch_size=128,
+        val_batch_mult=8,
     )
     # TODO: we should have a better workflow for first fitting the target transform
     # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
@@ -334,9 +333,9 @@ if __name__ == "__main__":
     lr_gamma = 0.95
     net_config = "Small"
     latent_factor = 4
-    energy_cnn_feature_maps = 256
+    energy_cnn_feature_maps = 512
     energy_cnn_n_layers = 3
-    energy_cnn_n_blocks = 8
+    energy_cnn_n_blocks = 12
 
     surrogate = Surrogate(
         lr=lr,
@@ -358,13 +357,12 @@ if __name__ == "__main__":
     """
     wandb_logger = WandbLogger(
         project="ml-for-bem",
-        name="Surrogate",
+        name="Surrogate-MultiGPU-Test",
         save_dir="wandb",
         log_model="all",
         job_type="train",
         group="global-surrogate",
     )
-    # tb_logger = TensorBoardLogger(remote_data_path, name="Surrogate")
 
     """
     Trainer
@@ -374,19 +372,18 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
-        strategy="auto",
-        # strategy="ddp_find_unused_parameters_true",
+        # strategy="auto",
+        strategy="ddp_find_unused_parameters_true",
         logger=wandb_logger,
         default_root_dir=remote_data_path,
         enable_progress_bar=True,
         enable_checkpointing=True,
         enable_model_summary=True,
-        # val_check_interval=0.5,
-        check_val_every_n_epoch=1,
+        val_check_interval=0.25,
+        # check_val_every_n_epoch=1,
         num_sanity_val_steps=3,
         precision="bf16-mixed",
-        # precision="16-mixed",
-        # sync_batchnorm=True,
+        sync_batchnorm=True,
     )
 
     trainer.fit(
