@@ -297,6 +297,78 @@ class WeatherStdNormalTransform(nn.Module):
         return x_transformed
 
 
+# TODO: add a transform for weather data
+class PredictBuildingDataset(Dataset):
+    def __init__(
+        self,
+        features: pd.DataFrame,
+        schedules: np.ndarray,
+        climate_array: np.ndarray,
+        space_config: dict,
+    ):
+        """
+        Create a PredictBuildingDataset
+
+        Args:
+            features (pd.DataFrame): a dataframe of features, untransformed (i.e. physical units); one column should be "template_idx", which will be used to select schedules.
+            schedules (np.ndarray): an array of schedules (n_templates, n_timesteps, n_channels)
+            climate_array (np.ndarray): an array of climate data.  Assumed shape is (n_weather_channels, n_timesteps)
+            space_config: a dictionary defining the space of the features.  Should be formatted as:
+                {
+                    "feature_name": {
+                        "mode": "Continuous" or "Onehot",
+                        "min": float (only for Continuous features),
+                        "max": float (only for Continuous features),
+                        "option_count": int (only for Onehot features),
+                    }
+                }
+
+        Returns:
+            PredictBuildingDataset: a dataset of building features and schedules
+        """
+
+        # Store the features
+        self.template_idx = features["template_idx"].astype(int)
+        self.features_untransformed = features.drop("template_idx", axis=1)
+        self.features = transform_dataframe(
+            space_config, self.features_untransformed
+        ).astype(np.float32)
+
+        # Store the schedules
+        self.schedules = schedules.astype(np.float32)
+
+        # Store the climate array
+        self.climate_array = climate_array.astype(np.float32)
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, index):
+        """
+        Get a single sample from the dataset.  Handles fetching the climate data and schedules
+
+        Args:
+            index (int): the index of the sample
+
+        Returns:
+            features (np.ndarray): the features
+            schedules (np.ndarray): the schedules
+            climate_data (np.ndarray): the climate data
+        """
+
+        # get the features, which are already transformed
+        features = self.features.iloc[index].values
+
+        # Get the schedule seed and make the schedule as f32 precision
+        template_idx = self.template_idx.iloc[index]
+        schedules = self.schedules[template_idx].astype(np.float32)
+
+        # get the epw index and load the climate data
+        climate_data = self.climate_array
+
+        return features, schedules, climate_data
+
+
 class BuildingDataset(Dataset):
     """
     A dataset of building features and targets

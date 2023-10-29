@@ -277,6 +277,13 @@ class Surrogate(pl.LightningModule):
         )
         return loss
 
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        features, schedules, climates = batch
+        preds = self.model(features, schedules, climates)
+        preds = preds.reshape(features.shape[0], -1)
+        preds = self.target_transform.inverse_transform(preds)
+        return preds
+
 
 if __name__ == "__main__":
     from ml.data import BuildingDataModule
