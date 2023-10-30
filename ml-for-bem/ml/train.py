@@ -59,7 +59,6 @@ class MultiModalModel(nn.Module):
 
 
 # TODO: Surrogate should have a `forward`` method
-# TODO: Surrogate should have a `predict_step` method
 
 
 class Surrogate(pl.LightningModule):
@@ -259,7 +258,6 @@ class Surrogate(pl.LightningModule):
             ]
             error_dict[f"AnnualRMSE/Val/{seen_key}/{slug}"] = annual_rmse[i]
             error_dict[f"AnnualCVRMSE/Val/{seen_key}/{slug}"] = annual_cvrmse[i]
-        # TODO: don't add dataloader idx
         self.log_dict(
             error_dict,
             on_step=False,
@@ -292,15 +290,24 @@ if __name__ == "__main__":
     import os
     from lightning.pytorch.loggers import WandbLogger, TensorBoardLogger
 
-    # TODO: fiix window bounds
     # TODO: batch size should be in config
     # TODO: thresh should be in config
     wandb.login()
-    in_lightning_studio = True if os.environ.get("LIGHTNING_ORG",None) is not None else False
+    in_lightning_studio = (
+        True if os.environ.get("LIGHTNING_ORG", None) is not None else False
+    )
     bucket = "ml-for-bem"
     remote_experiment = "full_climate_zone/v5"
-    local_data_dir = "/teamspace/s3_connections/ml-for-bem" if in_lightning_studio else "data/lightning"
-    climate_array_path = f"{local_data_dir}/weather/temp/global_climate_array.npy" if in_lightning_studio else "data/epws/global_climate_array.npy"
+    local_data_dir = (
+        "/teamspace/s3_connections/ml-for-bem"
+        if in_lightning_studio
+        else "data/lightning"
+    )
+    climate_array_path = (
+        f"{local_data_dir}/weather/temp/global_climate_array.npy"
+        if in_lightning_studio
+        else "data/epws/global_climate_array.npy"
+    )
     remote_data_dir = "full_climate_zone/v5/lightning"
     remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
@@ -314,6 +321,8 @@ if __name__ == "__main__":
     )
     # TODO: we should have a better workflow for first fitting the target transform
     # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
+    # TODO: the model should store the climate transform, or we should otherwise have a better way of
+    # storing it for use later.
     dm.prepare_data()
     dm.setup(stage=None)
     target_transform = dm.target_transform
@@ -368,6 +377,8 @@ if __name__ == "__main__":
     Trainer
     """
 
+    # TODO: We should have better model checkpointing so we
+    # don't blow up the disk and can better track the best model
     torch.set_float32_matmul_precision("medium")
     trainer = pl.Trainer(
         accelerator="auto",
