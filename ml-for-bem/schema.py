@@ -22,7 +22,6 @@ try:
 except (ImportError, ModuleNotFoundError) as e:
     logger.error("Failed to import a package! Be wary about continuing...", exc_info=e)
 
-from whiteboxsim import WhiteboxSimulation
 from utils.constants import *
 from schedules import (
     schedule_paths,
@@ -132,10 +131,10 @@ class SchemaParameter:
                 counts = (
                     self.extract_storage_values_batch(storage_batch)
                     if value is None
-                    else value
+                    else np.array([value])
                 )
                 onehots = np.zeros((counts.shape[0], self.count))
-                onehots[np.arange(counts.shape[0]), counts[:, 0].astype(int)] = 1
+                onehots[np.arange(counts.shape[0]), counts[:].astype(int)] = 1
                 return onehots
             elif isinstance(self, SchedulesParameters):
                 return (
@@ -188,7 +187,7 @@ class SchemaParameter:
         """
         return val
 
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+    def mutate_simulation_object(self):
         """
         This method updates the simulation objects (archetypal template, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
@@ -196,7 +195,6 @@ class SchemaParameter:
         The default base SchemaParameter does nothing.  Children classes implement the appropriate
         semantic logic.
         Args:
-            whitebox_sim: WhiteboxSimulation
         """
         pass
 
@@ -205,7 +203,6 @@ class SchemaParameter:
         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
         Works as the reverse of mutate_simulation_object
         Args:
-            whitebox_sim: WhiteboxSimulation
             building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
         """
         pass
@@ -265,16 +262,16 @@ class ShoeboxGeometryParameter(NumericParameter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+    def mutate_simulation_object(self, epjson):
         """
-        This method updates the simulation objects (archetypal template, shoebox config)
+        This method updates the simulation objects (epjson, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         Updates whitebox simulation's shoebox configuration dictionary class.
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        value = self.extract_storage_values(whitebox_sim.storage_vector) #TODO
         setattr(whitebox_sim.shoebox_config, self.name, value)
 
     def extract_from_template(self, whitebox_sim=None):
@@ -516,30 +513,7 @@ class WindowParameter(NumericParameter):
         #     whitebox_sim.storage_vector
         # )
 
-        # # get the three values for u/shgc/vlt
         # values = self.extract_storage_values(whitebox_sim.storage_vector)
-
-        # # separate them
-        # u_value = values[0]
-        # shgc = values[1]
-
-        # ORIGINAL COMPLEX WINDOW VERSION
-        # create a new single layer window that has the properties from special single layer material
-        # TODO use new EnergyPlus window from u-val and shgc
-        # window = WindowConstruction.from_shgc(
-        #     Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
-        #     solar_heat_gain_coefficient=shgc,
-        #     u_factor=u_value,
-        #     visible_transmittance=vlt,
-        # )
-
-        # VERSION WITH DISCRETE WINDOW (ONEHOT)
-        # window_typ = WINDOW_TYPES[idx]
-        # all_winds = [w.Name for w in whitebox_sim.lib.WindowConstructions]
-        # # Update the window
-        # whitebox_sim.template.Windows.Construction = (
-        #     whitebox_sim.lib.WindowConstructions[all_winds.index(window_typ)]
-        # )
 
         # VERSION WTIH ARCHETYPAL
         # window_material = SimpleGlazingMaterial(Name=f"SimpleWindowMat_U{u_value}_SHGC{shgc}", Uvalue=u_value, SolarHeatGainCoefficient=shgc)
@@ -548,55 +522,32 @@ class WindowParameter(NumericParameter):
         # # Update the window
         # whitebox_sim.template.Windows.Construction = (window_construction)
 
-    def extract_from_template(self, building_template):  # TODO: for umi later
+    def extract_from_template(self, building_template):
         """
         This method extracts the parameter value from an archetypal building template for the creation of a building vector.
         Works as the reverse of mutate_simulation_object
         Args:
             whitebox_sim: WhiteboxSimulation
             building_template: Archetypal BuildingTemplate
-        Logic for window sorting (from ClimateStudio database):
-            SINGLE
-                Uval > 2.6
-            DOUBLE
-                Uval [0.84, 2.67]
-                1.6 < Uval < 2.6 LOE 1.0 < Uval < 1.6
-            TRIPLE
-                Uval [0.785, 1.75]
-                0.7 < Uval < 1.0 LOE Uval < 0.7
-
         """
-        logging.warning("WINDOW extract_from_template IS NOT DONE YET.")
         window = building_template.Windows.Construction
         uval = window.u_value
-        if window.glazing_count == 2:
-            shgc = window.shgc()
-        elif window.glazing_count == 1:
-            # Calculate shgc from t_sol of construction
-            tsol = window.Layers[0].Material.SolarTransmittance
-            shgc = self.single_pane_shgc_estimation(tsol, uval)
-        else:
-            # if window is not 2 layers
-            logging.info(
-                f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
-            )
-            shgc = 0.6
-        # vlt = window.visible_transmittance
-
-        # # sort into window type
-        # if uval >= 1.6 and uval < 2.6:
-        #     type = 1
-        # elif uval >= 1.0 and uval < 1.6:
-        #     type = 2
-        # elif uval >= 0.7 and uval < 1.0:
-        #     type = 3
-        # elif uval < 0.7:
-        #     type = 4
-        # else:
-        #     type = 0
-        # return type
-
-        # return self.to_ml(value=np.array([uval, shgc]))
+        if self.name == "WindowUValue":
+            return self.to_ml(value=uval)
+        elif self.name == "WindowShgc":
+            if window.glazing_count == 2:
+                value = window.shgc()
+            elif window.glazing_count == 1:
+                # Calculate shgc from t_sol of construction
+                tsol = window.Layers[0].Material.SolarTransmittance
+                value = self.single_pane_shgc_estimation(tsol, uval)
+            else:
+                # if window is not 2 layers
+                logging.info(
+                    f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
+                )
+                value = 0.6
+        return self.to_ml(value=value)
 
     @classmethod
     def single_pane_shgc_estimation(cls, tsol, uval):
@@ -987,7 +938,7 @@ class Schema:
                     mean=0.5,
                     std=0.1,
                     source="climate studio",
-                    info="",
+                    info="SHGC",
                 ),
                 OneHotParameter(
                     name="EconomizerSettings",
@@ -1185,22 +1136,22 @@ class Schema:
         parameters = self.parameters
         for parameter in parameters:
             if parameter.in_ml:
-                # print("Extracting value(s) for ", parameter.name)
                 if isinstance(parameter, SchedulesParameters):
                     schedules_vect = parameter.extract_from_template(building_template)
-                    # print(f"Got schedules of {type(schedules_vect)} with shape {schedules_vect.shape}")
+                elif isinstance(parameter, TMassParameter):
+                    vals = parameter.extract_from_template(building_template)
+                    # append to template vector
+                    template_vect.extend(
+                        vals[0]
+                    )  # Never occurs for batch (one template at a time)
                 elif (
                     isinstance(parameter, BuildingTemplateParameter)
-                    or isinstance(parameter, TMassParameter)
                     or isinstance(parameter, RValueParameter)
-                ):  # TODO: check
+                    or isinstance(parameter, WindowParameter)
+                ):
                     val = parameter.extract_from_template(building_template)
                     # append to template vector
                     template_vect.append(val)
-                elif isinstance(parameter, WindowParameter):
-                    val = parameter.extract_from_template(building_template)
-                    # template_vect.append(val)
-                    template_vect.extend(val)
 
         # return values which will be used for a building parameter vector and/or timeseries vector (schedules)
         return dict(

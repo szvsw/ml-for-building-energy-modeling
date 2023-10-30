@@ -5,13 +5,14 @@ from enum import IntEnum
 
 JOULES_TO_KWH = 2.777e-7
 SHADING_DIV_SIZE = 12
+PERIM_OFFSET = 3  # meters
+CORE_DEPTH = 3  # meters
 
 EPW_RELATIVE_PATH = "data/epws/global_epws_indexed"
 EPW_MAP_PATH = "data/global_epws_indexed.csv"
 EPW_TRAINING_LIST_PATH = "data/epws/global_training_epw_meta.csv"
 EPW_TESTING_LIST_PATH = "data/epws/global_testing_epw_meta.csv"
 SHOEBOX_RELATIVE_PATH = "shoeboxer/cache"
-
 DEFAULT_SCHEDULES_PATH = "data/schedules.npy"
 
 WINDOW_TYPES = {
@@ -30,7 +31,7 @@ class ThermalMassConstructions(IntEnum):
     SteelFrame = 3
 
 
-class ThermalMassCapacities(IntEnum):  # TODO
+class ThermalMassCapacities(IntEnum):
     Concrete = 450000
     Brick = 100000
     WoodFrame = 50000

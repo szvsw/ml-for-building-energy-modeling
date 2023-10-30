@@ -40,7 +40,9 @@ from archetypal.template.zone_construction_set import ZoneConstructionSet
 from archetypal.template.zonedefinition import ZoneDefinition
 
 from surrogate import Surrogate, ClimateData, normalize
-from utils.weather_utils import collect_values, calc_surface_temp
+
+# from weather.weather import collect_values, calc_surface_temp
+# from utils.weather_utils import collect_values, calc_surface_temp
 from schema import (
     Schema,
     OneHotParameter,
@@ -63,12 +65,10 @@ PERIM_AREA_MIN = 0.3619999885559082
 CORE_AREA_MAX = 74.86000289916991
 CORE_AREA_MIN = 0.3440000057220462
 
-J_TO_KWH = 2.7777e-7
-
 EPLUS_DATA = [
     {
         "name": "heating",
-        "eplus_name": "Zone Ideal Loads Supply Air Total Heating Energy",  # [J]
+        "eplus_name": "Zone Ideal Loads Supply Air Total Heating Energy",
         "units": "J",
     },
     {

@@ -65,7 +65,7 @@ class WhiteboxSimulation:
         "idf",
     )
 
-    def __init__(self, schema, storage_vector):
+    def __init__(self, schema, storage_vector, template_lib_path=None, template_idx=0):
         """
         Create a whitebox simulation object
 
@@ -78,81 +78,19 @@ class WhiteboxSimulation:
         self.schema = schema
         self.storage_vector = storage_vector
         self.shoebox_config = ShoeboxConfiguration()
-        self.load_template()
+        if template_lib_path:
+            self.load_template(template_lib_path, template_idx)
         self.build_epw_path()
         self.update_parameters()
         self.build_shoebox()
-        # self.set_HVAC()
-        # self.build_shading_from_vect()
 
-    def load_template(self):
+    def load_template(self, template_lib_path, template_idx):
         """
         Method for loading a template based off id in storage vector.
         """
-        template_lib_idx = self.schema["climate_zone"].extract_storage_values(
-            self.storage_vector
-        )
 
-        template_lib_idx = int(template_lib_idx)
-
-        template_lib_path = (
-            data_path
-            / "template_libs"
-            / "cz_libs"
-            / "residential"
-            / f"CZ{CLIMATEZONES_LIST[template_lib_idx]}.json"
-        )
-
-        """PROG_{IDX}_VINTAGE_{IDX}_MASS_{0/1}"""
-
-        vintage = self.schema["vintage"].extract_storage_values(self.storage_vector)
-
-        vintage_idx = 0
-        if vintage < 1940:
-            pass
-        elif vintage < 1980:
-            vintage_idx = 1
-        elif vintage < 2004:
-            vintage_idx = 2
-        else:
-            vintage_idx = 3
-
-        program_type = self.schema["program_type"].extract_storage_values(
-            self.storage_vector
-        )
-        tmass = self.schema["FacadeMass"].extract_storage_values(self.storage_vector)
-
-        mass_flag = 0
-        if tmass > HIGH_LOW_MASS_THRESH:
-            mass_flag = 1
-
-        n_programs = len(RESTYPES)
-        n_masses = 2
-        n_vintages = 4
-        template_idx = (
-            n_masses * n_vintages * int(program_type)
-            + n_masses * vintage_idx
-            + mass_flag
-        )
-
-        """
-        0a - template library
-            single family, pre-1940 low mass
-            single family pe-1940 high mass
-            multi family pre 1940
-            multi big family pre 1940
-            multi bigger family pre 1940
-            single family pre 1980
-
-        """
         self.lib = UmiTemplateLibrary.open(template_lib_path)
         self.template = self.lib.BuildingTemplates[template_idx]
-        # print("Vintage", vintage, vintage_idx)
-        # print("Program Type", int(program_type))
-        # print("FacadeMass", tmass, high_mass)
-        # print("Template Idx", template_idx)
-        # for bt in self.lib.BuildingTemplates:
-        #     print(bt.Name)
 
     def update_parameters(self):
         """
@@ -192,8 +130,6 @@ class WhiteboxSimulation:
             change_summary=False,
             output_directory=SHOEBOX_PATH,
         )
-        # TODO make an IDF here? or later?
-        # self.shoebox = sb.idf(run_simulation=False)
         self.shoebox = sb
 
     def simulate(self):
