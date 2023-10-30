@@ -209,7 +209,6 @@ class Umi:
         shoebox_width=3,  # Can be list (for each bldg) or single value TODO
         floor_to_floor_height=4,  # Can be list (for each bldg) or single value TODO,
         perim_offset=PERIM_OFFSET,
-        core_depth=CORE_DEPTH,
     ):
         self.gdf = gdf
         self.epw = epw
@@ -219,7 +218,6 @@ class Umi:
         self.shoebox_width = shoebox_width
         self.floor_to_floor_height = floor_to_floor_height
         self.perim_offset = perim_offset
-        self.core_depth = core_depth  # TODO: unsure of where this is used...
 
         start_time = time.time()
         self.schedules_array, self.features_df = self.prepare_archetype_features()
@@ -299,9 +297,6 @@ class Umi:
             if shgc > 1:
                 logger.warning("SHGC over 1, clipping.")
                 shgc = 1.0
-            if window_u > 7:
-                logger.warning("Window U-value over 7, clipping.")
-                window_u = 7.0
 
             # 4. Get the ventilation factors
             # TODO: how to deal with things that are named weird
@@ -624,7 +619,6 @@ class Umi:
                 #         ].agg("_".join, axis=1)
                 #     else:
                 #         gdf["template"] = gdf[keyfields["primary"]]
-                core_depth = gdf["CoreDepth"][0]
                 f2f_height = gdf["FloorToFloorHeight"][0]
                 perim_offset = gdf["PerimeterOffset"][0]
                 width = gdf["RoomWidth"][0]
@@ -646,7 +640,6 @@ class Umi:
                 shoebox_width=width,
                 floor_to_floor_height=f2f_height,
                 perim_offset=perim_offset,
-                core_depth=core_depth,
             )
 
 

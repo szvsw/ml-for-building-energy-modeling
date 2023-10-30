@@ -6,7 +6,6 @@ from enum import IntEnum
 JOULES_TO_KWH = 2.777e-7
 SHADING_DIV_SIZE = 12
 PERIM_OFFSET = 3  # meters
-CORE_DEPTH = 3  # meters
 
 EPW_RELATIVE_PATH = "data/epws/global_epws_indexed"
 EPW_MAP_PATH = "data/global_epws_indexed.csv"
