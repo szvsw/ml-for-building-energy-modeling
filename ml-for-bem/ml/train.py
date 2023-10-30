@@ -264,7 +264,7 @@ class Surrogate(pl.LightningModule):
             error_dict,
             on_step=False,
             on_epoch=True,
-            # sync_dist=True,
+            sync_dist=True,
             add_dataloader_idx=False,
         )
         self.log(
@@ -272,7 +272,7 @@ class Surrogate(pl.LightningModule):
             loss,
             on_step=False,
             on_epoch=True,
-            # sync_dist=True,
+            sync_dist=True,
             add_dataloader_idx=False,
         )
         return loss
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     """
     Hyperparameters:
     """
-    lr = 1e-3  # TODO: larger learning rate for larger batch size on multi-gpu?
+    lr = 1e-2  # TODO: larger learning rate for larger batch size on multi-gpu?
     lr_gamma = 0.95
     net_config = "Small"
     latent_factor = 4
