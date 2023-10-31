@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.metrics import r2_score
 
-from networks import (
+from ml.networks import (
     EnergyCNN,
     EnergyCNN2,
     MonthlyEnergyCNN,
@@ -806,13 +806,17 @@ class Surrogate:
         self.writer = SummaryWriter(DATA_PATH / "runs" / f"{run_name}_timeseries")
         self.writer.add_graph(
             self.timeseries_net,
-            torch.randn(2, self.timeseries_per_vector, HOURS_IN_YEAR).float().to(device),
+            torch.randn(2, self.timeseries_per_vector, HOURS_IN_YEAR)
+            .float()
+            .to(device),
         )
         self.writer.close()
         self.writer = SummaryWriter(DATA_PATH / "runs" / f"{run_name}_energy")
         self.writer.add_graph(
             self.energy_net,
-            torch.randn(2, self.energy_cnn_in_size, self.output_resolution).float().to(device),
+            torch.randn(2, self.energy_cnn_in_size, self.output_resolution)
+            .float()
+            .to(device),
         )
         self.writer.close()
 
