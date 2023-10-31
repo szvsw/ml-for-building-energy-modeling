@@ -247,17 +247,21 @@ class Umi:
             "roof_2_footprint"
         ]  # Always the same for 2.5D
 
-    def prepare_archetype_features(self):
+    def prepare_archetype_features(self, template_lib: UmiTemplateLibrary = None):
         """
         Fetches data from archetypal building templates for shoeboxes.
+
+        Args:
+            UmiTemplateLibrary (default=None): archetypal template library; if none passed, uses registered UTL in self.template_lib
 
         Returns:
             schedules:  a numpy array of schedule data for each building template [n_templates, n_used_templates (3), 8760]
             template_df: a pandas df of template features that are used in the template_dict of the shoebox builder (and surrogate)
         """
         # TODO pass over unused templates
+        template_lib = template_lib or self.template_lib
         template_vectors_dict = {}
-        for building_template in self.template_lib.BuildingTemplates:
+        for building_template in template_lib.BuildingTemplates:
             logger.debug(
                 f"Fetching BuildingTemplate vector data from {building_template.Name}"
             )
@@ -358,7 +362,7 @@ class Umi:
             )
             template_vectors_dict[building_template.Name] = td
 
-        n_templates = len(self.template_lib.BuildingTemplates)
+        n_templates = len(template_lib.BuildingTemplates)
         schedules = np.zeros((n_templates, len(SCHEDULE_PATHS), 8760))
         for i, (_, d) in enumerate(template_vectors_dict.items()):
             schedules[i] = d.pop("schedules")
@@ -464,13 +468,17 @@ class Umi:
         #     shoebox_df.index.repeat(self.building_gdf["floor_count"])
         # ]
         # Make 4 shoeboxes for each building
-        shoebox_gdf = shoebox_gdf.loc[shoebox_gdf.index.repeat(4)].reset_index(drop=True)
+        shoebox_gdf = shoebox_gdf.loc[shoebox_gdf.index.repeat(4)].reset_index(
+            drop=True
+        )
         shoebox_gdf["roof_2_footprint"] = [0, 0, 1.0, 1.0] * (n_buildings)
         shoebox_gdf["ground_2_footprint"] = [1.0, 0, 0, 1.0] * (n_buildings)
         n_sbs = shoebox_gdf.shape[0]
 
         # Make a shoebox for each orientation
-        shoebox_gdf = shoebox_gdf.loc[shoebox_gdf.index.repeat(4)].reset_index(drop=True)
+        shoebox_gdf = shoebox_gdf.loc[shoebox_gdf.index.repeat(4)].reset_index(
+            drop=True
+        )
         shoebox_gdf["orientation"] = ["North", "East", "South", "West"] * n_sbs
 
         wdf = shoebox_gdf.merge(self.calculate_weights(), on="guid")
