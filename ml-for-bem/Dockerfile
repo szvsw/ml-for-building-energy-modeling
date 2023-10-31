@@ -21,7 +21,7 @@ RUN apt-get update \
 # Set the working directory in the container
 WORKDIR /usr/src/ml-for-bem
 
-COPY sampling-requirements.txt requirements.txt
+COPY requirements/sampling-requirements.txt requirements.txt
 
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
