@@ -46,7 +46,7 @@ from archetypal.template.zonedefinition import ZoneDefinition
 
 from shoeboxer.builder import template_dict
 from utils.constants import *
-from schedules import get_schedules
+from utils.schedules import get_schedules
 from weather.weather import extract
 
 logging.basicConfig()
@@ -471,7 +471,7 @@ class Umi:
         if calculate_shading:
             logger.info("Running raytracer...")
             logger.warning("RAYTRACER NOT SETUP. SKIPPING.")
-            self.allocate_shaded_shoeboxes() #TODO
+            self.allocate_shaded_shoeboxes()  # TODO
         else:
             # Make
             self.allocate_unshaded_shoeboxes()

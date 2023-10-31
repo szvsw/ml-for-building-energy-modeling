@@ -24,7 +24,7 @@ from archetypal import settings
 from archetypal.idfclass.sql import Sql
 from archetypal.schedule import Schedule, ScheduleTypeLimits
 
-from schedules import mutate_timeseries
+from utils.schedules import mutate_timeseries
 from utils.constants import *
 
 from shoeboxer.shoebox_config import ShoeboxConfiguration

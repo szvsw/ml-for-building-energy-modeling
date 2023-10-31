@@ -23,7 +23,7 @@ except (ImportError, ModuleNotFoundError) as e:
     logger.error("Failed to import a package! Be wary about continuing...", exc_info=e)
 
 from utils.constants import *
-from schedules import (
+from utils.schedules import (
     schedule_paths,
     operations,
     get_schedules,
@@ -271,7 +271,7 @@ class ShoeboxGeometryParameter(NumericParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        value = self.extract_storage_values(whitebox_sim.storage_vector) #TODO
+        value = self.extract_storage_values(whitebox_sim.storage_vector)  # TODO
         setattr(whitebox_sim.shoebox_config, self.name, value)
 
     def extract_from_template(self, whitebox_sim=None):
