@@ -220,7 +220,9 @@ class Umi:
         self.perim_offset = perim_offset
 
         start_time = time.time()
-        self.schedules_array, self.features_df = self.prepare_archetype_features()
+        self.schedules_array, self.features_df = self.pepare_archetypal_features(
+            self.template_lib
+        )
         self.epw_array = self.prepare_epw_features()
         self.prepare_gis_features()
         logger.info(f"Processed UMI in {time.time() - start_time:,.2f} seconds")
@@ -247,7 +249,8 @@ class Umi:
             "roof_2_footprint"
         ]  # Always the same for 2.5D
 
-    def prepare_archetype_features(self, template_lib: UmiTemplateLibrary = None):
+    @classmethod
+    def pepare_archetypal_features(cls, template_lib: UmiTemplateLibrary):
         """
         Fetches data from archetypal building templates for shoeboxes.
 
@@ -259,7 +262,6 @@ class Umi:
             template_df: a pandas df of template features that are used in the template_dict of the shoebox builder (and surrogate)
         """
         # TODO pass over unused templates
-        template_lib = template_lib or self.template_lib
         template_vectors_dict = {}
         # check that there are no duplicate names in the template library
         names = [t.Name for t in template_lib.BuildingTemplates]
@@ -267,7 +269,7 @@ class Umi:
             set(names)
         ), "Duplicate names in template library!  Aborting."
         for building_template in template_lib.BuildingTemplates:
-            data = self.extract_from_template(building_template)
+            data = cls.dict_from_buildingtemplate(building_template)
             template_vectors_dict[building_template.Name] = data
 
         n_templates = len(template_lib.BuildingTemplates)
@@ -276,7 +278,8 @@ class Umi:
             schedules[i] = d.pop("schedules")
         return schedules, pd.DataFrame.from_dict(template_vectors_dict).T
 
-    def extract_from_template(self, building_template: BuildingTemplate):
+    @classmethod
+    def dict_from_buildingtemplate(cls, building_template: BuildingTemplate):
         logger.debug(
             f"Fetching BuildingTemplate vector data from {building_template.Name}"
         )
@@ -288,13 +291,13 @@ class Umi:
         for name, constr in building_template.Perimeter.Constructions:
             if name == "Facade":
                 wall_r = constr.r_value
-                wall_mass = self.sort_tmass(constr.heat_capacity_per_unit_wall_area)
+                wall_mass = cls.sort_tmass(constr.heat_capacity_per_unit_wall_area)
                 logger.debug(
                     f"Found facade with r_value {round(wall_r, 2)} and tmass bin {wall_mass}"
                 )
             if name == "Roof":
                 roof_r = constr.r_value
-                roof_mass = self.sort_tmass(constr.heat_capacity_per_unit_wall_area)
+                roof_mass = cls.sort_tmass(constr.heat_capacity_per_unit_wall_area)
                 logger.debug(
                     f"Found roof with r_value {round(roof_r, 2)} and tmass bin {roof_mass}"
                 )
@@ -314,7 +317,7 @@ class Umi:
                     0
                 ].Material.SolarTransmittance
             )
-            shgc = self.single_pane_shgc_estimation(tsol, window_u)
+            shgc = cls.single_pane_shgc_estimation(tsol, window_u)
 
         if shgc > 1:
             logger.warning("SHGC over 1, clipping.")
@@ -373,7 +376,8 @@ class Umi:
         )
         return td
 
-    def sort_tmass(self, val):
+    @classmethod
+    def sort_tmass(cls, val):
         if val >= ThermalMassCapacities.Concrete:
             return ThermalMassConstructions.Concrete.value
         elif (
@@ -387,7 +391,8 @@ class Umi:
         elif val < ThermalMassCapacities.WoodFrame:
             return ThermalMassConstructions.SteelFrame.value
 
-    def single_pane_shgc_estimation(self, tsol, uval):
+    @classmethod
+    def single_pane_shgc_estimation(cls, tsol, uval):
         """
         Calculate shgc for single pane window - from Archetypal tsol calulation based on u-val and shgc
         """
