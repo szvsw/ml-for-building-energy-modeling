@@ -1,0 +1,19 @@
+
+name: ml-for-bem-tracing
+
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - pytorch 
+  - pytorch-cuda=11.8 
+  - numpy
+  - python=3.8
+  - pip
+  - geopandas
+  - pip:
+    - taichi
+    - ladybug-core
+    - pyradiance
+  
