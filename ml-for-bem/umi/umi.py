@@ -209,6 +209,7 @@ class Umi:
         shoebox_width=3,  # Can be list (for each bldg) or single value TODO
         floor_to_floor_height=4,  # Can be list (for each bldg) or single value TODO,
         perim_offset=PERIM_OFFSET,
+        calculate_shading=False,
     ):
         self.building_gdf = gdf
         self.epw = epw
@@ -225,6 +226,14 @@ class Umi:
         )
         self.epw_array = self.prepare_epw_features()
         self.prepare_gis_features()
+        self.prepare_shoeboxes(calculate_shading)
+
+        # Add in template_idx for feature array
+        if "template_idx" not in self.building_gdf.columns:
+            self.building_gdf["template_idx"] = list(
+                self.features_df.loc[self.building_gdf["template_name"]]["template_idx"]
+            )
+
         logger.info(f"Processed UMI in {time.time() - start_time:,.2f} seconds")
 
     def prepare_gis_features(self):
@@ -276,7 +285,9 @@ class Umi:
         schedules = np.zeros((n_templates, len(SCHEDULE_PATHS), 8760))
         for i, (_, d) in enumerate(template_vectors_dict.items()):
             schedules[i] = d.pop("schedules")
-        return schedules, pd.DataFrame.from_dict(template_vectors_dict).T
+        features = pd.DataFrame.from_dict(template_vectors_dict).T
+        features["template_idx"] = list(range(features.shape[0]))
+        return schedules, features
 
     @classmethod
     def dict_from_buildingtemplate(cls, building_template: BuildingTemplate):
@@ -291,15 +302,15 @@ class Umi:
         for name, constr in building_template.Perimeter.Constructions:
             if name == "Facade":
                 wall_r = constr.r_value
-                wall_mass = cls.sort_tmass(constr.heat_capacity_per_unit_wall_area)
+                FacadeMass = cls.sort_tmass(constr.heat_capacity_per_unit_wall_area)
                 logger.debug(
-                    f"Found facade with r_value {round(wall_r, 2)} and tmass bin {wall_mass}"
+                    f"Found facade with r_value {round(wall_r, 2)} and tmass bin {FacadeMass}"
                 )
             if name == "Roof":
                 roof_r = constr.r_value
-                roof_mass = cls.sort_tmass(constr.heat_capacity_per_unit_wall_area)
+                RoofMass = cls.sort_tmass(constr.heat_capacity_per_unit_wall_area)
                 logger.debug(
-                    f"Found roof with r_value {round(roof_r, 2)} and tmass bin {roof_mass}"
+                    f"Found roof with r_value {round(roof_r, 2)} and tmass bin {RoofMass}"
                 )
             if name == "Ground":
                 slab_r = constr.r_value
@@ -355,24 +366,24 @@ class Umi:
 
         td = template_dict(
             schedules=scheds,
-            people_density=building_template.Perimeter.Loads.PeopleDensity,
-            lighting_power_density=building_template.Perimeter.Loads.LightingPowerDensity,
-            equipment_power_density=building_template.Perimeter.Loads.EquipmentPowerDensity,
-            infiltration_per_area=building_template.Perimeter.Ventilation.Infiltration,
-            ventilation_per_floor_area=building_template.Perimeter.Conditioning.MinFreshAirPerArea,
-            ventilation_per_person=building_template.Perimeter.Conditioning.MinFreshAirPerPerson,
-            ventilation_mode=vent_mode,
-            heating_sp=building_template.Perimeter.Conditioning.HeatingSetpoint,
-            cooling_sp=building_template.Perimeter.Conditioning.CoolingSetpoint,
-            heat_recovery=getattr(HRV, recovery_type),
-            economizer=getattr(Econ, econ_type),
-            wall_r_val=wall_r,
-            wall_mass=wall_mass,
-            roof_r_val=roof_r,
-            roof_mass=roof_mass,
-            slab_r_val=slab_r,
-            shgc=shgc,
-            window_u_val=window_u,
+            PeopleDensity=building_template.Perimeter.Loads.PeopleDensity,
+            LightingPowerDensity=building_template.Perimeter.Loads.LightingPowerDensity,
+            EquipmentPowerDensity=building_template.Perimeter.Loads.EquipmentPowerDensity,
+            Infiltration=building_template.Perimeter.Ventilation.Infiltration,
+            VentilationPerArea=building_template.Perimeter.Conditioning.MinFreshAirPerArea,
+            VentilationPerPerson=building_template.Perimeter.Conditioning.MinFreshAirPerPerson,
+            VentilationMode=vent_mode,
+            HeatingSetpoint=building_template.Perimeter.Conditioning.HeatingSetpoint,
+            CoolingSetpoint=building_template.Perimeter.Conditioning.CoolingSetpoint,
+            RecoverySettings=getattr(HRV, recovery_type),
+            EconomizerSettings=getattr(Econ, econ_type),
+            FacadeRValue=wall_r,
+            FacadeMass=FacadeMass,
+            RoofRValue=roof_r,
+            RoofMass=RoofMass,
+            SlabRValue=slab_r,
+            WindowShgc=shgc,
+            WindowUValue=window_u,
         )
         return td
 
@@ -456,6 +467,20 @@ class Umi:
     ):
         return extract(self.epw, timeseries)
 
+    def prepare_shoeboxes(self, calculate_shading):
+        if calculate_shading:
+            logger.info("Running raytracer...")
+            logger.warning("RAYTRACER NOT SETUP. SKIPPING.")
+            self.allocate_shaded_shoeboxes() #TODO
+        else:
+            # Make
+            self.allocate_unshaded_shoeboxes()
+        shading_cols = [f"shading_{x}" for x in range(SHADING_DIV_SIZE)]
+        self.shoebox_gdf[shading_cols] = 0
+
+    def prepare_shading(self):
+        pass
+
     def calculate_weights(self):
         """
         Append to buildings_dataframe shoebox weight info based on polygon edge proportions and normals ["N_weight", "E_weight", "S_weight", "W_weight"]
@@ -482,7 +507,10 @@ class Umi:
         """
         n_buildings = self.building_gdf.shape[0]
         shoebox_gdf = self.building_gdf.merge(
-            self.features_df.reset_index(), left_on="template", right_on="index"
+            self.features_df.reset_index(),
+            left_on="template_name",
+            right_on="index",
+            suffixes=(None, "_y"),
         )
         # # Make a shoebox for each floor
         # shoebox_df = shoebox_df.loc[
@@ -502,11 +530,16 @@ class Umi:
         )
         shoebox_gdf["orientation"] = ["North", "East", "South", "West"] * n_sbs
 
-        wdf = shoebox_gdf.merge(self.calculate_weights(), on="guid")
+        wdf = shoebox_gdf.merge(
+            self.calculate_weights(), on="guid", suffixes=(None, "_y")
+        )
         wdf[["guid", "orientation", "North", "East", "South", "West"]]
         shoebox_weights = []
         for _, row in wdf.T.to_dict().items():
             shoebox_weights.append(row[row["orientation"]])
+
+        # drop duplicate columns
+        shoebox_gdf.drop(shoebox_gdf.filter(regex="_y$").columns, axis=1, inplace=True)
 
         self.shoebox_weights = pd.Series(shoebox_weights)
         self.shoebox_gdf = shoebox_gdf
@@ -517,9 +550,9 @@ class Umi:
         """
         Future
         Returns:
-            shoebox_df: Pandas DF with sizing details, building_id, orientation, and template_name, template_idx (joined with template_df that has template_dict column names)
+            shoebox_df: Pandas DF with sizing details, building_id, orientation, and template_name, template_idxx (joined with template_df that has template_dict column names)
                 NOTE: X-to-footprint values will be overwritten
-            schedules_array: same order as template_idx
+            schedules_array: same order as template_idxx
             epw_array: numpy array
             shoebox_weights: pandas df index = "building_id", columns = ["N_weight", "E_weight", "S_weight", "W_weight"]
         """
@@ -533,7 +566,9 @@ class Umi:
             gdf.iloc[:max_idx].plot(**kwargs)
         else:
             max_idx = min(self.building_gdf.shape[0], max_polys)
-            self.building_gdf.iloc[:max_idx].plot(column="template", **kwargs, ax=ax)
+            self.building_gdf.iloc[:max_idx].plot(
+                column="template_name", **kwargs, ax=ax
+            )
             try:
                 self.building_gdf.iloc[:max_idx]["cores"].plot(
                     facecolor="none", edgecolor="red", ax=ax
@@ -604,16 +639,16 @@ class Umi:
                 # Add new column for template ID based on primary and secondary divisions
                 # if keyfields["primary"] != "N/A":
                 #     if keyfields["secondary"] != "N/A":
-                #         gdf["template"] = gdf[
+                #         gdf["template_name"] = gdf[
                 #             [keyfields["primary"], keyfields["secondary"]]
                 #         ].agg("_".join, axis=1)
                 #     else:
-                #         gdf["template"] = gdf[keyfields["primary"]]
-                gdf["template"] = np.random.randint(
+                #         gdf["template_name"] = gdf[keyfields["primary"]]
+                gdf["template_idx"] = np.random.randint(
                     len(template_lib.BuildingTemplates), size=gdf.shape[0]
                 )
-                umi_gdf = gdf[[keyfields["height"], "geometry", "template"]]
-                umi_gdf.columns = ["height", "geometry", "template"]
+                umi_gdf = gdf[[keyfields["height"], "geometry", "template_idx"]]
+                umi_gdf.columns = ["height", "geometry", "template_idx"]
                 umi_gdf["wwr"] = wwr
 
             return cls(
@@ -722,13 +757,15 @@ class Umi:
                 new_c = [
                     "height",
                     "geometry",
-                    "template",
+                    "template_name",
                     "wwr",
                 ]  # TODO: make arguments
                 # umi_gdf = gdf[[prev_c]]
                 # umi_gdf.columns = new_c
                 umi_gdf = gdf.rename(columns={A: a for A, a in zip(prev_c, new_c)})
-                umi_gdf = umi_gdf[["height", "geometry", "template", "wwr", "guid"]]
+                umi_gdf = umi_gdf[
+                    ["height", "geometry", "template_name", "wwr", "guid"]
+                ]
 
             return cls(
                 gdf=umi_gdf,

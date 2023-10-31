@@ -105,54 +105,54 @@ def schedule_to_epbunch(name, values, sched_lims_bunch=sched_type_limits):
 
 def template_dict(
     schedules,
-    people_density=0.05,
-    lighting_power_density=2,
-    equipment_power_density=5,
-    infiltration_per_area=0.0001,
-    ventilation_per_floor_area=0.0004,
-    ventilation_per_person=0.0025,
-    ventilation_mode=1,  # one hot of 0-2
-    heating_sp=18,
-    cooling_sp=24,
+    PeopleDensity=0.05,
+    LightingPowerDensity=2,
+    EquipmentPowerDensity=5,
+    Infiltration=0.0001,
+    VentilationPerArea=0.0004,
+    VentilationPerPerson=0.0025,
+    VentilationMode=1,  # one hot of 0-2
+    HeatingSetpoint=18,
+    CoolingSetpoint=24,
     humid_max=81,
     humid_min=21,
     sat_max=28,
     sat_min=17,
-    heat_recovery=0,
-    economizer=1,
-    wall_r_val=2,
-    wall_mass=2,  # need to revisit minimums
-    roof_r_val=6,
-    roof_mass=1,
-    slab_r_val=4,
-    shgc=0.5,
-    window_u_val=1.0,
+    RecoverySettings=0,
+    EconomizerSettings=1,
+    FacadeRValue=2,
+    FacadeMass=2,  # need to revisit minimums
+    RoofRValue=6,
+    RoofMass=1,
+    SlabRValue=4,
+    WindowShgc=0.5,
+    WindowUValue=1.0,
     visible_transmittance=0.8,
 ):
     return dict(
         schedules=schedules,
-        people_density=people_density,
-        lighting_power_density=lighting_power_density,
-        equipment_power_density=equipment_power_density,
-        infiltration_per_area=infiltration_per_area,
-        ventilation_per_floor_area=ventilation_per_floor_area,
-        ventilation_per_person=ventilation_per_person,
-        ventilation_mode=ventilation_mode,
-        heating_sp=heating_sp,
-        cooling_sp=cooling_sp,
+        PeopleDensity=PeopleDensity,
+        LightingPowerDensity=LightingPowerDensity,
+        EquipmentPowerDensity=EquipmentPowerDensity,
+        Infiltration=Infiltration,
+        VentilationPerArea=VentilationPerArea,
+        VentilationPerPerson=VentilationPerPerson,
+        VentilationMode=VentilationMode,
+        HeatingSetpoint=HeatingSetpoint,
+        CoolingSetpoint=CoolingSetpoint,
         humid_max=humid_max,
         humid_min=humid_min,
         sat_max=sat_max,
         sat_min=sat_min,
-        heat_recovery=heat_recovery,
-        economizer=economizer,
-        wall_r_val=wall_r_val,
-        wall_mass=wall_mass,
-        roof_r_val=roof_r_val,
-        roof_mass=roof_mass,
-        slab_r_val=slab_r_val,
-        shgc=shgc,
-        window_u_val=window_u_val,
+        RecoverySettings=RecoverySettings,
+        EconomizerSettings=EconomizerSettings,
+        FacadeRValue=FacadeRValue,
+        FacadeMass=FacadeMass,
+        RoofRValue=RoofRValue,
+        RoofMass=RoofMass,
+        SlabRValue=SlabRValue,
+        WindowShgc=WindowShgc,
+        WindowUValue=WindowUValue,
         visible_transmittance=visible_transmittance,
     )
 
@@ -214,36 +214,38 @@ class ShoeBox:
         #     )  # TODO how to divide this? Do this in schema
         td = template_dict(
             schedules,
-            people_density=schema["PeopleDensity"].extract_storage_values(vector),
-            lighting_power_density=schema[
-                "LightingPowerDensity"
-            ].extract_storage_values(vector),
-            equipment_power_density=schema[
+            PeopleDensity=schema["PeopleDensity"].extract_storage_values(vector),
+            LightingPowerDensity=schema["LightingPowerDensity"].extract_storage_values(
+                vector
+            ),
+            EquipmentPowerDensity=schema[
                 "EquipmentPowerDensity"
             ].extract_storage_values(vector),
-            infiltration_per_area=schema["Infiltration"].extract_storage_values(vector),
-            ventilation_per_floor_area=schema[
-                "VentilationPerArea"
-            ].extract_storage_values(vector),
-            ventilation_per_person=schema[
-                "VentilationPerPerson"
-            ].extract_storage_values(vector),
-            ventilation_mode=schema["VentilationMode"].extract_storage_values(vector),
-            heating_sp=schema["HeatingSetpoint"].extract_storage_values(vector),
-            cooling_sp=schema["CoolingSetpoint"].extract_storage_values(vector),
+            Infiltration=schema["Infiltration"].extract_storage_values(vector),
+            VentilationPerArea=schema["VentilationPerArea"].extract_storage_values(
+                vector
+            ),
+            VentilationPerPerson=schema["VentilationPerPerson"].extract_storage_values(
+                vector
+            ),
+            VentilationMode=schema["VentilationMode"].extract_storage_values(vector),
+            HeatingSetpoint=schema["HeatingSetpoint"].extract_storage_values(vector),
+            CoolingSetpoint=schema["CoolingSetpoint"].extract_storage_values(vector),
             # humid_max=81,
             # humid_min=21,
             # sat_max=28,
             # sat_min=17,
-            heat_recovery=schema["RecoverySettings"].extract_storage_values(vector),
-            economizer=schema["EconomizerSettings"].extract_storage_values(vector),
-            wall_r_val=schema["FacadeRValue"].extract_storage_values(vector),
-            wall_mass=schema["FacadeMass"].extract_storage_values(vector),
-            roof_r_val=schema["RoofRValue"].extract_storage_values(vector),
-            roof_mass=schema["RoofMass"].extract_storage_values(vector),
-            slab_r_val=schema["SlabRValue"].extract_storage_values(vector),
-            shgc=schema["WindowShgc"].extract_storage_values(vector),
-            window_u_val=schema["WindowUValue"].extract_storage_values(vector),
+            RecoverySettings=schema["RecoverySettings"].extract_storage_values(vector),
+            EconomizerSettings=schema["EconomizerSettings"].extract_storage_values(
+                vector
+            ),
+            FacadeRValue=schema["FacadeRValue"].extract_storage_values(vector),
+            FacadeMass=schema["FacadeMass"].extract_storage_values(vector),
+            RoofRValue=schema["RoofRValue"].extract_storage_values(vector),
+            RoofMass=schema["RoofMass"].extract_storage_values(vector),
+            SlabRValue=schema["SlabRValue"].extract_storage_values(vector),
+            WindowShgc=schema["WindowShgc"].extract_storage_values(vector),
+            WindowUValue=schema["WindowUValue"].extract_storage_values(vector),
             # visible_transmittance=0.8,  # TODO?
         )
         return cls(
@@ -318,17 +320,17 @@ class ShoeBox:
         # TODO: Fetch based off of building surfaces with outdoor boundary conditions?
         for con_name, con_def in self.epjson["Construction"].items():
             if "Exterior Wall" in con_name:
-                self.change_construction_r(con_def, template_dict["wall_r_val"])
+                self.change_construction_r(con_def, template_dict["FacadeRValue"])
                 self.change_construction_mass(
-                    con_def, template_dict["wall_mass"], template_dict["wall_r_val"]
+                    con_def, template_dict["FacadeMass"], template_dict["FacadeRValue"]
                 )
             elif "Exterior Roof" in con_name:
-                self.change_construction_r(con_def, template_dict["roof_r_val"])
+                self.change_construction_r(con_def, template_dict["RoofRValue"])
                 self.change_construction_mass(
-                    con_def, template_dict["roof_mass"], template_dict["roof_r_val"]
+                    con_def, template_dict["RoofMass"], template_dict["RoofRValue"]
                 )
             elif "Ground Slab" in con_name:
-                self.change_construction_r(con_def, template_dict["slab_r_val"])
+                self.change_construction_r(con_def, template_dict["SlabRValue"])
 
     def calculate_r(self, construction):
         r_vals = []
@@ -446,8 +448,8 @@ class ShoeBox:
         # Create the Material
         window_material_type = "WindowMaterial:SimpleGlazingSystem"
         window_material_def = {
-            "solar_heat_gain_coefficient": template_dict["shgc"],
-            "u_factor": template_dict["window_u_val"],
+            "solar_heat_gain_coefficient": template_dict["WindowShgc"],
+            "u_factor": template_dict["WindowUValue"],
             "visible_transmittance": template_dict["visible_transmittance"],
         }
         window_material_name = f"SimpleGlazing"
@@ -467,7 +469,7 @@ class ShoeBox:
     def handle_lights(self, template_dict):
         lights_var_def = self.epjson["Lights"]["SharedLights"]
         lights_var_def["watts_per_zone_floor_area"] = template_dict[
-            "lighting_power_density"
+            "LightingPowerDensity"
         ]
         # Schedules
         lights_sched_name = lights_var_def["schedule_name"]
@@ -479,7 +481,7 @@ class ShoeBox:
 
     def handle_people(self, template_dict):
         people_def = self.epjson["People"]["SharedPeople"]
-        people_def["people_per_floor_area"] = template_dict["people_density"]
+        people_def["people_per_floor_area"] = template_dict["PeopleDensity"]
 
         # Schedules
         people_sched_name = people_def["number_of_people_schedule_name"]
@@ -499,12 +501,12 @@ class ShoeBox:
         # equipment_base_def = self.epjson["ElectricEquipment"][
         #     "SharedElectricEquipmentBaseload"
         # ]
-        # equipment_base_def["watts_per_zone_floor_area"] = template_dict["equipment_power_density"]
+        # equipment_base_def["watts_per_zone_floor_area"] = template_dict["EquipmentPowerDensity"]
         # equipment_base_def["schedule_name"] = "AllOn"
 
         equipment_var_def = self.epjson["ElectricEquipment"]["SharedElectricEquipment"]
         equipment_var_def["watts_per_zone_floor_area"] = template_dict[
-            "equipment_power_density"
+            "EquipmentPowerDensity"
         ]
 
         equipment_var_sched_name = equipment_var_def["schedule_name"]
@@ -556,7 +558,7 @@ class ShoeBox:
         for infil_def in self.epjson["ZoneInfiltration:DesignFlowRate"].values():
             infil_def["design_flow_rate_calculation_method"] = "Flow/ExteriorArea"
             infil_def["flow_rate_per_exterior_surface_area"] = template_dict[
-                "infiltration_per_area"
+                "Infiltration"
             ]
 
     def handle_hvac_econ_enthalpy(self, template_dict):
@@ -568,18 +570,20 @@ class ShoeBox:
         """
         for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
             # Handle Heat Recovery
-            if template_dict["heat_recovery"] == HRV.NoHRV:
+            if template_dict["RecoverySettings"] == HRV.NoHRV:
                 zone["heat_recovery_type"] = "None"
-            elif template_dict["heat_recovery"] == HRV.Sensible:
+            elif template_dict["RecoverySettings"] == HRV.Sensible:
                 zone["sensible_heat_recovery_effectiveness"] = 0.7
                 zone["heat_recovery_type"] = "Sensible"
-            elif template_dict["heat_recovery"] == HRV.Enthalpy:
+            elif template_dict["RecoverySettings"] == HRV.Enthalpy:
                 zone["sensible_heat_recovery_effectiveness"] = 0.7
                 zone["latent_heat_recovery_effectiveness"] = 0.65
                 zone["heat_recovery_type"] = "Enthalpy"
 
             # Handle Economizer
-            zone["outdoor_air_economizer_type"] = Econ(template_dict["economizer"]).name
+            zone["outdoor_air_economizer_type"] = Econ(
+                template_dict["EconomizerSettings"]
+            ).name
 
     def handle_sat_minmax(self, template_dict):
         """
@@ -633,15 +637,13 @@ class ShoeBox:
 
         """
 
-        mech_vent_sched_mode = MechVentMode(template_dict["ventilation_mode"]).name
+        mech_vent_sched_mode = MechVentMode(template_dict["VentilationMode"]).name
 
         logger.debug(f"Mechanical ventilation schedule: {mech_vent_sched_mode}")
         # TODO: check outputs of when ventilation is on
         self.epjson["DesignSpecification:OutdoorAir"]["SharedDesignSpecOutdoorAir"] = {
-            "outdoor_air_flow_per_person": template_dict["ventilation_per_person"],
-            "outdoor_air_flow_per_zone_floor_area": template_dict[
-                "ventilation_per_floor_area"
-            ],
+            "outdoor_air_flow_per_person": template_dict["VentilationPerPerson"],
+            "outdoor_air_flow_per_zone_floor_area": template_dict["VentilationPerArea"],
             "outdoor_air_method": "Sum",
             "outdoor_air_schedule_name": "",  # AllOn
         }
@@ -657,10 +659,10 @@ class ShoeBox:
         # TODO: allow for schedule?
         self.epjson["Schedule:Constant"]["CoolingSPSchedule"][
             "hourly_value"
-        ] = template_dict["cooling_sp"]
+        ] = template_dict["CoolingSetpoint"]
         self.epjson["Schedule:Constant"]["HeatingSPSchedule"][
             "hourly_value"
-        ] = template_dict["heating_sp"]
+        ] = template_dict["HeatingSetpoint"]
 
     def handle_geometry(self):
         # scale geometry
@@ -830,7 +832,7 @@ if __name__ == "__main__":
     epw = "D:/Users/zoelh/GitRepos/ml-for-building-energy-modeling/ml-for-bem/data/epws/city_epws_indexed/cityidx_0001_USA_NY-New York Central Prk Obs Belv.725033_TMY3.epw"
     out_dir = Path("./ml-for-bem/shoeboxer/cache")
     d = template_dict(scheds)
-    d["ventilation_mode"] = 1
+    d["VentilationMode"] = 1
     sb = ShoeBox(
         name="test",
         shoebox_config=shoebox_config,
