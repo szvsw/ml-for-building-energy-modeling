@@ -14,14 +14,6 @@ EPW_TESTING_LIST_PATH = "data/epws/global_testing_epw_meta.csv"
 SHOEBOX_RELATIVE_PATH = "shoeboxer/cache"
 DEFAULT_SCHEDULES_PATH = "data/schedules.npy"
 
-WINDOW_TYPES = {
-    0: "single_clr",
-    1: "Double_clr",
-    2: "dbl_LoE",
-    3: "triple_clr",
-    4: "triple_LoE",
-}
-
 
 class ThermalMassConstructions(IntEnum):
     Concrete = 0
