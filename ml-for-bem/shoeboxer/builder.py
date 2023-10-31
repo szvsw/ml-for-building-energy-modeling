@@ -157,7 +157,7 @@ class ShoeBox:
         shoebox_config: ShoeboxConfiguration,
         epw,
         template_dict,
-        seed_model=Path(module_path, "shoeboxer/shoebox-template.json"),
+        seed_model=Path("shoeboxer/shoebox-template.json"),
         output_directory=None,
         change_summary=False,
     ):
