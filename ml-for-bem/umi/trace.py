@@ -185,6 +185,7 @@ class Tracer:
         ), f"Currently, only {2**16-1} buildings are supported, but this GIS file has {len(self.gdf)} buildings."
         if convert_crs:
             logger.info("Converting crs...")
+            # TODO: fix CRS conversions
             self.gdf = self.gdf.to_crs("EPSG:32633")
         self.height_col = height_col
         self.id_col = id_col
