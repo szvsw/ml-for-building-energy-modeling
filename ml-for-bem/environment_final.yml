@@ -17,6 +17,7 @@ dependencies:
   - h5py
   - pytables
   - tensorboard
+  - jsondiff
   - geopandas<0.13
   - pandas<2
   - shapely<2
