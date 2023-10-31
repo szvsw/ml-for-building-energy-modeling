@@ -261,112 +261,117 @@ class Umi:
         # TODO pass over unused templates
         template_lib = template_lib or self.template_lib
         template_vectors_dict = {}
+        # check that there are no duplicate names in the template library
+        names = [t.Name for t in template_lib.BuildingTemplates]
+        assert len(names) == len(
+            set(names)
+        ), "Duplicate names in template library!  Aborting."
         for building_template in template_lib.BuildingTemplates:
-            logger.debug(
-                f"Fetching BuildingTemplate vector data from {building_template.Name}"
-            )
-            # 1. Get the schedules
-            scheds = get_schedules(
-                building_template, zones=["Perimeter"], paths=SCHEDULE_PATHS
-            )
-            # 2. Get the construction factors
-            for name, constr in building_template.Perimeter.Constructions:
-                if name == "Facade":
-                    wall_r = constr.r_value
-                    wall_mass = self.sort_tmass(constr.heat_capacity_per_unit_wall_area)
-                    logger.debug(
-                        f"Found facade with r_value {round(wall_r, 2)} and tmass bin {wall_mass}"
-                    )
-                if name == "Roof":
-                    roof_r = constr.r_value
-                    roof_mass = self.sort_tmass(constr.heat_capacity_per_unit_wall_area)
-                    logger.debug(
-                        f"Found roof with r_value {round(roof_r, 2)} and tmass bin {roof_mass}"
-                    )
-                if name == "Ground":
-                    slab_r = constr.r_value
-                    logger.debug(f"Found slab with r_value {round(slab_r, 2)}")
-
-            # 3. Get window parameters
-            window_u = 1 / building_template.Windows.Construction.r_value
-            try:
-                shgc = 1 / building_template.Windows.Construction.shgc()
-            except:
-                logger.debug("Using internal shgc calculation.")
-                tsol = (
-                    1
-                    / building_template.Windows.Construction.Layers[
-                        0
-                    ].Material.SolarTransmittance
-                )
-                shgc = self.single_pane_shgc_estimation(tsol, window_u)
-
-            if shgc > 1:
-                logger.warning("SHGC over 1, clipping.")
-                shgc = 1.0
-
-            # 4. Get the ventilation factors
-            # TODO: how to deal with things that are named weird
-            vent_sched_name = (
-                building_template.Perimeter.Conditioning.MechVentSchedule.Name
-            )
-            if building_template.Perimeter.Conditioning.MechVentSchedule == 0:
-                vent_mode = MechVentMode.Off.value
-            elif "ALWAYSOFF" in vent_sched_name.upper():
-                vent_mode = MechVentMode.AllOn.value
-            elif "ALWAYSON" in vent_sched_name.upper():
-                vent_mode = MechVentMode.OccupancySchedule.value
-            elif "OCC" in vent_sched_name.upper():
-                vent_mode = MechVentMode.OccupancySchedule.value
-            else:
-                logger.warning(
-                    "Mechanical ventilation response for schedule {vent_sched_name} is not supported. Defaulting to occupancy."
-                )
-                vent_mode = MechVentMode.OccupancySchedule.value
-
-            recovery_type = (
-                building_template.Perimeter.Conditioning.HeatRecoveryType.name
-            )
-            if recovery_type == "NONE":
-                recovery_type = "NoHRV"
-            assert recovery_type in (x.name for x in HRV)
-
-            econ_type = building_template.Perimeter.Conditioning.EconomizerType.name
-            if econ_type not in (x.name for x in Econ):
-                logger.warning(
-                    f"Economizer type {econ_type} is not supported. Defaulting to DifferentialEnthalpy"
-                )
-                econ_type = "DifferentialEnthalpy"
-            assert econ_type in (x.name for x in Econ)
-
-            td = template_dict(
-                schedules=scheds,
-                people_density=building_template.Perimeter.Loads.PeopleDensity,
-                lighting_power_density=building_template.Perimeter.Loads.LightingPowerDensity,
-                equipment_power_density=building_template.Perimeter.Loads.EquipmentPowerDensity,
-                infiltration_per_area=building_template.Perimeter.Ventilation.Infiltration,
-                ventilation_per_floor_area=building_template.Perimeter.Conditioning.MinFreshAirPerArea,
-                ventilation_per_person=building_template.Perimeter.Conditioning.MinFreshAirPerPerson,
-                ventilation_mode=vent_mode,
-                heating_sp=building_template.Perimeter.Conditioning.HeatingSetpoint,
-                cooling_sp=building_template.Perimeter.Conditioning.CoolingSetpoint,
-                heat_recovery=getattr(HRV, recovery_type).value,
-                economizer=getattr(Econ, econ_type).value,
-                wall_r_val=wall_r,
-                wall_mass=wall_mass,
-                roof_r_val=roof_r,
-                roof_mass=roof_mass,
-                slab_r_val=slab_r,
-                shgc=shgc,
-                window_u_val=window_u,
-            )
-            template_vectors_dict[building_template.Name] = td
+            data = self.extract_from_template(building_template)
+            template_vectors_dict[building_template.Name] = data
 
         n_templates = len(template_lib.BuildingTemplates)
         schedules = np.zeros((n_templates, len(SCHEDULE_PATHS), 8760))
         for i, (_, d) in enumerate(template_vectors_dict.items()):
             schedules[i] = d.pop("schedules")
         return schedules, pd.DataFrame.from_dict(template_vectors_dict).T
+
+    def extract_from_template(self, building_template: BuildingTemplate):
+        logger.debug(
+            f"Fetching BuildingTemplate vector data from {building_template.Name}"
+        )
+        # 1. Get the schedules
+        scheds = get_schedules(
+            building_template, zones=["Perimeter"], paths=SCHEDULE_PATHS
+        )
+        # 2. Get the construction factors
+        for name, constr in building_template.Perimeter.Constructions:
+            if name == "Facade":
+                wall_r = constr.r_value
+                wall_mass = self.sort_tmass(constr.heat_capacity_per_unit_wall_area)
+                logger.debug(
+                    f"Found facade with r_value {round(wall_r, 2)} and tmass bin {wall_mass}"
+                )
+            if name == "Roof":
+                roof_r = constr.r_value
+                roof_mass = self.sort_tmass(constr.heat_capacity_per_unit_wall_area)
+                logger.debug(
+                    f"Found roof with r_value {round(roof_r, 2)} and tmass bin {roof_mass}"
+                )
+            if name == "Ground":
+                slab_r = constr.r_value
+                logger.debug(f"Found slab with r_value {round(slab_r, 2)}")
+
+        # 3. Get window parameters
+        window_u = 1 / building_template.Windows.Construction.r_value
+        try:
+            shgc = 1 / building_template.Windows.Construction.shgc()
+        except:
+            logger.debug("Using internal shgc calculation.")
+            tsol = (
+                1
+                / building_template.Windows.Construction.Layers[
+                    0
+                ].Material.SolarTransmittance
+            )
+            shgc = self.single_pane_shgc_estimation(tsol, window_u)
+
+        if shgc > 1:
+            logger.warning("SHGC over 1, clipping.")
+            shgc = 1.0
+
+        # 4. Get the ventilation factors
+        # TODO: how to deal with things that are named weird
+        vent_sched_name = building_template.Perimeter.Conditioning.MechVentSchedule.Name
+        if building_template.Perimeter.Conditioning.MechVentSchedule == 0:
+            vent_mode = MechVentMode.Off.value
+        elif "ALWAYSOFF" in vent_sched_name.upper():
+            vent_mode = MechVentMode.AllOn.value
+        elif "ALWAYSON" in vent_sched_name.upper():
+            vent_mode = MechVentMode.OccupancySchedule.value
+        elif "OCC" in vent_sched_name.upper():
+            vent_mode = MechVentMode.OccupancySchedule.value
+        else:
+            logger.warning(
+                "Mechanical ventilation response for schedule {vent_sched_name} is not supported. Defaulting to occupancy."
+            )
+            vent_mode = MechVentMode.OccupancySchedule.value
+
+        recovery_type = building_template.Perimeter.Conditioning.HeatRecoveryType.name
+        if recovery_type == "NONE":
+            recovery_type = "NoHRV"
+        assert recovery_type in (x.name for x in HRV)
+
+        econ_type = building_template.Perimeter.Conditioning.EconomizerType.name
+        if econ_type not in (x.name for x in Econ):
+            logger.warning(
+                f"Economizer type {econ_type} is not supported. Defaulting to DifferentialEnthalpy"
+            )
+            econ_type = "DifferentialEnthalpy"
+        assert econ_type in (x.name for x in Econ)
+
+        td = template_dict(
+            schedules=scheds,
+            people_density=building_template.Perimeter.Loads.PeopleDensity,
+            lighting_power_density=building_template.Perimeter.Loads.LightingPowerDensity,
+            equipment_power_density=building_template.Perimeter.Loads.EquipmentPowerDensity,
+            infiltration_per_area=building_template.Perimeter.Ventilation.Infiltration,
+            ventilation_per_floor_area=building_template.Perimeter.Conditioning.MinFreshAirPerArea,
+            ventilation_per_person=building_template.Perimeter.Conditioning.MinFreshAirPerPerson,
+            ventilation_mode=vent_mode,
+            heating_sp=building_template.Perimeter.Conditioning.HeatingSetpoint,
+            cooling_sp=building_template.Perimeter.Conditioning.CoolingSetpoint,
+            heat_recovery=getattr(HRV, recovery_type).value,
+            economizer=getattr(Econ, econ_type).value,
+            wall_r_val=wall_r,
+            wall_mass=wall_mass,
+            roof_r_val=roof_r,
+            roof_mass=roof_mass,
+            slab_r_val=slab_r,
+            shgc=shgc,
+            window_u_val=window_u,
+        )
+        return td
 
     def sort_tmass(self, val):
         if val >= ThermalMassCapacities.Concrete:
