@@ -1,0 +1,785 @@
+,city,city_ascii,lat,lng,country,iso2,iso3,admin_name,capital,population,id,CZ,idx,slug
+596,Sofia,Sofia,42.7,23.33,Bulgaria,BG,BGR,Sofia-Grad,primary,1547779.0,1100762037,5A,596,cityidx_0596_BGR_--SOFIA.156140_IWEC Data.epw
+212,Shangzhou,Shangzhou,33.868,109.9244,China,CN,CHN,Shaanxi,,2341742.0,1156091241,6A,212,cityidx_0212_CHN_Hubei-Yunxi.572510_CSWD.epw
+553,Huaihua,Huaihua,27.5494,109.9592,China,CN,CHN,Hunan,,4979600.0,1156353465,3A,553,cityidx_0553_CHN_Hunan-Zhijiang.577450_CSWD.epw
+451,Fortaleza,Fortaleza,-3.7275,-38.5275,Brazil,BR,BRA,Ceará,admin,2452185.0,1076567885,0A,451,cityidx_0451_BRA_CE-Fortaleza-Pinto Martins Intl A.823980_TRY Brazil.epw
+273,Vancouver,Vancouver,45.6366,-122.5967,United States,US,USA,Washington,,188331.0,1840021189,4C,273,cityidx_0273_USA_OR-PORTLAND.726980_TMY2-24229.epw
+233,Salt Lake City,Salt Lake City,40.7776,-111.9311,United States,US,USA,Utah,admin,1135344.0,1840021383,5B,233,cityidx_0233_USA_UT-Salt Lake City.725720_TMY--24127.epw
+25,Dalian,Dalian,38.9,121.6,China,CN,CHN,Liaoning,,5871474.0,1156175472,5A,25,cityidx_0025_CHN_Liaoning-Dalian.546620_CSWD.epw
+343,Nizhniy Novgorod,Nizhniy Novgorod,56.3269,44.0075,Russia,RU,RUS,Nizhegorodskaya Oblast’,admin,1264075.0,1643012126,7,343,cityidx_0343_RUS_--MOSCOW.276120_IWEC Data.epw
+121,Afyonkarahisar,Afyonkarahisar,38.7578,30.5386,Turkey,TR,TUR,Afyonkarahisar,admin,299673.0,1792855788,4C,121,cityidx_0121_TUR_--ANKARA.171280_IWEC Data.epw
+386,Salamanca,Salamanca,40.965,-5.6642,Spain,ES,ESP,Castille-Leon,minor,143269.0,1724960825,4C,386,cityidx_0386_ESP_--Salamanca.082020_SWEC.epw
+24,Linfen,Linfen,36.0812,111.5087,China,CN,CHN,Shanxi,,4316610.0,1156416074,5B,24,cityidx_0024_CHN_Shanxi-Houma.539630_CSWD.epw
+452,Yichun,Yichun,47.7235,128.8893,China,CN,CHN,Heilongjiang,minor,1148126.0,1156757274,7,452,cityidx_0452_CHN_Heilongjiang-Jiamusi.508730_CSWD.epw
+190,Ōmiyachō,Omiyacho,35.2221,138.6216,Japan,JP,JPN,Shizuoka,,127252.0,1392347988,8,190,cityidx_0190_JPN_--MATSUMOTO.476180_IWEC Data.epw
+780,Sanming,Sanming,26.2658,117.6302,China,CN,CHN,Fujian,minor,2580000.0,1156294429,2A,780,cityidx_0780_CHN_Fujian-Yongan.589210_CSWD.epw
+275,Hengyang,Hengyang,26.8968,112.5857,China,CN,CHN,Hunan,,7243400.0,1156696884,4A,275,cityidx_0275_CHN_Hunan-Changning.578740_CSWD.epw
+435,Mositai,Mositai,45.5266,119.6506,China,CN,CHN,Inner Mongolia,minor,102214.0,1156252271,6B,435,cityidx_0435_CHN_Nei Mongol-Bairin Zuo Qi.540270_CSWD.epw
+196,Budapest,Budapest,47.4925,19.0514,Hungary,HU,HUN,Budapest,primary,2997958.0,1348611435,5A,196,cityidx_0196_SVK_--BRATISLAVA.118160_IWEC Data.epw
+353,Hermosillo,Hermosillo,29.0989,-110.9542,Mexico,MX,MEX,Sonora,admin,855563.0,1484015319,3B,353,cityidx_0353_USA_AZ-Douglas Bisbee Douglas Intl A.722735_TMY3.epw
+683,Ciudad Apodaca,Ciudad Apodaca,25.7817,-100.1886,Mexico,MX,MEX,Nuevo León,minor,523370.0,1484855080,2B,683,cityidx_0683_USA_TX-Laredo AFB.722520_TMY--12907.epw
+517,Yongzhou,Yongzhou,26.4515,111.5953,China,CN,CHN,Hunan,,5452100.0,1156694479,3A,517,cityidx_0517_CHN_Hunan-Lingling.578660_CSWD.epw
+356,Meizhou,Meizhou,24.2998,116.1191,China,CN,CHN,Guangdong,minor,4378800.0,1156361028,2A,356,cityidx_0356_CHN_Fujian-Shanghang.589180_CSWD.epw
+490,Ottawa,Ottawa,45.4247,-75.695,Canada,CA,CAN,Ontario,primary,989567.0,1124399363,6A,490,cityidx_0490_CAN_ON-Ottawa Int'l.716280_WYEC2-B-04772.epw
+449,Haiphong,Haiphong,20.8651,106.6838,Vietnam,VN,VNM,Hải Phòng,admin,2103500.0,1704000623,1A,449,cityidx_0449_VNM_--HANOI.488200_IWEC Data.epw
+104,Tianjin,Tianjin,39.1467,117.2056,China,CN,CHN,Tianjin,admin,10368000.0,1156174046,4A,104,cityidx_0104_CHN_Tianjin-Tianjin.545270_CSWD.epw
+605,Jammu,Jammu,32.73,74.87,India,IN,IND,Jammu and Kashmīr,admin,502197.0,1356491738,1B,605,cityidx_0605_IND_Punjab-Amritsar.420710_ISHRAE.epw
+630,Makhachkala,Makhachkala,42.9833,47.4833,Russia,RU,RUS,Dagestan,admin,592976.0,1643580480,4B,630,cityidx_0630_IRN_--Tabriz.407060_ITMY.epw
+306,Fukang,Fukang,44.1646,87.9536,China,CN,CHN,Xinjiang,minor,165006.0,1156761099,6B,306,cityidx_0306_CHN_Xinjiang Uygur-Urumqi.514630_CSWD.epw
+220,Karaj,Karaj,35.8272,50.9489,Iran,IR,IRN,Alborz,admin,1973470.0,1364258511,3B,220,cityidx_0220_IRN_--Tehran Mehrabad.407540_ITMY.epw
+738,Suoluntun,Suoluntun,45.2279,124.8432,China,CN,CHN,Jilin,,495900.0,1156764587,6A,738,cityidx_0738_CHN_Jilin-Qian Gorlos.509490_CSWD.epw
+431,Havana,Havana,23.1367,-82.3589,Cuba,CU,CUB,La Habana,primary,2141652.0,1192752771,1A,431,cityidx_0431_CUB_--CASA_BLANCA.783250_SWERA.epw
+475,Pingliang,Pingliang,35.5412,106.6819,China,CN,CHN,Gansu,minor,2068033.0,1156216904,5A,475,cityidx_0475_CHN_Gansu-Pingliang.539150_CSWD.epw
+476,Langley,Langley,49.1044,-122.5827,Canada,CA,CAN,British Columbia,,117285.0,1124000480,4C,476,cityidx_0476_CAN_BC-Abbotsford.711080_WYEC2-B-24288.epw
+796,Yangjiang,Yangjiang,21.8556,111.9627,China,CN,CHN,Guangdong,minor,2555600.0,1156123172,2A,796,cityidx_0796_CHN_Guangdong-Yangjiang.596630_CSWD.epw
+619,Dehra Dūn,Dehra Dun,30.345,78.029,India,IN,IND,Uttarākhand,admin,578420.0,1356970407,2B,619,cityidx_0619_IND_Uttar Pradesh-Dehradun.421110_ISHRAE.epw
+612,Amsterdam,Amsterdam,52.3728,4.8936,Netherlands,NL,NLD,Noord-Holland,primary,1459402.0,1528355309,5A,612,cityidx_0612_NLD_--AMSTERDAM.062400_IWEC Data.epw
+380,Calgary,Calgary,51.05,-114.0667,Canada,CA,CAN,Alberta,,1239220.0,1124690423,7,380,cityidx_0380_CAN_AB-Calgary Int'l.718770_WYEC2-B-25110.epw
+34,Lahore,Lahore,31.5497,74.3436,Pakistan,PK,PAK,Punjab,admin,12306000.0,1586801463,1B,34,cityidx_0034_IND_Punjab-Amritsar.420710_ISHRAE.epw
+338,Alīgarh,Aligarh,27.88,78.08,India,IN,IND,Uttar Pradesh,,1131160.0,1356076391,1B,338,cityidx_0338_IND_Delhi-New Delhi.421820_ISHRAE.epw
+556,Ajmer,Ajmer,26.4499,74.6399,India,IN,IND,Rājasthān,,551101.0,1356058258,1B,556,cityidx_0556_IND_Rajasthan-Jaipur.423480_ISHRAE.epw
+858,Padiāla,Padiala,30.5667,76.6333,India,IN,IND,Punjab,,406192.0,1356667176,2B,858,cityidx_0858_IND_Himachal Pradesh-Sundernagar.8204_ISHRAE.epw
+35,Bangalore,Bangalore,12.9789,77.5917,India,IN,IND,Karnātaka,admin,15386000.0,1356410365,1A,35,cityidx_0035_IND_Karnataka-Bangalore.432950_ISHRAE.epw
+297,Shaoyang,Shaoyang,27.2418,111.4725,China,CN,CHN,Hunan,,7370500.0,1156310366,3A,297,cityidx_0297_CHN_Hunan-Wugang.578530_CSWD.epw
+626,Meihekou,Meihekou,42.5279,125.678,China,CN,CHN,Jilin,minor,618251.0,1156474288,6A,626,cityidx_0626_CHN_Jilin-Changchun.541610_CSWD.epw
+94,Bangkok,Bangkok,13.7525,100.4942,Thailand,TH,THA,Krung Thep Maha Nakhon,primary,18007000.0,1764068610,0A,94,cityidx_0094_THA_--BANGKOK.484560_IWEC Data.epw
+699,Suez,Suez,29.9667,32.55,Egypt,EG,EGY,As Suways,admin,516959.0,1818495972,2B,699,cityidx_0699_EGY_Al Ismailiyah-Ismailia.624400_ETMY.epw
+535,Atlanta,Atlanta,33.7628,-84.422,United States,US,USA,Georgia,admin,5046555.0,1840013660,3A,535,cityidx_0535_USA_GA-Fulton Co Arpt Brow.722195_TMY3.epw
+286,Shuangyashan,Shuangyashan,46.6388,131.1545,China,CN,CHN,Heilongjiang,minor,1462626.0,1156245904,7,286,cityidx_0286_CHN_Heilongjiang-Jiamusi.508730_CSWD.epw
+373,Xinyang,Xinyang,32.1264,114.0672,China,CN,CHN,Henan,,6234401.0,1156273453,3A,373,cityidx_0373_CHN_Henan-Xinyang.572970_CSWD.epw
+717,Jhang City,Jhang City,31.2694,72.3161,Pakistan,PK,PAK,Punjab,minor,414131.0,1586288677,1B,717,cityidx_0717_IND_Punjab-Amritsar.420710_ISHRAE.epw
+49,Kabul,Kabul,34.5253,69.1783,Afghanistan,AF,AFG,Kābul,primary,4273156.0,1004993580,3B,49,cityidx_0049_IND_Punjab-Amritsar.420710_ISHRAE.epw
+243,Meerut,Meerut,28.98,77.71,India,IN,IND,Uttar Pradesh,,1305429.0,1356390476,1B,243,cityidx_0243_IND_Delhi-New Delhi.421820_ISHRAE.epw
+536,Benghazi,Benghazi,32.1167,20.0667,Libya,LY,LBY,Banghāzī,admin,631555.0,1434915572,2B,536,cityidx_0536_GRC_--ANDRAVIDA.166820_IWEC Data.epw
+389,Maipú,Maipu,-33.5167,-70.7667,Chile,CL,CHL,Región Metropolitana,,521627.0,1152583016,3C,389,cityidx_0389_CHL_--SANTIAGO.855740_IWEC Data.epw
+835,Jiayuguan,Jiayuguan,39.8112,98.2862,China,CN,CHN,Gansu,minor,231853.0,1156177210,5B,835,cityidx_0835_CHN_Gansu-Jiuquan.525330_CSWD.epw
+653,Piura,Piura,-5.2,-80.6333,Peru,PE,PER,Piura,admin,473025.0,1604331641,1B,653,cityidx_0653_ECU_--QUITO.840710_IWEC Data.epw
+731,Chimbote,Chimbote,-9.0745,-78.5936,Peru,PE,PER,Ancash,,497875.0,1604199858,2B,731,cityidx_0731_PER_--LIMA.846280_IWEC Data.epw
+802,Balashikha,Balashikha,55.8167,37.9667,Russia,RU,RUS,Moskovskaya Oblast’,,468221.0,1643989845,6A,802,cityidx_0802_RUS_--MOSCOW.276120_IWEC Data.epw
+867,Dnipro,Dnipro,48.4675,35.04,Ukraine,UA,UKR,Dnipropetrovska Oblast,admin,980948.0,1804152933,5A,867,cityidx_0867_UKR_--ODESSA.338370_IWEC Data.epw
+27,Baoding,Baoding,38.8671,115.4845,China,CN,CHN,Hebei,,11860000.0,1156256829,4B,27,cityidx_0027_CHN_Hebei-Raoyang.546060_CSWD.epw
+508,Feicheng,Feicheng,36.186,116.772,China,CN,CHN,Shandong,,946627.0,1156303834,6A,508,cityidx_0508_CHN_Shandong-Jinan.548230_CSWD.epw
+37,Mumbai,Mumbai,19.0761,72.8775,India,IN,IND,Mahārāshtra,admin,24973000.0,1356226629,0A,37,cityidx_0037_IND_--MUMBAI.430030_IWEC Data.epw
+81,Xinzhou,Xinzhou,38.4178,112.7233,China,CN,CHN,Shanxi,minor,3067501.0,1156617534,5B,81,cityidx_0081_CHN_Shanxi-Yuanping.536730_CSWD.epw
+436,Oslo,Oslo,59.9133,10.7389,Norway,NO,NOR,Oslo,primary,1064235.0,1578324706,6A,436,cityidx_0436_NOR_--OSLO FORNEBU.014880_IWEC Data.epw
+710,Shahe,Shahe,36.8622,114.502,China,CN,CHN,Hebei,,486329.0,1156690538,4B,710,cityidx_0710_CHN_Hebei-Xingtai.537980_CSWD.epw
+74,Riyadh,Riyadh,24.6333,46.7167,Saudi Arabia,SA,SAU,Ar Riyāḑ,primary,7237000.0,1682999334,0B,74,cityidx_0074_SAU_--RIYADH.404380_IWEC Data.epw
+807,Jiaozuo,Jiaozuo,35.229,113.2304,China,CN,CHN,Henan,,3590700.0,1156157854,4A,807,cityidx_0807_CHN_Henan-Zhengzhou.570830_CSWD.epw
+115,Dingxi,Dingxi,35.5806,104.6263,China,CN,CHN,Gansu,minor,2698624.0,1156518274,7,115,cityidx_0115_CHN_Gansu-Yuzhong.529830_CSWD.epw
+632,Santa Rosa,Santa Rosa,38.4458,-122.7067,United States,US,USA,California,,314196.0,1840021488,3C,632,cityidx_0632_USA_CA-Climate Zone 02.C00000_CTZRV2.epw
+65,Weinan,Weinan,34.4996,109.4684,China,CN,CHN,Shaanxi,minor,5286077.0,1156903687,4B,65,cityidx_0065_CHN_Shaanxi-Xian.570360_CSWD.epw
+287,Kuytun,Kuytun,44.4264,84.9032,China,CN,CHN,Xinjiang,minor,166261.0,1156287095,6B,287,cityidx_0287_CHN_Xinjiang Uygur-Wusu.513460_CSWD.epw
+274,Dingzhou,Dingzhou,38.5158,114.9845,China,CN,CHN,Hebei,,1165182.0,1156656582,4B,274,cityidx_0274_CHN_Hebei-Shijiazhuang.536980_CSWD.epw
+160,Handan,Handan,36.6116,114.4894,China,CN,CHN,Hebei,minor,2708015.0,1156957080,4B,160,cityidx_0160_CHN_Hebei-Xingtai.537980_CSWD.epw
+365,San Carlos de Bariloche,San Carlos de Bariloche,-41.15,-71.3,Argentina,AR,ARG,Río Negro,minor,112887.0,1032111842,5C,365,cityidx_0365_CHL_--CONCEPCION.856820_IWEC Data.epw
+838,Gorgān,Gorgan,36.8386,54.4347,Iran,IR,IRN,Golestān,admin,350676.0,1364802450,4B,838,cityidx_0838_IRN_--Tehran Mehrabad.407540_ITMY.epw
+300,Pikine,Pikine,14.75,-17.4,Senegal,SN,SEN,Dakar,,1170791.0,1686165071,1B,300,cityidx_0300_SEN_--DAKAR.616410_IWEC Data.epw
+67,Kunming,Kunming,25.0433,102.7061,China,CN,CHN,Yunnan,admin,4422686.0,1156477539,3C,67,cityidx_0067_CHN_Yunnan-Kunming.567780_CSWD.epw
+845,Bhawana,Bhawana,31.5661,72.6461,Pakistan,PK,PAK,Punjab,,373841.0,1586746564,1B,845,cityidx_0845_IND_Punjab-Amritsar.420710_ISHRAE.epw
+79,Ji’an,Ji'an,27.1172,114.9793,China,CN,CHN,Jiangxi,minor,4956600.0,1156278215,6A,79,cityidx_0079_CHN_Jiangxi-Jian.577990_CSWD.epw
+642,Vladivostok,Vladivostok,43.1333,131.9,Russia,RU,RUS,Primorskiy Kray,admin,606589.0,1643832017,6A,642,cityidx_0642_CHN_Heilongjiang-Suifenhe.540960_CSWD.epw
+54,Kinshasa,Kinshasa,-4.325,15.3222,Congo (Kinshasa),CD,COD,Kinshasa,primary,12836000.0,1180000363,1A,54,cityidx_0054_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+703,Bangui,Bangui,4.3733,18.5628,Central African Republic,CF,CAF,Bangui,primary,889231.0,1140080881,0B,703,cityidx_0703_KEN_--KAKAMEGA.636870_SWERA.epw
+295,Concepción,Concepcion,-36.8282,-73.0514,Chile,CL,CHL,Biobío,admin,719944.0,1152838958,3C,295,cityidx_0295_CHL_--CONCEPCION.856820_IWEC Data.epw
+43,Taiyuan,Taiyuan,37.8733,112.5425,China,CN,CHN,Shanxi,admin,3875053.0,1156632014,5B,43,cityidx_0043_CHN_Shanxi-Taiyuan.537720_CSWD.epw
+856,Stockton,Stockton,37.9765,-121.3109,United States,US,USA,California,,406822.0,1840021517,3B,856,cityidx_0856_USA_CA-Stockton Metropolitan Arpt.724920_TMY3.epw
+526,Riga,Riga,56.9489,24.1064,Latvia,LV,LVA,Rīga,primary,920643.0,1428586192,6A,526,cityidx_0526_LTU_--KAUNAS.266290_IWEC Data.epw
+202,Nagoya,Nagoya,35.1833,136.9,Japan,JP,JPN,Aichi,admin,9197000.0,1392407472,3A,202,cityidx_0202_JPN_--NAGOYA.476350_IWEC Data.epw
+510,Yuanping,Yuanping,38.7299,112.7134,China,CN,CHN,Shanxi,,491213.0,1156294277,5B,510,cityidx_0510_CHN_Shanxi-Yuanping.536730_CSWD.epw
+109,Taipei,Taipei,25.0375,121.5625,Taiwan,TW,TWN,Taipei,primary,9078000.0,1158881289,2A,109,cityidx_0109_TWN_--TAIPEI.466960_IWEC Data.epw
+620,Brasília,Brasilia,-15.7939,-47.8828,Brazil,BR,BRA,Distrito Federal,primary,3039444.0,1076144436,2A,620,cityidx_0620_BRA_DF-Brasilia.867150_INMET.epw
+580,Cleveland,Cleveland,41.4764,-81.6805,United States,US,USA,Ohio,,1683059.0,1840000596,5A,580,cityidx_0580_USA_OH-Burke Lakefront.725245_TMY3.epw
+213,Talas,Talas,38.6833,35.5667,Turkey,TR,TUR,Kayseri,minor,165127.0,1792443013,5C,213,cityidx_0213_TUR_--ANKARA.171280_IWEC Data.epw
+317,Marrakech,Marrakech,31.63,-8.0089,Morocco,MA,MAR,Marrakech-Safi,admin,928850.0,1504172585,2B,317,cityidx_0317_MAR_--CASABLANCA NOUASSER.601560_IWEC Data.epw
+575,Niamey,Niamey,13.515,2.1175,Niger,NE,NER,Niamey,primary,1026848.0,1562932886,0B,575,cityidx_0575_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+293,Kaiyuan,Kaiyuan,36.0656,113.8153,China,CN,CHN,Henan,minor,1160000.0,1156441554,4B,293,cityidx_0293_CHN_Henan-Anyang.538980_CSWD.epw
+162,Dayan,Dayan,26.8808,100.2208,China,CN,CHN,Yunnan,,1296000.0,1156828380,3C,162,cityidx_0162_CHN_Yunnan-Lijiang.566510_CSWD.epw
+147,Quanzhou,Quanzhou,24.9139,118.5858,China,CN,CHN,Fujian,minor,8782285.0,1156829655,2A,147,cityidx_0147_CHN_Fujian-Congwu.591330_CSWD.epw
+797,Sirūr,Sirur,18.83,74.38,India,IN,IND,Mahārāshtra,,385414.0,1356926718,1B,797,cityidx_0797_IND_Maharashtra-Pune.430630_ISHRAE.epw
+804,Goyang,Goyang,37.65,126.8,South Korea,KR,KOR,Gyeonggi,minor,1061929.0,1410511255,5A,804,cityidx_0804_KOR_--INCH'ON.471120_IWEC Data.epw
+477,Hejian,Hejian,38.4451,116.0897,China,CN,CHN,Hebei,,810306.0,1156405731,4B,477,cityidx_0477_CHN_Hebei-Raoyang.546060_CSWD.epw
+868,Meram,Meram,37.8364,32.4383,Turkey,TR,TUR,Konya,minor,342315.0,1792895883,4B,868,cityidx_0868_TUR_--ANKARA.171280_IWEC Data.epw
+602,Sydney,Sydney,-33.8678,151.21,Australia,AU,AUS,New South Wales,admin,4840600.0,1036074917,3A,602,cityidx_0602_AUS_NSW-Sydney.947680_RMY.epw
+824,Fresnillo,Fresnillo,23.175,-102.8675,Mexico,MX,MEX,Zacatecas,minor,230865.0,1484014035,3C,824,cityidx_0824_MEX_--MEXICO CITY.766790_IWEC Data.epw
+695,Xinpu,Xinpu,34.5906,119.1801,China,CN,CHN,Jiangsu,minor,4599360.0,1156035381,4A,695,cityidx_0695_CHN_Jiangsu-Ganyu.580400_CSWD.epw
+665,Murrieta,Murrieta,33.5719,-117.1909,United States,US,USA,California,,509526.0,1840020553,3B,665,cityidx_0665_USA_CA-Camp Pendleton Mcas.722926_TMY3.epw
+615,Suqian,Suqian,33.9331,118.2831,China,CN,CHN,Jiangsu,,4986192.0,1156212349,4A,615,cityidx_0615_CHN_Jiangsu-Huaiyang-Qingjiang.581440_CSWD.epw
+498,Zaragoza,Zaragoza,41.65,-0.8833,Spain,ES,ESP,Aragon,admin,675301.0,1724907391,3B,498,cityidx_0498_ESP_--Zaragoza.081600_SWEC.epw
+769,Izhevsk,Izhevsk,56.85,53.2167,Russia,RU,RUS,Udmurtiya,admin,646277.0,1643983138,7,769,cityidx_0769_RUS_--SAMARA.289000_IWEC Data.epw
+548,Federal Way,Federal Way,47.3091,-122.3358,United States,US,USA,Washington,,99792.0,1840019826,4C,548,cityidx_0548_USA_WA-SEATTLE.727930_TMY2-24233.epw
+310,Manchester,Manchester,53.4794,-2.2453,United Kingdom,GB,GBR,Manchester,,2705000.0,1826246335,5A,310,cityidx_0310_GBR_--AUGHTON.033220_IWEC Data.epw
+874,Kuaidamao,Kuaidamao,41.7302,125.9471,China,CN,CHN,Jilin,minor,2324439.0,1156106507,2A,874,cityidx_0874_CHN_Jilin-Linjiang.543740_CSWD.epw
+282,Taichung,Taichung,24.1439,120.6794,Taiwan,TW,TWN,Taichung,admin,3033885.0,1158689622,1A,282,cityidx_0282_TWN_--TAIPEI.466960_IWEC Data.epw
+371,Puente Alto,Puente Alto,-33.6167,-70.5667,Chile,CL,CHL,Región Metropolitana,minor,573935.0,1152516346,3C,371,cityidx_0371_CHL_--SANTIAGO.855740_IWEC Data.epw
+847,Al Hufūf,Al Hufuf,25.3833,49.5833,Saudi Arabia,SA,SAU,Ash Sharqīyah,,660788.0,1682958157,0B,847,cityidx_0847_SAU_--RIYADH.404380_IWEC Data.epw
+456,Wuhai,Wuhai,39.6844,106.8158,China,CN,CHN,Inner Mongolia,minor,532902.0,1156575615,5B,456,cityidx_0456_CHN_Nei Mongol-Jartai.535020_CSWD.epw
+678,Yucheng,Yucheng,36.9329,116.6403,China,CN,CHN,Shandong,minor,522878.0,1156530681,4B,678,cityidx_0678_CHN_Shandong-Jinan.548230_CSWD.epw
+329,Huludao,Huludao,40.7094,120.8378,China,CN,CHN,Liaoning,minor,2623541.0,1156580218,5A,329,cityidx_0329_CHN_Liaoning-Xingcheng.544550_CSWD.epw
+57,Nizhnevartovsk,Nizhnevartovsk,60.95,76.6,Russia,RU,RUS,Khanty-Mansiyskiy Avtonomnyy Okrug-Yugra,,278725.0,1643786132,8,57,cityidx_0057_RUS_--OMSK.286980_IWEC Data.epw
+39,Harbin,Harbin,45.75,126.6333,China,CN,CHN,Heilongjiang,admin,3830000.0,1156241528,7,39,cityidx_0039_CHN_--HARBIN.509530_IWEC Data.epw
+609,Taihecun,Taihecun,45.768,131.0063,China,CN,CHN,Heilongjiang,minor,920471.0,1156875484,7,609,cityidx_0609_CHN_Heilongjiang-Jixi.509780_CSWD.epw
+182,Riverside,Riverside,33.9381,-117.3949,United States,US,USA,California,,2022285.0,1840020551,3B,182,cityidx_0182_USA_CA-Riverside Muni.722869_TMY3.epw
+345,Kharkiv,Kharkiv,49.9925,36.2311,Ukraine,UA,UKR,Kharkivska Oblast,admin,1446107.0,1804588111,6A,345,cityidx_0345_UKR_--KIEV.333450_IWEC Data.epw
+771,Huozhou,Huozhou,36.5726,111.7176,China,CN,CHN,Shanxi,,282905.0,1156917368,5B,771,cityidx_0771_CHN_Shanxi-Jiexiu.538630_CSWD.epw
+434,Samara,Samara,53.2028,50.1408,Russia,RU,RUS,Samarskaya Oblast’,admin,1169719.0,1643205757,7,434,cityidx_0434_RUS_--SAMARA.289000_IWEC Data.epw
+114,Bratsk,Bratsk,56.1167,101.6,Russia,RU,RUS,Irkutskaya Oblast’,,231602.0,1643485535,8,114,cityidx_0114_RUS_--IRKUTSK.307100_IWEC Data.epw
+608,Kumasi,Kumasi,6.6667,-1.6167,Ghana,GH,GHA,Ashanti,admin,2069350.0,1288181103,0A,608,cityidx_0608_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+214,Zhangye,Zhangye,38.9355,100.4553,China,CN,CHN,Gansu,minor,1199515.0,1156180353,5B,214,cityidx_0214_CHN_Qinghai-Gangca.527540_CSWD.epw
+377,Mbuji-Mayi,Mbuji-Mayi,-6.15,23.6,Congo (Kinshasa),CD,COD,Kasaï Oriental,admin,2643000.0,1180399586,1A,377,cityidx_0377_KEN_--KISII            _.637090_SWERA.epw
+748,Chaozhou,Chaozhou,23.67,116.63,China,CN,CHN,Guangdong,minor,2656600.0,1156549118,2A,748,cityidx_0748_CHN_Guangdong-Shantou.593160_CSWD.epw
+698,Melbourne,Melbourne,-37.8142,144.9631,Australia,AU,AUS,Victoria,admin,4529500.0,1036533631,3A,698,cityidx_0698_AUS_VIC-Melbourne.948680_RMY.epw
+534,Kandahār,Kandahar,31.62,65.7158,Afghanistan,AF,AFG,Kandahār,admin,614254.0,1004003059,3B,534,cityidx_0534_PAK_--KARACHI.417800_IWEC Data.epw
+808,Rancagua,Rancagua,-34.1667,-70.75,Chile,CL,CHL,Libertador General Bernardo O’Higgins,admin,231370.0,1152672356,3C,808,cityidx_0808_CHL_--SANTIAGO.855740_IWEC Data.epw
+772,Cologne,Cologne,50.9364,6.9528,Germany,DE,DEU,North Rhine-Westphalia,,1083498.0,1276015998,5A,772,cityidx_0772_DEU_--KOLN.105130_IWEC Data.epw
+237,Cangzhou,Cangzhou,38.3037,116.8452,China,CN,CHN,Hebei,,7544300.0,1156698069,4A,237,cityidx_0237_CHN_Tianjin-Tianjin.545270_CSWD.epw
+848,Jamshedpur,Jamshedpur,22.7925,86.1842,India,IN,IND,Jhārkhand,,1558000.0,1356501259,0A,848,cityidx_0848_IND_Jharkand-Ranchi.427010_ISHRAE.epw
+533,Antofagasta,Antofagasta,-23.65,-70.4,Chile,CL,CHL,Antofagasta,admin,348517.0,1152734289,3C,533,cityidx_0533_CHL_--ANTOFAGASTA.854420_IWEC Data.epw
+123,Nanyang,Nanyang,32.9987,112.5292,China,CN,CHN,Henan,,10013600.0,1156192287,4A,123,cityidx_0123_CHN_Henan-Nanyang.571780_CSWD.epw
+85,Linyi,Linyi,35.1041,118.3502,China,CN,CHN,Shandong,,11018365.0,1156086320,4A,85,cityidx_0085_CHN_Shandong-Juxian.549360_CSWD.epw
+126,Chengdu,Chengdu,30.66,104.0633,China,CN,CHN,Sichuan,admin,14645000.0,1156421555,3A,126,cityidx_0126_CHN_Sichuan-Chengdu.562940_CSWD.epw
+869,Qincheng,Qincheng,34.5809,105.7311,China,CN,CHN,Gansu,minor,3262549.0,1156104017,4A,869,cityidx_0869_CHN_Gansu-Tianshui.570060_CSWD.epw
+481,Guadalajara,Guadalajara,20.6767,-103.3475,Mexico,MX,MEX,Jalisco,admin,5525000.0,1484950208,3A,481,cityidx_0481_MEX_--MEXICO CITY.766790_IWEC Data.epw
+524,Edmonton,Edmonton,53.5344,-113.4903,Canada,CA,CAN,Alberta,admin,1062643.0,1124290735,7,524,cityidx_0524_CAN_AB-Edmonton Stony Plain.711230_WYEC2-B-25145.epw
+447,Nanning,Nanning,22.8192,108.315,China,CN,CHN,Guangxi,admin,3837978.0,1156605439,2A,447,cityidx_0447_CHN_Guangxi Zhuang-Nanning.594310_CSWD.epw
+658,Ryazan,Ryazan,54.63,39.7425,Russia,RU,RUS,Ryazanskaya Oblast’,admin,537622.0,1643205787,6A,658,cityidx_0658_RUS_--MOSCOW.276120_IWEC Data.epw
+262,Ahvāz,Ahvaz,31.3203,48.6692,Iran,IR,IRN,Khūzestān,admin,1261042.0,1364350188,1B,262,cityidx_0262_KWT_--Kuwait Intl Airport.405820_KISR.epw
+420,Provo,Provo,40.2457,-111.6457,United States,US,USA,Utah,,551645.0,1840020174,5B,420,cityidx_0420_USA_UT-Provo Muni  Awos.725724_TMY3.epw
+59,Tongliao,Tongliao,43.6172,122.264,China,CN,CHN,Inner Mongolia,minor,3139153.0,1156358686,6B,59,cityidx_0059_CHN_Nei Mongol-Tongliao.541350_CSWD.epw
+88,Istanbul,Istanbul,41.0136,28.955,Turkey,TR,TUR,İstanbul,admin,16079000.0,1792756324,3A,88,cityidx_0088_TUR_--ISTANBUL.170600_IWEC Data.epw
+576,Manaus,Manaus,-3.1,-60.0167,Brazil,BR,BRA,Amazonas,admin,2219580.0,1076607274,0A,576,cityidx_0576_BRA_AM-Manaus-Gomez Intl AP.817300_INMET.epw
+347,Sizhan,Sizhan,39.0099,106.3694,China,CN,CHN,Ningxia,,751389.0,1156450911,5B,347,cityidx_0347_CHN_Ningxia Hui-Yinchuan.536140_CSWD.epw
+428,Patiāla,Patiala,30.34,76.38,India,IN,IND,Punjab,,763280.0,1356458416,2B,428,cityidx_0428_IND_Himachal Pradesh-Sundernagar.8204_ISHRAE.epw
+505,Accra,Accra,5.55,-0.2,Ghana,GH,GHA,Greater Accra,primary,2388000.0,1288299415,0A,505,cityidx_0505_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+549,Selçuklu,Selcuklu,37.8814,32.4922,Turkey,TR,TUR,Konya,minor,648850.0,1792683478,4B,549,cityidx_0549_TUR_--ANKARA.171280_IWEC Data.epw
+236,Tabrīz,Tabriz,38.0814,46.3006,Iran,IR,IRN,Āz̄arbāyjān-e Sharqī,admin,1558693.0,1364141756,4B,236,cityidx_0236_IRN_--Tabriz.407060_ITMY.epw
+146,Ludhiāna,Ludhiana,30.91,75.85,India,IN,IND,Punjab,,1618879.0,1356929498,2B,146,cityidx_0146_IND_Himachal Pradesh-Sundernagar.8204_ISHRAE.epw
+558,Jodhpur,Jodhpur,26.28,73.02,India,IN,IND,Rājasthān,,1033918.0,1356727084,0B,558,cityidx_0558_IND_Rajasthan-Jodhpur.423390_ISHRAE.epw
+355,Santiago del Estero,Santiago del Estero,-27.7833,-64.2667,Argentina,AR,ARG,Santiago del Estero,admin,911506.0,1032492280,2B,355,cityidx_0355_ARG_Santa Fe-Ceres.872570_ArgTMY.epw
+746,Suzhou,Suzhou,31.3,120.6194,China,CN,CHN,Jiangsu,minor,4330000.0,1156029196,3A,746,cityidx_0746_CHN_--SHANGHAI HONGQIAO.583620_SWERA.epw
+598,Turpan,Turpan,42.9512,89.1895,China,CN,CHN,Xinjiang,minor,622903.0,1156573684,4B,598,cityidx_0598_CHN_Xinjiang Uygur-Turpan.515730_CSWD.epw
+493,Sapporo,Sapporo,43.0667,141.35,Japan,JP,JPN,Hokkaidō,admin,1961690.0,1392000195,5A,493,cityidx_0493_JPN_--SAPPORO.474120_IWEC Data.epw
+546,Reno,Reno,39.5497,-119.8483,United States,US,USA,Nevada,,463328.0,1840020121,5B,546,cityidx_0546_USA_NV-Reno.724880_TMY--23185.epw
+483,Fuzhou,Fuzhou,26.0769,119.2917,China,CN,CHN,Fujian,admin,3671192.0,1156188037,2A,483,cityidx_0483_CHN_Fujian-Fuzhou.588470_CSWD.epw
+527,Sorgun,Sorgun,39.8144,35.1903,Turkey,TR,TUR,Yozgat,minor,79314.0,1792669012,5C,527,cityidx_0527_TUR_--ANKARA.171280_IWEC Data.epw
+518,Bulawayo,Bulawayo,-20.17,28.58,Zimbabwe,ZW,ZWE,Bulawayo,admin,653337.0,1716032632,2B,518,cityidx_0518_ZWE_--HARARE.677750_IWEC Data.epw
+714,Yiyang,Yiyang,28.5833,112.3333,China,CN,CHN,Hunan,,4413800.0,1156218615,3A,714,cityidx_0714_CHN_--CHANGSHA.576870_SWERA.epw
+673,Nehe,Nehe,48.48,124.8738,China,CN,CHN,Heilongjiang,minor,740000.0,1156609562,7,673,cityidx_0673_CHN_Heilongjiang-Nenjiang.505570_CSWD.epw
+76,Komsomol’sk-na-Amure,Komsomol'sk-na-Amure,50.5667,137.0,Russia,RU,RUS,Khabarovskiy Kray,minor,249810.0,1643862307,8,76,cityidx_0076_CHN_Heilongjiang-Fujin.507880_CSWD.epw
+820,Wafangdian,Wafangdian,39.6271,121.9972,China,CN,CHN,Liaoning,,1024876.0,1156476417,5A,820,cityidx_0820_CHN_Liaoning-Dalian.546620_CSWD.epw
+232,Kırşehir,Kirsehir,39.1456,34.1608,Turkey,TR,TUR,Kırşehir,admin,153511.0,1792825471,5C,232,cityidx_0232_TUR_--ANKARA.171280_IWEC Data.epw
+167,Chinchvad,Chinchvad,18.6186,73.8037,India,IN,IND,Mahārāshtra,,1729320.0,1356475483,1B,167,cityidx_0167_IND_Maharashtra-Pune.430630_ISHRAE.epw
+852,Buffalo,Buffalo,42.9018,-78.8487,United States,US,USA,New York,,1004655.0,1840000386,5A,852,cityidx_0852_USA_NY-Buffalo.725280_TMY--14733.epw
+73,Rio de Janeiro,Rio de Janeiro,-22.9111,-43.2056,Brazil,BR,BRA,Rio de Janeiro,admin,12592000.0,1076887657,1A,73,cityidx_0073_BRA_--SANTOS_DUMONT RIO.837550_SWERA.epw
+774,Türkmenabat,Turkmenabat,39.0833,63.5667,Turkmenistan,TM,TKM,Lebap,admin,408906.0,1795079064,4B,774,cityidx_0774_UZB_--TASHKENT.384570_IWEC Data.epw
+806,Hancheng,Hancheng,35.4768,110.4419,China,CN,CHN,Shaanxi,,391164.0,1156265838,4B,806,cityidx_0806_CHN_Shanxi-Yuncheng.539590_CSWD.epw
+250,Minsk,Minsk,53.9,27.5667,Belarus,BY,BLR,Minsk,primary,2009786.0,1112348503,6A,250,cityidx_0250_BLR_--MINSK.268500_IWEC Data.epw
+735,Al ‘Ayn,Al `Ayn,24.2075,55.7447,United Arab Emirates,AE,ARE,Abū Z̧aby,,766936.0,1784674685,0B,735,cityidx_0735_ARE_--ABU DHABI.412170_IWEC Data.epw
+708,Haicheng,Haicheng,40.8523,122.7474,China,CN,CHN,Liaoning,minor,1293877.0,1156052713,5A,708,cityidx_0708_CHN_Liaoning-Yingkou.544710_CSWD.epw
+590,Bilāspur,Bilaspur,22.09,82.15,India,IN,IND,Chhattīsgarh,,1625502.0,1356820491,1A,590,cityidx_0590_IND_Chhattisgarh-Raipur.428750_ISHRAE.epw
+141,Mashhad,Mashhad,36.3,59.6,Iran,IR,IRN,Khorāsān-e Raẕavī,admin,3372090.0,1364123206,4B,141,cityidx_0141_IRN_--Yazd.408210_ITMY.epw
+440,Kent,Kent,47.3887,-122.2128,United States,US,USA,Washington,,134890.0,1840018424,4C,440,cityidx_0440_USA_WA-Renton Muni.727934_TMY3.epw
+69,Buenos Aires,Buenos Aires,-34.5997,-58.3819,Argentina,AR,ARG,"Buenos Aires, Ciudad Autónoma de",primary,16710000.0,1032717330,3A,69,cityidx_0069_ARG_--BUENOS AIRES.875760_IWEC Data.epw
+855,Guadalupe,Guadalupe,22.7528,-102.5078,Mexico,MX,MEX,Zacatecas,minor,215000.0,1484781342,3C,855,cityidx_0855_MEX_--MEXICO CITY.766790_IWEC Data.epw
+488,Krasnoyarsk,Krasnoyarsk,56.0089,92.8719,Russia,RU,RUS,Krasnoyarskiy Kray,admin,1083865.0,1643544975,7,488,cityidx_0488_MNG_--ULAANGOM.442120_IWEC Data.epw
+234,Birmingham,Birmingham,52.48,-1.9025,United Kingdom,GB,GBR,Birmingham,,2919600.0,1826423213,5A,234,cityidx_0234_GBR_--BIRMINGHAM.035340_IWEC Data.epw
+144,Eşfahān,Esfahan,32.6447,51.6675,Iran,IR,IRN,Eşfahān,admin,2219343.0,1364023865,3B,144,cityidx_0144_IRN_--Esfahan.408000_ITMY.epw
+470,Ufa,Ufa,54.7261,55.9475,Russia,RU,RUS,Bashkortostan,admin,1115560.0,1643722928,7,470,cityidx_0470_RUS_--EKATERINBURG.284400_IWEC Data.epw
+187,Prayagraj,Prayagraj,25.4358,81.8464,India,IN,IND,Uttar Pradesh,,5954391.0,1356718332,1A,187,cityidx_0187_IND_Uttar Pradesh-Allahabad.424750_ISHRAE.epw
+763,San Nicolás de los Garza,San Nicolas de los Garza,25.75,-100.2833,Mexico,MX,MEX,Nuevo León,minor,443273.0,1484264138,2B,763,cityidx_0763_USA_TX-Laredo AFB.722520_TMY--12907.epw
+278,Bogotá,Bogota,4.7111,-74.0722,Colombia,CO,COL,Bogotá,primary,7968095.0,1170483426,3A,278,cityidx_0278_COL_--BOGOTA.802220_IWEC Data.epw
+728,Valparaíso,Valparaiso,-33.0461,-71.6197,Chile,CL,CHL,Valparaíso,admin,296655.0,1152337970,3C,728,cityidx_0728_CHL_--SANTIAGO.855740_IWEC Data.epw
+418,Gongzhuling,Gongzhuling,43.5036,124.8088,China,CN,CHN,Jilin,minor,1092692.0,1156696810,6A,418,cityidx_0418_CHN_Jilin-Changchun.541610_CSWD.epw
+385,Dandong,Dandong,40.1167,124.3833,China,CN,CHN,Liaoning,,2444697.0,1156178316,5A,385,cityidx_0385_CHN_Liaoning-Dandong.544970_CSWD.epw
+791,Puyang,Puyang,35.7639,115.03,China,CN,CHN,Henan,minor,3598740.0,1156431924,4A,791,cityidx_0791_CHN_Henan-Anyang.538980_CSWD.epw
+755,Atyraū,Atyrau,47.1167,51.8833,Kazakhstan,KZ,KAZ,,admin,290700.0,1398169063,5B,755,cityidx_0755_RUS_--SAMARA.289000_IWEC Data.epw
+831,Catia La Mar,Catia La Mar,10.6,-67.0333,Venezuela,VE,VEN,La Guaira,minor,661897.0,1862657837,0B,831,cityidx_0831_VEN_--CARACAS.804150_IWEC Data.epw
+235,Olympia,Olympia,47.0417,-122.8959,United States,US,USA,Washington,admin,200836.0,1840019865,4C,235,cityidx_0235_USA_WA-OLYMPIA.727920_TMY2-24227.epw
+197,Burnaby,Burnaby,49.2667,-122.9667,Canada,CA,CAN,British Columbia,,232755.0,1124817304,4C,197,cityidx_0197_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+603,Aţ Ţā’if,At Ta'if,21.2751,40.4062,Saudi Arabia,SA,SAU,Makkah al Mukarramah,,579970.0,1682956102,2B,603,cityidx_0603_SAU_--RIYADH.404380_IWEC Data.epw
+454,Voronezh,Voronezh,51.6717,39.2106,Russia,RU,RUS,Voronezhskaya Oblast’,admin,1050602.0,1643811064,6A,454,cityidx_0454_RUS_--MOSCOW.276120_IWEC Data.epw
+540,N’Djamena,N'Djamena,12.11,15.05,Chad,TD,TCD,N’Djamena,primary,1092066.0,1148708596,0B,540,cityidx_0540_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+379,Quezon City,Quezon City,14.63,121.03,Philippines,PH,PHL,Quezon,admin,2960048.0,1608974097,0A,379,cityidx_0379_PHL_--MANILA.984290_IWEC Data.epw
+108,Alexandria,Alexandria,31.1975,29.8925,Egypt,EG,EGY,Al Iskandarīyah,admin,4870000.0,1818695837,2B,108,cityidx_0108_EGY_Al Iskandariyah-Alexandria.623180_ETMY.epw
+785,Barnaul,Barnaul,53.3333,83.75,Russia,RU,RUS,Altayskiy Kray,admin,633301.0,1643318931,7,785,cityidx_0785_KAZ_--SEMIPALATINSK.361770_IWEC Data.epw
+417,Jincheng,Jincheng,39.5529,113.1933,China,CN,CHN,Shanxi,minor,105038.0,1156528474,6B,417,cityidx_0417_CHN_Shanxi-Datong.534870_CSWD.epw
+676,Milwaukee,Milwaukee,43.0642,-87.9675,United States,US,USA,Wisconsin,,1340981.0,1840003046,5A,676,cityidx_0676_USA_WI-Milwaukee.726400_TMY--14839.epw
+792,Fremont,Fremont,37.5265,-121.9843,United States,US,USA,California,,231502.0,1840020292,3C,792,cityidx_0792_USA_CA-Mountain View Moffet N.745090_TMY--23244.epw
+313,Bijie,Bijie,27.3019,105.2863,China,CN,CHN,Guizhou,,6899636.0,1156018927,4A,313,cityidx_0313_CHN_Guizhou-Bijie.577070_CSWD.epw
+211,Yunzhong,Yunzhong,39.8143,113.0946,China,CN,CHN,Shanxi,minor,326849.0,1156589240,6B,211,cityidx_0211_CHN_Shanxi-Datong.534870_CSWD.epw
+766,Mombasa,Mombasa,-4.05,39.6667,Kenya,KE,KEN,Mombasa,admin,1208333.0,1404512373,1A,766,cityidx_0766_KEN_--MOMBASA MOI_INTL.638200_SWERA.epw
+198,Konya,Konya,37.8667,32.4833,Turkey,TR,TUR,Konya,admin,2232374.0,1792014004,4B,198,cityidx_0198_TUR_--ANKARA.171280_IWEC Data.epw
+42,Van,Van,38.4942,43.38,Turkey,TR,TUR,Van,admin,353419.0,1792940471,5C,42,cityidx_0042_IRN_--Tabriz.407060_ITMY.epw
+314,Torreón,Torreon,25.5394,-103.4486,Mexico,MX,MEX,Coahuila,minor,716672.0,1484215762,3C,314,cityidx_0314_USA_TX-Laredo Intl Ap  Ut.722520_TMY3.epw
+340,Hyderabad City,Hyderabad City,25.3792,68.3683,Pakistan,PK,PAK,Sindh,minor,1732693.0,1586185019,0B,340,cityidx_0340_PAK_--KARACHI.417800_IWEC Data.epw
+51,Giza,Giza,29.987,31.2118,Egypt,EG,EGY,Al Jīzah,admin,5598402.0,1818925479,2B,51,cityidx_0051_EGY_Al Qahirah-Helwan.623780_ETMY.epw
+460,Dezhou,Dezhou,37.4513,116.3105,China,CN,CHN,Shandong,minor,5611194.0,1156524080,4A,460,cityidx_0460_CHN_Hebei-Raoyang.546060_CSWD.epw
+846,Guwāhāti,Guwahati,26.1722,91.7458,India,IN,IND,Assam,,1116267.0,1356593800,1A,846,cityidx_0846_IND_Assam-Guwahati.424100_ISHRAE.epw
+337,Guigang,Guigang,23.0961,109.6092,China,CN,CHN,Guangxi,minor,4409200.0,1156895251,2A,337,cityidx_0337_CHN_Guangxi Zhuang-Guiping.592540_CSWD.epw
+643,Zhangjiakou Shi Xuanhua Qu,Zhangjiakou Shi Xuanhua Qu,40.5944,115.0243,China,CN,CHN,Hebei,minor,409745.0,1156240430,5B,643,cityidx_0643_CHN_Hebei-Huailai.544050_CSWD.epw
+271,Zhongwei,Zhongwei,37.5139,105.1884,China,CN,CHN,Ningxia,minor,1067336.0,1156956616,5B,271,cityidx_0271_CHN_Ningxia Hui-Yinchuan.536140_CSWD.epw
+545,Saymayl,Saymayl,36.8583,42.8501,Iraq,IQ,IRQ,Dahūk,minor,71557.0,1368902174,5C,545,cityidx_0545_IRN_--Tabriz.407060_ITMY.epw
+118,Bremerton,Bremerton,47.5436,-122.7121,United States,US,USA,Washington,,219538.0,1840018410,5C,118,cityidx_0118_USA_WA-Bremerton National.727928_TMY3.epw
+582,Namangan,Namangan,41.0011,71.6683,Uzbekistan,UZ,UZB,Namangan,admin,626120.0,1860894033,4B,582,cityidx_0582_UZB_--TASHKENT.384570_IWEC Data.epw
+830,Mbandaka,Mbandaka,0.0478,18.2558,Congo (Kinshasa),CD,COD,Équateur,admin,1187837.0,1180720887,1A,830,cityidx_0830_KEN_--KISUMU.637080_SWERA.epw
+194,Siirt,Siirt,37.925,41.9458,Turkey,TR,TUR,Siirt,admin,166332.0,1792190820,5C,194,cityidx_0194_IRN_--Tabriz.407060_ITMY.epw
+134,Jiamusi,Jiamusi,46.8081,130.3653,China,CN,CHN,Heilongjiang,minor,2552097.0,1156350864,7,134,cityidx_0134_CHN_Heilongjiang-Jiamusi.508730_CSWD.epw
+430,Jalandhar,Jalandhar,31.2569,75.4432,India,IN,IND,Punjab,,873725.0,1356494816,1B,430,cityidx_0430_IND_Punjab-Amritsar.420710_ISHRAE.epw
+633,Yazd,Yazd,31.8822,54.3397,Iran,IR,IRN,Yazd,admin,529673.0,1364429875,3B,633,cityidx_0633_IRN_--Yazd.408210_ITMY.epw
+445,Lu’an,Lu'an,31.7542,116.5078,China,CN,CHN,Anhui,minor,5611701.0,1156499624,3A,445,cityidx_0445_CHN_Anhui-Huoshan.583140_CSWD.epw
+251,Nevşehir,Nevsehir,38.6264,34.7139,Turkey,TR,TUR,Nevşehir,admin,153117.0,1792583760,5C,251,cityidx_0251_TUR_--ANKARA.171280_IWEC Data.epw
+437,Erciş,Ercis,39.0311,43.3597,Turkey,TR,TUR,Van,minor,92945.0,1792489856,5C,437,cityidx_0437_IRN_--Tabriz.407060_ITMY.epw
+627,Fenyang,Fenyang,37.2647,111.7775,China,CN,CHN,Shanxi,,416212.0,1156455704,5B,627,cityidx_0627_CHN_Shanxi-Jiexiu.538630_CSWD.epw
+82,Boston,Boston,42.3188,-71.0852,United States,US,USA,Massachusetts,admin,4208580.0,1840000455,5A,82,cityidx_0082_USA_MA-Boston.725090_TMY--94701.epw
+204,Dallas,Dallas,32.7935,-96.7667,United States,US,USA,Texas,,5668165.0,1840019440,2A,204,cityidx_0204_USA_TX-Dallas Love Field.722583_TMY3.epw
+409,Pudong,Pudong,31.2231,121.5397,China,CN,CHN,Shanghai,minor,5681512.0,1156644508,3A,409,cityidx_0409_CHN_--SHANGHAI HONGQIAO.583620_SWERA.epw
+592,Phnom Penh,Phnom Penh,11.5694,104.9211,Cambodia,KH,KHM,Phnom Penh,primary,2129371.0,1116260534,0A,592,cityidx_0592_THA_--BANGKOK.484560_IWEC Data.epw
+457,Qinbaling,Qinbaling,35.7278,107.64,China,CN,CHN,Gansu,,2211191.0,1156032582,5A,457,cityidx_0457_CHN_Gansu-Xifengzhen.539230_CSWD.epw
+376,Kota,Kota,25.18,75.83,India,IN,IND,Rājasthān,,1001694.0,1356820310,1B,376,cityidx_0376_IND_Rajasthan-Kota.424520_ISHRAE.epw
+90,Foshan,Foshan,23.0292,113.1056,China,CN,CHN,Guangdong,minor,9498863.0,1156738403,2A,90,cityidx_0090_CHN_--GUANGZHOU.592870_IWEC Data.epw
+859,Brisbane,Brisbane,-27.4678,153.0281,Australia,AU,AUS,Queensland,admin,2360241.0,1036192929,2A,859,cityidx_0859_AUS_--BRISBANE.945780_IWEC Data.epw
+158,Jinzhou,Jinzhou,41.1144,121.1292,China,CN,CHN,Liaoning,,3126463.0,1156157151,5A,158,cityidx_0158_CHN_Liaoning-Jinzhou.543370_CSWD.epw
+833,Khabarovsk,Khabarovsk,48.4833,135.0667,Russia,RU,RUS,Khabarovskiy Kray,admin,616242.0,1643175363,7,833,cityidx_0833_CHN_Heilongjiang-Fujin.507880_CSWD.epw
+242,Belo Horizonte,Belo Horizonte,-19.9167,-43.9333,Brazil,BR,BRA,Minas Gerais,admin,5328000.0,1076967355,2A,242,cityidx_0242_BRA_--Belo Horizonte Pampulh.835830_SWERA.epw
+333,Xiping,Xiping,25.6005,103.8166,China,CN,CHN,Yunnan,minor,652604.0,1156207794,3C,333,cityidx_0333_CHN_Yunnan-Kunming.567780_CSWD.epw
+601,Ensenada,Ensenada,31.8578,-116.6058,Mexico,MX,MEX,Baja California,minor,557430.0,1484714297,3B,601,cityidx_0601_USA_CA-Chula Vista Brown Field Naas.722904_TMY3.epw
+716,Nanping,Nanping,26.6448,118.1728,China,CN,CHN,Fujian,minor,2690000.0,1156927445,2A,716,cityidx_0716_CHN_Fujian-Nanping.588340_CSWD.epw
+228,Novyy Urengoy,Novyy Urengoy,66.0833,76.6833,Russia,RU,RUS,Yamalo-Nenetskiy Avtonomnyy Okrug,,113254.0,1643427847,8,228,cityidx_0228_RUS_--OMSK.286980_IWEC Data.epw
+17,Dhaka,Dhaka,23.7639,90.3889,Bangladesh,BD,BGD,Dhaka,primary,18627000.0,1050529279,1A,17,cityidx_0017_BGD_--DHAKA TEJGAON_(MIL).419230_SWERA.epw
+734,Cacuaco,Cacuaco,-8.8053,13.2444,Angola,AO,AGO,Luanda,,1279488.0,1024559448,1A,734,cityidx_0734_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+839,Tangshan,Tangshan,39.6292,118.1742,China,CN,CHN,Hebei,,3399231.0,1156904299,4A,839,cityidx_0839_CHN_Hebei-Leting.545390_CSWD.epw
+636,Shaoguan,Shaoguan,24.8011,113.5927,China,CN,CHN,Guangdong,minor,2997600.0,1156617066,2A,636,cityidx_0636_CHN_Guangdong-Shaoguan.590820_CSWD.epw
+758,Zanjān,Zanjan,36.6789,48.5056,Iran,IR,IRN,Zanjān,admin,433475.0,1364312712,4B,758,cityidx_0758_IRN_--Tabriz.407060_ITMY.epw
+393,Liuzhou,Liuzhou,24.3264,109.4281,China,CN,CHN,Guangxi,minor,4157934.0,1156360785,2A,393,cityidx_0393_CHN_Guangxi Zhuang-Guiping.592540_CSWD.epw
+818,Kursk,Kursk,51.7167,36.1833,Russia,RU,RUS,Kurskaya Oblast’,admin,450977.0,1643011077,6A,818,cityidx_0818_RUS_--MOSCOW.276120_IWEC Data.epw
+372,Ashgabat,Ashgabat,37.95,58.3833,Turkmenistan,TM,TKM,Aşgabat,primary,828100.0,1795049992,3B,372,cityidx_0372_IRN_--Yazd.408210_ITMY.epw
+415,Malang,Malang,-7.98,112.62,Indonesia,ID,IDN,Jawa Timur,,2795209.0,1360141408,0A,415,cityidx_0415_MYS_--KUCHING.964130_IWEC Data.epw
+783,Burco,Burco,9.5279,45.5345,Somalia,SO,SOM,Togdheer,admin,750211.0,1706322754,0B,783,cityidx_0783_ETH_--DIRE_DAWA_(MIL CIV).634710_SWERA.epw
+500,Karbalā’,Karbala',32.6167,44.0333,Iraq,IQ,IRQ,Karbalā’,admin,690100.0,1368597794,2B,500,cityidx_0500_KWT_--Kuwait Intl Airport.405820_KISR.epw
+684,Zhongshan,Zhongshan,22.5333,113.35,China,CN,CHN,Guangdong,minor,2909633.0,1156579621,2A,684,cityidx_0684_MAC_--MACAU.450110_IWEC Data.epw
+398,Chelyabinsk,Chelyabinsk,55.15,61.4,Russia,RU,RUS,Chelyabinskaya Oblast’,admin,1202371.0,1643224011,7,398,cityidx_0398_RUS_--EKATERINBURG.284400_IWEC Data.epw
+229,Heihe,Heihe,50.2458,127.4886,China,CN,CHN,Heilongjiang,minor,1673899.0,1156339225,7,229,cityidx_0229_CHN_Heilongjiang-Sunwu.505640_CSWD.epw
+686,Goiânia,Goiania,-16.6667,-49.25,Brazil,BR,BRA,Goiás,admin,1393575.0,1076034054,1A,686,cityidx_0686_BRA_GO-Morrinhos.867550_INMET.epw
+784,Semarang,Semarang,-6.9667,110.4167,Indonesia,ID,IDN,Jawa Tengah,admin,1621384.0,1360745537,0A,784,cityidx_0784_MYS_--KUCHING.964130_IWEC Data.epw
+709,Chilliwack,Chilliwack,49.1577,-121.9509,Canada,CA,CAN,British Columbia,,83788.0,1124531262,4C,709,cityidx_0709_CAN_BC-Abbotsford.711080_WYEC2-B-24288.epw
+689,Winnipeg,Winnipeg,49.8844,-97.1464,Canada,CA,CAN,Manitoba,admin,705244.0,1124224963,7,689,cityidx_0689_CAN_MB-Winnipeg Int'l.718520_WYEC2-B-14996.epw
+641,Erzurum,Erzurum,39.9086,41.2769,Turkey,TR,TUR,Erzurum,admin,767848.0,1792511957,7,641,cityidx_0641_IRN_--Tabriz.407060_ITMY.epw
+91,Jaipur,Jaipur,26.9,75.8,India,IN,IND,Rājasthān,admin,3073350.0,1356293537,1B,91,cityidx_0091_IND_Rajasthan-Jaipur.423480_ISHRAE.epw
+309,Yuci,Yuci,37.6823,112.7281,China,CN,CHN,Shanxi,,840000.0,1156177817,5B,309,cityidx_0309_CHN_Shanxi-Taiyuan.537720_CSWD.epw
+64,Comodoro Rivadavia,Comodoro Rivadavia,-45.8647,-67.4808,Argentina,AR,ARG,Chubut,minor,730266.0,1032042035,4C,64,cityidx_0064_CHL_--PUNTA ARENAS.859340_IWEC Data.epw
+322,Medan,Medan,3.5894,98.6739,Indonesia,ID,IDN,Sumatera Utara,admin,3632000.0,1360543171,0A,322,cityidx_0322_MYS_--GEORGE TOWN.486010_IWEC Data.epw
+50,Mexico City,Mexico City,19.4333,-99.1333,Mexico,MX,MEX,Ciudad de México,primary,21804000.0,1484247881,3A,50,cityidx_0050_MEX_--MEXICO CITY.766790_IWEC Data.epw
+116,Xiping,Xiping,40.082,113.2981,China,CN,CHN,Shanxi,minor,1873000.0,1156898522,6B,116,cityidx_0116_CHN_Shanxi-Datong.534870_CSWD.epw
+12,Tehran,Tehran,35.6892,51.3889,Iran,IR,IRN,Tehrān,primary,14148000.0,1364305026,3B,12,cityidx_0012_IRN_--Tehran Mehrabad.407540_ITMY.epw
+117,Anshan,Anshan,41.1066,122.9895,China,CN,CHN,Liaoning,,3645884.0,1156901825,6A,117,cityidx_0117_CHN_Liaoning-Shenyang.543420_CSWD.epw
+742,Andijon,Andijon,40.7833,72.3333,Uzbekistan,UZ,UZB,Andijon,admin,441700.0,1860445095,4B,742,cityidx_0742_UZB_--TASHKENT.384570_IWEC Data.epw
+124,Meru,Meru,0.05,37.65,Kenya,KE,KEN,Meru,admin,1833000.0,1404588252,3C,124,cityidx_0124_KEN_--MERU.636950_SWERA.epw
+832,Madurai,Madurai,9.9252,78.1198,India,IN,IND,Tamil Nādu,minor,1561129.0,1356257289,0A,832,cityidx_0832_IND_Tamil Nadu-Tiruchirapalli.433440_ISHRAE.epw
+502,Noida,Noida,28.57,77.32,India,IN,IND,Uttar Pradesh,,637272.0,1356002491,1B,502,cityidx_0502_IND_Delhi-New Delhi.421820_ISHRAE.epw
+670,Leizhou,Leizhou,20.9147,110.0806,China,CN,CHN,Guangdong,minor,1494700.0,1156863840,1A,670,cityidx_0670_CHN_Hainan-Haikou.597580_CSWD.epw
+788,Bishkek,Bishkek,42.8747,74.6122,Kyrgyzstan,KG,KGZ,Bishkek,primary,1074075.0,1417191971,5A,788,cityidx_0788_CHN_--KASHI.517090_SWERA.epw
+384,Colorado Springs,Colorado Springs,38.8674,-104.7605,United States,US,USA,Colorado,,628808.0,1840018825,5B,384,cityidx_0384_USA_CO-Colorado Springs.724660_TMY--93037.epw
+671,Khartoum North,Khartoum North,15.6333,32.6333,Sudan,SD,SDN,Khartoum,,936349.0,1729318628,0B,671,cityidx_0671_ETH_--GONDAR.633310_SWERA.epw
+68,Amman,Amman,31.9497,35.9328,Jordan,JO,JOR,Al ‘Āşimah,primary,4007526.0,1400522593,3B,68,cityidx_0068_ISR_--Jerusalem-Atarot AP.401840_MSI.epw
+247,Noyabrsk,Noyabrsk,63.2017,75.4517,Russia,RU,RUS,Yamalo-Nenetskiy Avtonomnyy Okrug,,106879.0,1643340196,8,247,cityidx_0247_RUS_--OMSK.286980_IWEC Data.epw
+151,Chennai,Chennai,13.0825,80.275,India,IN,IND,Tamil Nādu,admin,12395000.0,1356374944,0A,151,cityidx_0151_IND_Tamil Nadu-Chennai-Madras.432790_ISHRAE.epw
+381,Wuling,Wuling,39.4421,114.23,China,CN,CHN,Shanxi,minor,121110.0,1156122729,6B,381,cityidx_0381_CHN_Shanxi-Datong.534870_CSWD.epw
+472,Volgograd,Volgograd,48.7086,44.5147,Russia,RU,RUS,Volgogradskaya Oblast’,admin,1015586.0,1643577201,6A,472,cityidx_0472_RUS_--SAMARA.289000_IWEC Data.epw
+83,Surrey,Surrey,49.19,-122.8489,Canada,CA,CAN,British Columbia,,517887.0,1124001454,4C,83,cityidx_0083_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+395,Mirzāpur,Mirzapur,25.146,82.569,India,IN,IND,Uttar Pradesh,,2496970.0,1356427908,1A,395,cityidx_0395_IND_Uttar Pradesh-Allahabad.424750_ISHRAE.epw
+570,Xiaoganzhan,Xiaoganzhan,30.9273,113.911,China,CN,CHN,Hubei,,4921000.0,1156002290,3A,570,cityidx_0570_CHN_Hubei-Wuhan.574940_CSWD.epw
+825,Welkom,Welkom,-27.9831,26.7208,South Africa,ZA,ZAF,Free State,,431944.0,1710480365,3B,825,cityidx_0825_ZAF_--JOHANNESBURG.683680_IWEC Data.epw
+464,Sahāranpur,Saharanpur,29.964,77.546,India,IN,IND,Uttar Pradesh,,705478.0,1356139858,2B,464,cityidx_0464_IND_Uttar Pradesh-Saharanpur.5217_ISHRAE.epw
+555,Putian,Putian,25.4394,119.0103,China,CN,CHN,Fujian,minor,3210714.0,1156811601,2A,555,cityidx_0555_CHN_Fujian-Congwu.591330_CSWD.epw
+479,Khayelitsha,Khayelitsha,-34.0403,18.6778,South Africa,ZA,ZAF,Western Cape,,391749.0,1710736316,3C,479,cityidx_0479_ZAF_--CAPE TOWN.688160_IWEC Data.epw
+463,Yichun,Yichun,27.8041,114.383,China,CN,CHN,Jiangxi,minor,5573200.0,1156229590,3A,463,cityidx_0463_CHN_Jiangxi-Yichun.577930_CSWD.epw
+284,Rangoon,Rangoon,16.795,96.16,Myanmar,MM,MMR,Yangon,primary,5209541.0,1104616656,0A,284,cityidx_0284_THA_--BANGKOK.484560_IWEC Data.epw
+650,Anqing,Anqing,30.5,117.0333,China,CN,CHN,Anhui,minor,4723000.0,1156238875,3A,650,cityidx_0650_CHN_Anhui-Anqing.584240_CSWD.epw
+629,Akşehir,Aksehir,38.3575,31.4164,Turkey,TR,TUR,Konya,minor,93233.0,1792359338,4C,629,cityidx_0629_TUR_--ANKARA.171280_IWEC Data.epw
+399,Qiaotou,Qiaotou,36.935,101.6736,China,CN,CHN,Qinghai,minor,114712.0,1156599423,6B,399,cityidx_0399_CHN_Qinghai-Xining.528660_CSWD.epw
+179,Sanmenxia,Sanmenxia,34.7736,111.195,China,CN,CHN,Henan,,2234018.0,1156529682,4B,179,cityidx_0179_CHN_Shanxi-Yuncheng.539590_CSWD.epw
+811,Ţanţā,Tanta,30.7833,31.0,Egypt,EG,EGY,Al Gharbīyah,admin,429503.0,1818501770,2B,811,cityidx_0811_EGY_--CAIRO.623660_IWEC Data.epw
+495,Khŭjand,Khujand,40.2833,69.6333,Tajikistan,TJ,TJK,Sughd,admin,770000.0,1762372787,4B,495,cityidx_0495_UZB_--TASHKENT.384570_IWEC Data.epw
+482,Guadalupe,Guadalupe,25.6775,-100.2597,Mexico,MX,MEX,Nuevo León,minor,691931.0,1484002410,2B,482,cityidx_0482_USA_TX-Laredo AFB.722520_TMY--12907.epw
+259,Johannesburg,Johannesburg,-26.2044,28.0456,South Africa,ZA,ZAF,Gauteng,admin,8000000.0,1710550792,3A,259,cityidx_0259_ZAF_--JOHANNESBURG.683680_IWEC Data.epw
+265,Douala,Douala,4.05,9.7,Cameroon,CM,CMR,Littoral,admin,5768400.0,1120494607,0A,265,cityidx_0265_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+680,Juliaca,Juliaca,-15.4833,-70.1333,Peru,PE,PER,Puno,,307417.0,1604174464,3C,680,cityidx_0680_PER_--AREQUIPA.847520_IWEC Data.epw
+215,Kyiv,Kyiv,50.45,30.5233,Ukraine,UA,UKR,"Kyiv, Misto",primary,2963199.0,1804382913,5A,215,cityidx_0215_UKR_--KIEV.333450_IWEC Data.epw
+516,Murcia,Murcia,37.9861,-1.1303,Spain,ES,ESP,Murcia,admin,672773.0,1724107739,3B,516,cityidx_0516_ESP_--Murcia.084300_SWEC.epw
+191,Jixi,Jixi,45.2937,130.965,China,CN,CHN,Heilongjiang,minor,1862165.0,1156393765,7,191,cityidx_0191_CHN_Heilongjiang-Jixi.509780_CSWD.epw
+759,Baojishi,Baojishi,34.3609,107.1751,China,CN,CHN,Shaanxi,,3738700.0,1156101096,4A,759,cityidx_0759_CHN_--BAOJI.570160_SWERA.epw
+604,Addis Ababa,Addis Ababa,9.03,38.74,Ethiopia,ET,ETH,Ādīs Ābeba,primary,3041002.0,1231824991,2A,604,cityidx_0604_ETH_--ADDIS_ABABA BOLE.634500_SWERA.epw
+303,Abidjan,Abidjan,5.3167,-4.0333,Côte d'Ivoire,CI,CIV,Abidjan,primary,4980000.0,1384207980,0A,303,cityidx_0303_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+174,Minneapolis,Minneapolis,44.9635,-93.2678,United States,US,USA,Minnesota,,2856952.0,1840007830,6A,174,cityidx_0174_USA_MN-Minneapolis St Paul IntL Arp.726580_TMY3.epw
+394,Morādābād,Moradabad,28.8389,78.7769,India,IN,IND,Uttar Pradesh,,887871.0,1356269375,1B,394,cityidx_0394_IND_Uttar Pradesh-Saharanpur.5217_ISHRAE.epw
+800,Balandougou,Balandougou,13.3558,-9.5517,Mali,ML,MLI,Kayes,,1596882.0,1466367944,0A,800,cityidx_0800_SEN_--DAKAR.616410_IWEC Data.epw
+631,Pingdingshan,Pingdingshan,33.735,113.2999,China,CN,CHN,Henan,,4904701.0,1156735124,4A,631,cityidx_0631_CHN_Henan-Nanyang.571780_CSWD.epw
+209,Kyzyl,Kyzyl,51.7167,94.45,Russia,RU,RUS,Tyva,admin,116015.0,1643780385,8,209,cityidx_0209_MNG_--ULAANGOM.442120_IWEC Data.epw
+346,Niğde,Nigde,37.9667,34.6792,Turkey,TR,TUR,Niğde,admin,118186.0,1792867993,5C,346,cityidx_0346_TUR_--ANKARA.171280_IWEC Data.epw
+222,Callao,Callao,-12.0333,-77.1333,Peru,PE,PER,Callao,admin,1129854.0,1604422141,2B,222,cityidx_0222_PER_--LIMA.846280_IWEC Data.epw
+349,Bellevue,Bellevue,47.5951,-122.1535,United States,US,USA,Washington,,149365.0,1840018417,4C,349,cityidx_0349_USA_WA-Seattle Boeing Field  Isis.727935_TMY3.epw
+634,Changsha,Changsha,28.1987,112.9709,China,CN,CHN,Hunan,admin,4766296.0,1156961497,3A,634,cityidx_0634_CHN_Hunan-Changsha.576870_CSWD.epw
+71,Dongguan,Dongguan,23.0475,113.7493,China,CN,CHN,Guangdong,minor,10646000.0,1156478242,2A,71,cityidx_0071_CHN_Guangdong-Zhengcheng.592940_CSWD.epw
+52,Shenzhen,Shenzhen,22.535,114.054,China,CN,CHN,Guangdong,minor,17619000.0,1156158707,2A,52,cityidx_0052_CHN_--SHENZHEN.594930_SWERA.epw
+142,Tongshan,Tongshan,34.261,117.1859,China,CN,CHN,Jiangsu,minor,9083790.0,1156241678,4A,142,cityidx_0142_CHN_Jiangsu-Xuzhou.580270_CSWD.epw
+219,Arequipa,Arequipa,-16.4,-71.5333,Peru,PE,PER,Arequipa,admin,1008290.0,1604723954,3C,219,cityidx_0219_PER_--AREQUIPA.847520_IWEC Data.epw
+756,Rostov,Rostov,47.2333,39.7,Russia,RU,RUS,Rostovskaya Oblast’,admin,1137704.0,1643013518,5A,756,cityidx_0756_RUS_--MOSCOW.276120_IWEC Data.epw
+593,Kathmandu,Kathmandu,27.7172,85.324,Nepal,NP,NPL,,primary,975453.0,1524589448,7,593,cityidx_0593_NPL_--KATHMANDU_INTL_ARPT.444540_SWERA.epw
+404,Abbotsford,Abbotsford,49.05,-122.3167,Canada,CA,CAN,British Columbia,,141397.0,1124808029,4C,404,cityidx_0404_CAN_BC-Abbotsford.711080_WYEC2-B-24288.epw
+304,Karakol,Karakol,42.4903,78.3917,Kyrgyzstan,KG,KGZ,Ysyk-Köl,admin,85588.0,1417269527,8,304,cityidx_0304_CHN_Xinjiang Uygur-Aksu.516280_CSWD.epw
+392,Ar Ramādī,Ar Ramadi,33.4258,43.2992,Iraq,IQ,IRQ,Al Anbār,admin,874543.0,1368838855,2B,392,cityidx_0392_IRN_--Tabriz.407060_ITMY.epw
+727,Jiangguanchi,Jiangguanchi,34.0244,113.8201,China,CN,CHN,Henan,minor,4379998.0,1156235735,4A,727,cityidx_0727_CHN_Henan-Zhengzhou.570830_CSWD.epw
+249,Bole,Bole,44.8539,82.0514,China,CN,CHN,Xinjiang,,235585.0,1156784761,6B,249,cityidx_0249_CHN_Xinjiang Uygur-Jinghe.513340_CSWD.epw
+625,Hailun,Hailun,47.4585,126.9632,China,CN,CHN,Heilongjiang,minor,850000.0,1156804488,7,625,cityidx_0625_CHN_Heilongjiang-Hailun.507560_CSWD.epw
+326,Stockholm,Stockholm,59.3294,18.0686,Sweden,SE,SWE,Stockholm,primary,1611776.0,1752425602,6A,326,cityidx_0326_SWE_--STOCKHOLM_ ARLANDA.024600_IWEC Data.epw
+794,Hefei,Hefei,31.8639,117.2808,China,CN,CHN,Anhui,admin,4216940.0,1156332710,3A,794,cityidx_0794_CHN_Anhui-Hefei.583210_CSWD.epw
+31,Shanghai,Shanghai,31.1667,121.4667,China,CN,CHN,Shanghai,admin,24073000.0,1156073548,3A,31,cityidx_0031_CHN_--SHANGHAI HONGQIAO.583620_SWERA.epw
+679,Washington,Washington,38.9047,-77.0163,United States,US,USA,District of Columbia,primary,4810669.0,1840006060,4A,679,cityidx_0679_USA_VA-Washington Dc Reagan Ap.724050_TMY3.epw
+496,Zhaotong,Zhaotong,27.3328,103.7144,China,CN,CHN,Yunnan,,5591000.0,1156924687,4A,496,cityidx_0496_CHN_Guizhou-Weining.566910_CSWD.epw
+87,San Diego,San Diego,32.8313,-117.1222,United States,US,USA,California,,3084174.0,1840021990,3B,87,cityidx_0087_USA_CA-San Diego Montgomer.722903_TMY3.epw
+180,Heze,Heze,35.2333,115.4333,China,CN,CHN,Shandong,minor,8795939.0,1156225008,4A,180,cityidx_0180_CHN_Henan-Shangqiu.580050_CSWD.epw
+462,Kermān,Kerman,30.2833,57.0833,Iran,IR,IRN,Kermān,admin,738374.0,1364554896,3B,462,cityidx_0462_IRN_--Yazd.408210_ITMY.epw
+18,Jakarta,Jakarta,-6.175,106.8275,Indonesia,ID,IDN,Jakarta,primary,33756000.0,1360771077,0A,18,cityidx_0018_SGP_--SINGAPORE.486980_IWEC Data.epw
+809,Eslāmshahr,Eslamshahr,35.5606,51.2347,Iran,IR,IRN,Tehrān,minor,448129.0,1364870126,3B,809,cityidx_0809_IRN_--Tehran Mehrabad.407540_ITMY.epw
+46,Xingtai,Xingtai,37.0659,114.4753,China,CN,CHN,Hebei,,7111106.0,1156294952,4B,46,cityidx_0046_CHN_Hebei-Xingtai.537980_CSWD.epw
+685,Mathura,Mathura,27.4925,77.6736,India,IN,IND,Uttar Pradesh,,441894.0,1356066081,1B,685,cityidx_0685_IND_Delhi-New Delhi.421820_ISHRAE.epw
+382,Helsinki,Helsinki,60.1708,24.9375,Finland,FI,FIN,Uusimaa,primary,1268296.0,1246177997,6A,382,cityidx_0382_FIN_--HELSINKI.029740_IWEC Data.epw
+566,Gaobeidian,Gaobeidian,39.3257,115.8678,China,CN,CHN,Hebei,,640280.0,1156487293,4B,566,cityidx_0566_CHN_--BEIJING PEKING.545110_SWERA.epw
+816,Yopougon,Yopougon,5.3167,-4.0667,Côte d'Ivoire,CI,CIV,Abidjan,,1571065.0,1384759584,0A,816,cityidx_0816_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+753,Shulan,Shulan,44.4079,126.9429,China,CN,CHN,Jilin,minor,663403.0,1156989733,7,753,cityidx_0753_CHN_Heilongjiang-Shangzhi.509680_CSWD.epw
+585,Al Mafraq,Al Mafraq,32.3399,36.2052,Jordan,JO,JOR,Al Mafraq,admin,580000.0,1400040712,3B,585,cityidx_0585_ISR_--Jerusalem-Atarot AP.401840_MSI.epw
+443,Huili Chengguanzhen,Huili Chengguanzhen,26.6614,102.2469,China,CN,CHN,Sichuan,minor,430066.0,1156149320,3C,443,cityidx_0443_CHN_Sichuan-Huili.566710_CSWD.epw
+519,Hechi,Hechi,24.6928,108.085,China,CN,CHN,Guangxi,minor,3545700.0,1156167204,2A,519,cityidx_0519_CHN_Guangxi Zhuang-Hechi.590230_CSWD.epw
+113,Lagos,Lagos,6.455,3.3841,Nigeria,NG,NGA,Lagos,minor,16637000.0,1566593751,0A,113,cityidx_0113_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+817,Irkutsk,Irkutsk,52.2833,104.2833,Russia,RU,RUS,Irkutskaya Oblast’,admin,623736.0,1643439037,7,817,cityidx_0817_RUS_--IRKUTSK.307100_IWEC Data.epw
+779,Beira,Beira,-19.8333,34.85,Mozambique,MZ,MOZ,Sofala,admin,436240.0,1508407369,2B,779,cityidx_0779_ZWE_--HARARE.677750_IWEC Data.epw
+568,Lianran,Lianran,24.9211,102.4778,China,CN,CHN,Yunnan,minor,341341.0,1156332794,3C,568,cityidx_0568_CHN_Yunnan-Kunming.567780_CSWD.epw
+767,Kaduna,Kaduna,10.5167,7.4333,Nigeria,NG,NGA,Kaduna,admin,760084.0,1566368729,0B,767,cityidx_0767_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+268,Golmud,Golmud,36.4072,94.9283,China,CN,CHN,Qinghai,minor,215214.0,1156083724,6B,268,cityidx_0268_CHN_Qinghai-Golmud.528180_CSWD.epw
+316,Zunyi,Zunyi,27.705,106.9336,China,CN,CHN,Guizhou,,6606675.0,1156539782,3A,316,cityidx_0316_CHN_Guizhou-Zunyi.577130_CSWD.epw
+280,Guilin,Guilin,25.2819,110.2864,China,CN,CHN,Guangxi,minor,5085500.0,1156235364,2A,280,cityidx_0280_CHN_Guangxi Zhuang-Guilin.579570_CSWD.epw
+230,Beichengqu,Beichengqu,40.4348,113.1565,China,CN,CHN,Inner Mongolia,minor,245608.0,1156401666,6B,230,cityidx_0230_CHN_Shanxi-Datong.534870_CSWD.epw
+503,San Juan,San Juan,18.3985,-66.061,Puerto Rico,PR,PRI,Puerto Rico,primary,1915105.0,1630035577,1A,503,cityidx_0503_PRI_PR-San Juan Intl Arpt.785260_TMY3.epw
+319,Amritsar,Amritsar,31.64,74.86,India,IN,IND,Punjab,,1132383.0,1356926507,1B,319,cityidx_0319_IND_Punjab-Amritsar.420710_ISHRAE.epw
+270,Ağrı,Agri,39.7186,43.0508,Turkey,TR,TUR,Ağrı,admin,149188.0,1792385654,5C,270,cityidx_0270_IRN_--Tabriz.407060_ITMY.epw
+777,Long Beach,Long Beach,33.7977,-118.167,United States,US,USA,California,,466565.0,1840020490,3B,777,cityidx_0777_USA_CA-Long Beach.722970_TMY--23129.epw
+9,Xi’an,Xi'an,34.2667,108.9,China,CN,CHN,Shaanxi,admin,12328000.0,1156244079,4B,9,cityidx_0009_CHN_Shaanxi-Xian.570360_CSWD.epw
+15,Guangzhou,Guangzhou,23.13,113.26,China,CN,CHN,Guangdong,admin,26940000.0,1156237133,2A,15,cityidx_0015_CHN_--GUANGZHOU.592870_IWEC Data.epw
+411,Zhaoqing,Zhaoqing,23.05,112.4667,China,CN,CHN,Guangdong,minor,4151700.0,1156170144,2A,411,cityidx_0411_CHN_--GUANGZHOU.592870_IWEC Data.epw
+133,Noginsk,Noginsk,64.4833,91.2333,Russia,RU,RUS,Krasnoyarskiy Kray,,229731.0,1643129651,8,133,cityidx_0133_MNG_--ULAANGOM.442120_IWEC Data.epw
+238,Aguascalientes,Aguascalientes,21.876,-102.296,Mexico,MX,MEX,Aguascalientes,admin,934424.0,1484666646,3C,238,cityidx_0238_MEX_--MEXICO CITY.766790_IWEC Data.epw
+541,Depok,Depok,-6.394,106.8225,Indonesia,ID,IDN,Jawa Barat,,2330333.0,1360962899,0A,541,cityidx_0541_SGP_--SINGAPORE.486980_IWEC Data.epw
+150,Abuja,Abuja,9.0667,7.4833,Nigeria,NG,NGA,Federal Capital Territory,primary,3770000.0,1566342270,0B,150,cityidx_0150_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+538,Ḩafr al Bāţin,Hafr al Batin,28.4342,45.9636,Saudi Arabia,SA,SAU,Ash Sharqīyah,,600000.0,1682394909,1B,538,cityidx_0538_KWT_--KISR Coastal Weather Station.405850_KISR.epw
+66,London,London,51.5072,-0.1275,United Kingdom,GB,GBR,"London, City of",primary,11262000.0,1826645935,4A,66,cityidx_0066_GBR_--LONDON GATWICK.037760_IWEC Data.epw
+465,Xiamen,Xiamen,24.4797,118.0819,China,CN,CHN,Fujian,minor,3707090.0,1156212809,2A,465,cityidx_0465_CHN_Fujian-Xiamen.591340_CSWD.epw
+531,Orūmīyeh,Orumiyeh,37.5486,45.0675,Iran,IR,IRN,Āz̄arbāyjān-e Gharbī,admin,736224.0,1364158221,4B,531,cityidx_0531_IRN_--Tabriz.407060_ITMY.epw
+591,Quetta,Quetta,30.1833,67.0,Pakistan,PK,PAK,Balochistan,admin,1001205.0,1586556108,0B,591,cityidx_0591_IND_Rajasthan-Jaisalmer.423280_ISHRAE.epw
+92,Luanda,Luanda,-8.8383,13.2344,Angola,AO,AGO,Luanda,primary,9051000.0,1024949724,1A,92,cityidx_0092_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+318,Jiangmen,Jiangmen,22.5833,113.0833,China,CN,CHN,Guangdong,minor,4630300.0,1156105613,2A,318,cityidx_0318_MAC_--MACAU.450110_IWEC Data.epw
+406,Qingdao,Qingdao,36.1167,120.4,China,CN,CHN,Shandong,minor,5818255.0,1156112588,4A,406,cityidx_0406_CHN_Shandong-Weifang.548430_CSWD.epw
+551,Gómez Palacio,Gomez Palacio,25.5611,-103.4983,Mexico,MX,MEX,Durango,minor,342286.0,1484092318,3C,551,cityidx_0551_USA_TX-Laredo Intl Ap  Ut.722520_TMY3.epw
+396,Abu Dhabi,Abu Dhabi,24.4667,54.3667,United Arab Emirates,AE,ARE,Abū Z̧aby,primary,1483000.0,1784176710,0B,396,cityidx_0396_ARE_--ABU DHABI.412170_IWEC Data.epw
+60,Saint Petersburg,Saint Petersburg,59.95,30.3167,Russia,RU,RUS,Sankt-Peterburg,admin,5384342.0,1643616350,6A,60,cityidx_0060_RUS_--SAINT-PETERSBURG.260630_IWEC Data.epw
+258,Aleppo,Aleppo,36.2,37.16,Syria,SY,SYR,Ḩalab,admin,1916781.0,1760366651,3B,258,cityidx_0258_SYR_--DAMASCUS.400800_IWEC Data.epw
+514,Philadelphia,Philadelphia,40.0077,-75.1339,United States,US,USA,Pennsylvania,,5512873.0,1840000673,4A,514,cityidx_0514_USA_PA-Philadelphia Ne Philadelphia.724085_TMY3.epw
+291,Stuttgart,Stuttgart,48.7775,9.18,Germany,DE,DEU,Baden-Württemberg,admin,2787724.0,1276171358,5A,291,cityidx_0291_DEU_--STUTTGART.107380_IWEC Data.epw
+332,Shangrao,Shangrao,28.4419,117.9633,China,CN,CHN,Jiangxi,minor,6810700.0,1156405492,4A,332,cityidx_0332_CHN_Jiangxi-Yushan.586340_CSWD.epw
+638,Nārāyanganj,Narayanganj,23.62,90.5,Bangladesh,BD,BGD,Dhaka,,1572386.0,1050424421,1A,638,cityidx_0638_BGD_--DHAKA TEJGAON_(MIL).419230_SWERA.epw
+23,Kayseri,Kayseri,38.7225,35.4875,Turkey,TR,TUR,Kayseri,admin,1389680.0,1792945815,5C,23,cityidx_0023_TUR_--ANKARA.171280_IWEC Data.epw
+138,Yinchuan,Yinchuan,38.4795,106.2254,China,CN,CHN,Ningxia,admin,1901793.0,1156359072,5B,138,cityidx_0138_CHN_Ningxia Hui-Yinchuan.536140_CSWD.epw
+224,Al Başrah,Al Basrah,30.515,47.81,Iraq,IQ,IRQ,Al Başrah,admin,1326564.0,1368714645,1B,224,cityidx_0224_KWT_--Kuwait Intl Airport.405820_KISR.epw
+584,Viña del Mar,Vina del Mar,-33.0244,-71.5517,Chile,CL,CHL,Valparaíso,,332875.0,1152898644,3C,584,cityidx_0584_CHL_--SANTIAGO.855740_IWEC Data.epw
+267,Yekaterinburg,Yekaterinburg,56.8356,60.6128,Russia,RU,RUS,Sverdlovskaya Oblast’,admin,1468833.0,1643582706,7,267,cityidx_0267_RUS_--EKATERINBURG.284400_IWEC Data.epw
+628,Guyuan,Guyuan,36.008,106.2782,China,CN,CHN,Ningxia,,1426000.0,1156817541,5A,628,cityidx_0628_CHN_Ningxia Hui-Guyuan.538170_CSWD.epw
+226,Maracaibo,Maracaibo,10.6333,-71.6333,Venezuela,VE,VEN,Zulia,admin,2658355.0,1862072711,0B,226,cityidx_0226_VEN_--CARACAS.804150_IWEC Data.epw
+871,Victorville,Victorville,34.5277,-117.3536,United States,US,USA,California,,389060.0,1840021731,3B,871,cityidx_0871_USA_CA-Riverside Muni.722869_TMY3.epw
+507,Missoula,Missoula,46.8751,-114.0214,United States,US,USA,Montana,,92863.0,1840019840,6B,507,cityidx_0507_USA_MT-MISSOULA.727730_TMY2-24153.epw
+2,Xigazê,Xigaze,29.25,88.8833,China,CN,CHN,Tibet,minor,798153.0,1156107208,6C,2,cityidx_0002_CHN_--PAGRI.557730_SWERA.epw
+93,Mogadishu,Mogadishu,2.0392,45.3419,Somalia,SO,SOM,Banaadir,primary,4249083.0,1706893395,0B,93,cityidx_0093_KEN_--MANDERA.636240_SWERA.epw
+216,Tacoma,Tacoma,47.2431,-122.4531,United States,US,USA,Washington,,217332.0,1840021129,4C,216,cityidx_0216_USA_WA-Tacoma Mcchord Afb.742060_TMY3.epw
+550,Langfang,Langfang,39.5196,116.7006,China,CN,CHN,Hebei,,5464087.0,1156109017,4A,550,cityidx_0550_CHN_Beijing-Beijing.545110_CSWD.epw
+41,Tai’an,Tai'an,36.2001,117.0809,China,CN,CHN,Shandong,,5494207.0,1156095188,6A,41,cityidx_0041_CHN_Shandong-Jinan.548230_CSWD.epw
+427,Xiangyang,Xiangyang,32.0654,112.1531,China,CN,CHN,Hubei,minor,5680000.0,1156107325,3A,427,cityidx_0427_CHN_Hubei-Laohekou.572650_CSWD.epw
+129,Ghāziābād,Ghaziabad,28.67,77.42,India,IN,IND,Uttar Pradesh,,2375820.0,1356691871,1B,129,cityidx_0129_IND_Delhi-New Delhi.421820_ISHRAE.epw
+172,Baicheng,Baicheng,45.6148,122.832,China,CN,CHN,Jilin,minor,2032356.0,1156435764,7,172,cityidx_0172_CHN_Jilin-Baicheng.509360_CSWD.epw
+96,Mudanjiang,Mudanjiang,44.5861,129.5997,China,CN,CHN,Heilongjiang,minor,2798723.0,1156249698,7,96,cityidx_0096_CHN_Heilongjiang-Mudanjiang.540940_CSWD.epw
+177,Chaoyang,Chaoyang,41.5757,120.4486,China,CN,CHN,Liaoning,,3044641.0,1156706927,5A,177,cityidx_0177_CHN_Liaoning-Chaoyang.543240_CSWD.epw
+701,Davangere,Davangere,14.4666,75.9242,India,IN,IND,Karnātaka,,435125.0,1356445061,1B,701,cityidx_0701_IND_Karnataka-Chitradurg.432330_ISHRAE.epw
+298,Al Manşūrah,Al Mansurah,31.05,31.3833,Egypt,EG,EGY,Ad Daqahlīyah,admin,960423.0,1818255319,2B,298,cityidx_0298_EGY_--CAIRO.623660_IWEC Data.epw
+370,Baghdad,Baghdad,33.3153,44.3661,Iraq,IQ,IRQ,Baghdād,primary,6183000.0,1368596238,4A,370,cityidx_0370_IRN_--Tabriz.407060_ITMY.epw
+854,Shiyan,Shiyan,32.6351,110.7755,China,CN,CHN,Hubei,minor,3398000.0,1156383921,4A,854,cityidx_0854_CHN_Hubei-Yunxi.572510_CSWD.epw
+350,Kashgar,Kashgar,39.4681,75.9938,China,CN,CHN,Xinjiang,minor,920000.0,1156113193,4B,350,cityidx_0350_CHN_--KASHI.517090_SWERA.epw
+801,Ulyanovsk,Ulyanovsk,54.3167,48.3667,Russia,RU,RUS,Ul’yanovskaya Oblast’,admin,624518.0,1643668944,7,801,cityidx_0801_RUS_--SAMARA.289000_IWEC Data.epw
+446,An Najaf,An Najaf,32.0,44.33,Iraq,IQ,IRQ,An Najaf,admin,724700.0,1368003357,2B,446,cityidx_0446_KWT_--Kuwait Intl Airport.405820_KISR.epw
+822,Anguo,Anguo,38.4177,115.3204,China,CN,CHN,Hebei,,370317.0,1156172518,4B,822,cityidx_0822_CHN_Hebei-Raoyang.546060_CSWD.epw
+789,Padre Las Casas,Padre Las Casas,-38.7667,-72.6,Chile,CL,CHL,Araucanía,,72892.0,1152058226,4C,789,cityidx_0789_CHL_--CONCEPCION.856820_IWEC Data.epw
+448,Kālkāji Devi,Kalkaji Devi,28.5485,77.2513,India,IN,IND,Delhi,,824177.0,1356264482,1B,448,cityidx_0448_IND_Delhi-New Delhi.421820_ISHRAE.epw
+622,Āgra,Agra,27.18,78.02,India,IN,IND,Uttar Pradesh,,1585704.0,1356187395,1A,622,cityidx_0622_IND_Madhya Pradesh-Gwalior.423610_ISHRAE.epw
+140,Temuco,Temuco,-38.7333,-72.6667,Chile,CL,CHL,Araucanía,admin,282415.0,1152318955,4C,140,cityidx_0140_CHL_--CONCEPCION.856820_IWEC Data.epw
+837,New Westminster,New Westminster,49.2069,-122.9111,Canada,CA,CAN,British Columbia,,70996.0,1124196524,4C,837,cityidx_0837_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+520,Rasūlpur,Rasulpur,28.57,77.32,India,IN,IND,Uttar Pradesh,,637272.0,1356018224,1B,520,cityidx_0520_IND_Delhi-New Delhi.421820_ISHRAE.epw
+101,Detroit,Detroit,42.3834,-83.1024,United States,US,USA,Michigan,,3522856.0,1840003971,5A,101,cityidx_0101_USA_MI-DETROIT.725370_TMY2-94847.epw
+111,Hanoi,Hanoi,21.0283,105.8542,Vietnam,VN,VNM,Hà Nội,primary,8246600.0,1704413791,1A,111,cityidx_0111_VNM_--HANOI.488200_IWEC Data.epw
+875,Az Zubayr,Az Zubayr,30.3833,47.7,Iraq,IQ,IRQ,Al Başrah,minor,370000.0,1368147923,1B,875,cityidx_0875_KWT_--Kuwait Intl Airport.405820_KISR.epw
+581,Santiago de Compostela,Santiago de Compostela,42.8778,-8.5444,Spain,ES,ESP,Galicia,admin,98179.0,1724547778,4C,581,cityidx_0581_ESP_--Pontevedra.080440_SWEC.epw
+562,Bitlis,Bitlis,38.4,42.1083,Turkey,TR,TUR,Bitlis,admin,71501.0,1792490436,5C,562,cityidx_0562_IRN_--Tabriz.407060_ITMY.epw
+105,Yuxi,Yuxi,24.3495,102.5432,China,CN,CHN,Yunnan,minor,2386000.0,1156682309,3C,105,cityidx_0105_CHN_Yunnan-Kunming.567780_CSWD.epw
+652,Guatemala City,Guatemala City,14.6099,-90.5252,Guatemala,GT,GTM,Guatemala,primary,2934841.0,1320197916,2A,652,cityidx_0652_GTM_GU-GUATEMALA LA_AURORA.786410_SWERA.epw
+607,Al Mijlad,Al Mijlad,11.0339,27.74,Sudan,SD,SDN,West Kordofan,,985000.0,1729768355,0B,607,cityidx_0607_ETH_--BAHAR_DAR.633320_SWERA.epw
+819,Shenmu,Shenmu,38.827,110.499,China,CN,CHN,Shaanxi,,237846.0,1156106796,5B,819,cityidx_0819_CHN_Shaanxi-Yulin.536460_CSWD.epw
+696,Vila Nova de Gaia,Vila Nova de Gaia,41.1333,-8.6167,Portugal,PT,PRT,Porto,minor,302295.0,1620040225,3C,696,cityidx_0696_PRT_--PORTO.085450_IWEC Data.epw
+272,Pyongyang,Pyongyang,39.0194,125.7381,North Korea,KP,PRK,P’yŏngyang,primary,2863000.0,1408738594,5A,272,cityidx_0272_PRK_--P'YONGYANG.470580_IWEC Data.epw
+283,Vadodara,Vadodara,22.3,73.2,India,IN,IND,Gujarāt,,2065771.0,1356705249,0B,283,cityidx_0283_IND_Gujarat-Ahmedabad.426470_ISHRAE.epw
+61,Dahūk,Dahuk,36.8667,43.0,Iraq,IQ,IRQ,Dahūk,admin,330600.0,1368137126,5C,61,cityidx_0061_IRN_--Tabriz.407060_ITMY.epw
+368,Amasya,Amasya,40.65,35.8331,Turkey,TR,TUR,Amasya,admin,149084.0,1792344167,4C,368,cityidx_0368_TUR_--ANKARA.171280_IWEC Data.epw
+290,Lhasa,Lhasa,29.6534,91.1719,China,CN,CHN,Tibet,admin,902500.0,1156369972,5B,290,cityidx_0290_CHN_Tibet-Lhasa.555910_CSWD.epw
+362,Kazan,Kazan,55.7964,49.1089,Russia,RU,RUS,Tatarstan,admin,1243500.0,1643101260,7,362,cityidx_0362_RUS_--SAMARA.289000_IWEC Data.epw
+281,Najafgarh,Najafgarh,28.6092,76.9798,India,IN,IND,Delhi,,1203180.0,1356180206,1B,281,cityidx_0281_IND_Delhi-New Delhi.421820_ISHRAE.epw
+589,Al ‘Amārah,Al `Amarah,31.8333,47.15,Iraq,IQ,IRQ,Maysān,admin,511500.0,1368336235,1B,589,cityidx_0589_KWT_--Kuwait Intl Airport.405820_KISR.epw
+723,Nukus,Nukus,42.4667,59.6,Uzbekistan,UZ,UZB,Qoraqalpog‘iston,admin,319583.0,1860620079,5B,723,cityidx_0723_UZB_--TASHKENT.384570_IWEC Data.epw
+876,Gwalior,Gwalior,26.2215,78.178,India,IN,IND,Madhya Pradesh,,1069276.0,1356363967,1A,876,cityidx_0876_IND_Madhya Pradesh-Gwalior.423610_ISHRAE.epw
+697,Farāh,Farah,32.3436,62.1194,Afghanistan,AF,AFG,Farāh,admin,500000.0,1004523791,3B,697,cityidx_0697_IRN_--Yazd.408210_ITMY.epw
+667,Port Said,Port Said,31.2625,32.3061,Egypt,EG,EGY,Būr Sa‘īd,admin,524433.0,1818628574,2B,667,cityidx_0667_EGY_Al Ismailiyah-Ismailia.624400_ETMY.epw
+206,Miami,Miami,25.784,-80.2101,United States,US,USA,Florida,,5711945.0,1840015149,1A,206,cityidx_0206_USA_FL-MIAMI.722020_TMY2-12839.epw
+501,Baicheng,Baicheng,23.901,106.6194,China,CN,CHN,Guangxi,minor,3669400.0,1156981113,2A,501,cityidx_0501_CHN_Guangxi Zhuang-Baise.592110_CSWD.epw
+504,Doha,Doha,25.2867,51.5333,Qatar,QA,QAT,Ad Dawḩah,primary,1186023.0,1634459660,0B,504,cityidx_0504_ARE_--ABU DHABI.412170_IWEC Data.epw
+100,Lanzhou,Lanzhou,36.0617,103.8318,China,CN,CHN,Gansu,admin,3067141.0,1156280566,5B,100,cityidx_0100_CHN_Gansu-Lanzhou.528890_CSWD.epw
+425,Cape Town,Cape Town,-33.9253,18.4239,South Africa,ZA,ZAF,Western Cape,primary,433688.0,1710680650,3C,425,cityidx_0425_ZAF_--CAPE TOWN.688160_IWEC Data.epw
+189,Kuala Lumpur,Kuala Lumpur,3.1478,101.6953,Malaysia,MY,MYS,Kuala Lumpur,primary,8911000.0,1458988644,0A,189,cityidx_0189_MYS_--KUALA LUMPUR.486470_IWEC Data.epw
+408,El Paso,El Paso,31.8476,-106.43,United States,US,USA,Texas,,794344.0,1840023252,3B,408,cityidx_0408_USA_TX-EL_PASO.722700_TMY2-23044.epw
+302,Boosaaso,Boosaaso,11.2886,49.1819,Somalia,SO,SOM,Bari,admin,2000000.0,1706054548,0B,302,cityidx_0302_ETH_--DIRE_DAWA_(MIL CIV).634710_SWERA.epw
+327,Patnos,Patnos,39.2358,42.8686,Turkey,TR,TUR,Ağrı,minor,122833.0,1792386113,5C,327,cityidx_0327_IRN_--Tabriz.407060_ITMY.epw
+154,Yan’an Beilu,Yan'an Beilu,44.0144,87.2674,China,CN,CHN,Xinjiang,minor,426253.0,1156048097,6B,154,cityidx_0154_CHN_--URUMQI.514630_IWEC Data.epw
+400,Liaoyuan,Liaoyuan,42.8976,125.1381,China,CN,CHN,Jilin,,1176239.0,1156249772,6A,400,cityidx_0400_CHN_Jilin-Siping.541570_CSWD.epw
+62,Yulinshi,Yulinshi,38.2655,109.7388,China,CN,CHN,Shaanxi,,3634750.0,1156280672,5B,62,cityidx_0062_CHN_Shaanxi-Yulin.536460_CSWD.epw
+461,Aves,Aves,41.44,-8.3,Portugal,PT,PRT,Porto,,425411.0,1620507201,3C,461,cityidx_0461_PRT_--PORTO.085450_IWEC Data.epw
+299,Chenzhou,Chenzhou,25.7989,113.0267,China,CN,CHN,Hunan,minor,4744500.0,1156291915,2A,299,cityidx_0299_CHN_Hunan-Changning.578740_CSWD.epw
+432,Rājkot,Rajkot,22.3,70.7833,India,IN,IND,Gujarāt,,1335397.0,1356317190,0B,432,cityidx_0432_IND_Gujarat-Rajkot.427370_ISHRAE.epw
+687,Ad Dammām,Ad Dammam,26.4333,50.1,Saudi Arabia,SA,SAU,Ash Sharqīyah,admin,903312.0,1682452296,0B,687,cityidx_0687_KWT_--KISR Coastal Weather Station.405850_KISR.epw
+722,Dengtacun,Dengtacun,41.4237,123.3203,China,CN,CHN,Liaoning,,496122.0,1156096868,6A,722,cityidx_0722_CHN_Liaoning-Shenyang.543420_CSWD.epw
+537,Qinzhou,Qinzhou,21.95,108.6167,China,CN,CHN,Guangxi,minor,3304400.0,1156106602,2A,537,cityidx_0537_CHN_Guangxi Zhuang-Qinzhou.596320_CSWD.epw
+193,Tieling,Tieling,42.2841,123.8365,China,CN,CHN,Liaoning,,2717732.0,1156089994,6A,193,cityidx_0193_CHN_--SHENYANG.543420_IWEC Data.epw
+254,Richmond,Richmond,49.1667,-123.1333,Canada,CA,CAN,British Columbia,,198309.0,1124121940,4C,254,cityidx_0254_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+131,Kano,Kano,12.0,8.5167,Nigeria,NG,NGA,Kano,admin,3848885.0,1566422868,0B,131,cityidx_0131_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+747,Mesa,Mesa,33.4015,-111.7178,United States,US,USA,Arizona,,497752.0,1840020566,2B,747,cityidx_0747_USA_AZ-Phoenix Sky Harbor Intl Ap.722780_TMY3.epw
+760,Moçâmedes,Mocamedes,-15.1953,12.1508,Angola,AO,AGO,Namibe,admin,255000.0,1024785067,3C,760,cityidx_0760_ZWE_--HARARE.677750_IWEC Data.epw
+203,Qom,Qom,34.64,50.8764,Iran,IR,IRN,Qom,admin,1201158.0,1364701633,2B,203,cityidx_0203_IRN_--Tehran Mehrabad.407540_ITMY.epw
+595,Jinchang,Jinchang,38.5168,102.1866,China,CN,CHN,Gansu,minor,438026.0,1156184861,5B,595,cityidx_0595_CHN_Gansu-Minqin.526810_CSWD.epw
+690,Lipetsk,Lipetsk,52.6167,39.6,Russia,RU,RUS,Lipetskaya Oblast’,admin,510439.0,1643772906,6A,690,cityidx_0690_RUS_--MOSCOW.276120_IWEC Data.epw
+543,Balqash,Balqash,46.8481,74.995,Kazakhstan,KZ,KAZ,,,78002.0,1398134106,6B,543,cityidx_0543_KAZ_--SEMIPALATINSK.361770_IWEC Data.epw
+20,Qiqihar,Qiqihar,47.3398,123.9512,China,CN,CHN,Heilongjiang,minor,5367003.0,1156775905,7,20,cityidx_0020_CHN_Heilongjiang-Qiqihar.507450_CSWD.epw
+21,Ürümqi,Urumqi,43.8225,87.6125,China,CN,CHN,Xinjiang,admin,4335017.0,1156051276,6B,21,cityidx_0021_CHN_Xinjiang Uygur-Urumqi.514630_CSWD.epw
+473,Hakkari,Hakkari,37.577,43.739,Turkey,TR,TUR,Hakkâri,admin,81424.0,1792629133,5C,473,cityidx_0473_IRN_--Tabriz.407060_ITMY.epw
+169,Dubai,Dubai,25.2631,55.2972,United Arab Emirates,AE,ARE,Dubayy,admin,3331420.0,1784736618,0B,169,cityidx_0169_ARE_--ABU DHABI.412170_IWEC Data.epw
+325,Tacheng,Tacheng,46.7517,82.9869,China,CN,CHN,Xinjiang,minor,161037.0,1156191514,6B,325,cityidx_0325_CHN_Xinjiang Uygur-Tacheng.511330_CSWD.epw
+478,Jinan,Jinan,36.6667,116.9833,China,CN,CHN,Shandong,admin,5606374.0,1156972469,4A,478,cityidx_0478_CHN_Shandong-Jinan.548230_CSWD.epw
+344,Jorhāt,Jorhat,26.75,94.22,India,IN,IND,Assam,,153249.0,1356638741,6B,344,cityidx_0344_IND_Assam-Jorhat.424230_ISHRAE.epw
+737,Zhaodong,Zhaodong,46.0635,125.9773,China,CN,CHN,Heilongjiang,minor,666532.0,1156601489,7,737,cityidx_0737_CHN_Heilongjiang-Anda.508540_CSWD.epw
+185,Yulin,Yulin,22.6293,110.1507,China,CN,CHN,Guangxi,minor,5849700.0,1156901312,2A,185,cityidx_0185_CHN_Guangxi Zhuang-Guiping.592540_CSWD.epw
+36,Ahmedabad,Ahmedabad,23.03,72.58,India,IN,IND,Gujarāt,minor,8009000.0,1356304381,0B,36,cityidx_0036_IND_Gujarat-Ahmedabad.426470_ISHRAE.epw
+713,Oujda-Angad,Oujda-Angad,34.6867,-1.9114,Morocco,MA,MAR,Oriental,admin,494252.0,1504891036,3B,713,cityidx_0713_ESP_--Melilla.603380_SWEC.epw
+240,Fuyang,Fuyang,32.8986,115.8045,China,CN,CHN,Anhui,,8200264.0,1156248008,3A,240,cityidx_0240_CHN_Anhui-Boxian.581020_CSWD.epw
+491,Bulanık,Bulanik,39.095,42.2667,Turkey,TR,TUR,Muş,minor,80540.0,1792108880,5C,491,cityidx_0491_IRN_--Tabriz.407060_ITMY.epw
+691,Zêtang,Zetang,29.238,91.771,China,CN,CHN,Tibet,,382610.0,1156561299,5B,691,cityidx_0691_CHN_Tibet-Lhasa.555910_CSWD.epw
+757,Maple Ridge,Maple Ridge,49.2167,-122.6,Canada,CA,CAN,British Columbia,,82256.0,1124001699,4C,757,cityidx_0757_CAN_BC-Abbotsford.711080_WYEC2-B-24288.epw
+244,Lucknow,Lucknow,26.85,80.95,India,IN,IND,Uttar Pradesh,admin,3382000.0,1356891790,1A,244,cityidx_0244_IND_Uttar Pradesh-Lucknow.423690_ISHRAE.epw
+659,Jiexiu,Jiexiu,37.0282,111.9103,China,CN,CHN,Shanxi,,406517.0,1156275703,5B,659,cityidx_0659_CHN_Shanxi-Jiexiu.538630_CSWD.epw
+617,Herāt,Herat,34.3419,62.2031,Afghanistan,AF,AFG,Herāt,admin,556205.0,1004237782,3B,617,cityidx_0617_IRN_--Yazd.408210_ITMY.epw
+256,Yancheng,Yancheng,33.3936,120.1339,China,CN,CHN,Jiangsu,minor,7260240.0,1156995410,4A,256,cityidx_0256_CHN_Jiangsu-Dongtai.582510_CSWD.epw
+877,Jos,Jos,9.9167,8.8903,Nigeria,NG,NGA,Plateau,admin,622802.0,1566773679,0B,877,cityidx_0877_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+367,Hamburg,Hamburg,53.55,10.0,Germany,DE,DEU,Hamburg,admin,2484800.0,1276041799,5A,367,cityidx_0367_DEU_--HAMBURG.101470_IWEC Data.epw
+672,Thāne,Thane,19.1972,72.9722,India,IN,IND,Mahārāshtra,,1886941.0,1356681152,0A,672,cityidx_0672_IND_--MUMBAI.430030_IWEC Data.epw
+401,Çankırı,Cankiri,40.5986,33.6192,Turkey,TR,TUR,Çankırı,admin,96025.0,1792584248,5C,401,cityidx_0401_TUR_--ANKARA.171280_IWEC Data.epw
+218,Shangqiu,Shangqiu,34.4259,115.6467,China,CN,CHN,Henan,,7816831.0,1156805441,4A,218,cityidx_0218_CHN_Henan-Shangqiu.580050_CSWD.epw
+571,Gaza,Gaza,31.5069,34.456,Gaza Strip,XG,XGZ,,primary,590481.0,1916116052,2B,571,cityidx_0571_ISR_--Beer Sheva City.401900_MSI.epw
+530,Delta,Delta,49.0847,-123.0586,Canada,CA,CAN,British Columbia,,102238.0,1124001200,4C,530,cityidx_0530_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+383,Yozgat,Yozgat,39.8208,34.8083,Turkey,TR,TUR,Yozgat,admin,105167.0,1792862455,5C,383,cityidx_0383_TUR_--ANKARA.171280_IWEC Data.epw
+668,Ningde,Ningde,26.6617,119.5228,China,CN,CHN,Fujian,minor,2910000.0,1156909802,2A,668,cityidx_0668_CHN_Fujian-Fuzhou.588470_CSWD.epw
+173,Karamay,Karamay,45.5799,84.8892,China,CN,CHN,Xinjiang,minor,391008.0,1156892128,6B,173,cityidx_0173_CHN_Xinjiang Uygur-Karamay.512430_CSWD.epw
+573,Loni,Loni,28.75,77.28,India,IN,IND,Uttar Pradesh,,516082.0,1356528413,1B,573,cityidx_0573_IND_Delhi-New Delhi.421820_ISHRAE.epw
+402,Ogden,Ogden,41.2279,-111.9682,United States,US,USA,Utah,,608259.0,1840020135,5B,402,cityidx_0402_USA_UT-Ogden Hinkley Airport.725750_TMY3.epw
+95,Fuji,Fuji,35.1613,138.6763,Japan,JP,JPN,Shizuoka,,243739.0,1392249213,8,95,cityidx_0095_JPN_--MATSUMOTO.476180_IWEC Data.epw
+378,Valencia,Valencia,10.1667,-68.0,Venezuela,VE,VEN,Carabobo,admin,1484430.0,1862309871,0B,378,cityidx_0378_VEN_--CARACAS.804150_IWEC Data.epw
+506,Nur-Sultan,Nur-Sultan,51.1472,71.4222,Kazakhstan,KZ,KAZ,,primary,1078362.0,1398516045,7,506,cityidx_0506_RUS_--OMSK.286980_IWEC Data.epw
+55,Khartoum,Khartoum,15.5006,32.56,Sudan,SD,SDN,Khartoum,primary,7869000.0,1729268475,0B,55,cityidx_0055_ETH_--GONDAR.633310_SWERA.epw
+522,Medina,Medina,24.47,39.61,Saudi Arabia,SA,SAU,Al Madīnah al Munawwarah,admin,1180770.0,1682345785,0B,522,cityidx_0522_EGY_Al Bahr al Ahmar-Hurghada.624630_ETMY.epw
+413,Cali,Cali,3.4206,-76.5222,Colombia,CO,COL,Valle del Cauca,admin,2471474.0,1170417589,1A,413,cityidx_0413_COL_--BOGOTA.802220_IWEC Data.epw
+183,Hangzhou,Hangzhou,30.25,120.1675,China,CN,CHN,Zhejiang,admin,9523000.0,1156275243,3A,183,cityidx_0183_CHN_Zhejiang-Hangzhou.584570_CSWD.epw
+181,Porto,Porto,41.1621,-8.622,Portugal,PT,PRT,Porto,admin,1278210.0,1620356810,3C,181,cityidx_0181_PRT_--PORTO.085450_IWEC Data.epw
+175,Kırıkkale,Kirikkale,39.8417,33.5139,Turkey,TR,TUR,Kırıkkale,admin,193093.0,1792859558,5C,175,cityidx_0175_TUR_--ANKARA.171280_IWEC Data.epw
+547,Warsaw,Warsaw,52.23,21.0111,Poland,PL,POL,Mazowieckie,primary,1860281.0,1616024847,5A,547,cityidx_0547_POL_--Warszawa Okecie.123750_IMGW.epw
+70,Monterrey,Monterrey,25.6667,-100.3,Mexico,MX,MEX,Nuevo León,admin,5341171.0,1484559591,2B,70,cityidx_0070_USA_TX-Laredo AFB.722520_TMY--12907.epw
+324,Yushu,Yushu,44.8249,126.5451,China,CN,CHN,Jilin,minor,1304436.0,1156326773,7,324,cityidx_0324_CHN_--HARBIN.509530_IWEC Data.epw
+205,Farīdābād,Faridabad,28.4167,77.3,India,IN,IND,Haryāna,,1404653.0,1356013205,1B,205,cityidx_0205_IND_Delhi-New Delhi.421820_ISHRAE.epw
+188,Sanaa,Sanaa,15.3483,44.2064,Yemen,YE,YEM,Amānat al ‘Āşimah,primary,2957000.0,1887750814,0B,188,cityidx_0188_ETH_--COMBOLCHA DESSIE.633330_SWERA.epw
+561,Dehui,Dehui,44.5333,125.7,China,CN,CHN,Jilin,,839786.0,1156898134,6A,561,cityidx_0561_CHN_Jilin-Changchun.541610_CSWD.epw
+208,Sūrat,Surat,21.1702,72.8311,India,IN,IND,Gujarāt,,6538000.0,1356758738,0A,208,cityidx_0208_IND_Gujarat-Surat.428400_ISHRAE.epw
+823,Hanzhong,Hanzhong,33.0794,107.026,China,CN,CHN,Shaanxi,,3416196.0,1156382678,4A,823,cityidx_0823_CHN_Shaanxi-Hanzhong.571270_CSWD.epw
+597,Lugo,Lugo,43.0167,-7.55,Spain,ES,ESP,Galicia,minor,97613.0,1724547526,4C,597,cityidx_0597_ESP_--Lugo.080080_SWEC.epw
+666,Yibin,Yibin,28.7596,104.64,China,CN,CHN,Sichuan,minor,4588804.0,1156107603,3A,666,cityidx_0666_CHN_Sichuan-Yibin.564920_CSWD.epw
+388,Liaocheng,Liaocheng,36.45,115.9833,China,CN,CHN,Shandong,minor,5952128.0,1156006600,4A,388,cityidx_0388_CHN_Shandong-Chaoyang.548080_CSWD.epw
+466,Narela,Narela,28.8527,77.0929,India,IN,IND,Delhi,,661994.0,1356542019,1B,466,cityidx_0466_IND_Delhi-New Delhi.421820_ISHRAE.epw
+529,Bucharest,Bucharest,44.4325,26.1039,Romania,RO,ROU,Bucureşti,primary,1883425.0,1642414442,5A,529,cityidx_0529_ROM_--BUCHAREST.154200_IWEC Data.epw
+616,Antioch,Antioch,37.9787,-121.796,United States,US,USA,California,,322796.0,1840018903,3C,616,cityidx_0616_USA_CA-Concord Concord Buchanan Fiel.724936_TMY3.epw
+860,Madan,Madan,30.3392,48.3042,Iran,IR,IRN,Khūzestān,,370180.0,1364708556,1B,860,cityidx_0860_KWT_--Kuwait Intl Airport.405820_KISR.epw
+768,Sangereng,Sangereng,-6.2889,106.7181,Indonesia,ID,IDN,Jawa Barat,,1644899.0,1360029147,0A,768,cityidx_0768_SGP_--SINGAPORE.486980_IWEC Data.epw
+277,Damascus,Damascus,33.5131,36.2919,Syria,SY,SYR,Dimashq,primary,1754000.0,1760685964,3B,277,cityidx_0277_SYR_--DAMASCUS.400800_IWEC Data.epw
+135,Shihezi,Shihezi,44.3054,86.0804,China,CN,CHN,Xinjiang,minor,717000.0,1156232270,6B,135,cityidx_0135_CHN_Xinjiang Uygur-Wusu.513460_CSWD.epw
+352,Concord,Concord,37.9722,-122.0016,United States,US,USA,California,,640270.0,1840018905,3C,352,cityidx_0352_USA_CA-Concord Concord Buchanan Fiel.724936_TMY3.epw
+486,Maiduguri,Maiduguri,11.8333,13.15,Nigeria,NG,NGA,Borno,admin,1197497.0,1566540296,0B,486,cityidx_0486_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+231,Fushun,Fushun,41.8708,123.8917,China,CN,CHN,Liaoning,,2024000.0,1156857743,6A,231,cityidx_0231_CHN_--SHENYANG.543420_IWEC Data.epw
+706,Homyel’,Homyel',52.4453,30.9842,Belarus,BY,BLR,Homyel’skaya Voblasts’,admin,510300.0,1112580227,6A,706,cityidx_0706_UKR_--KIEV.333450_IWEC Data.epw
+348,Munich,Munich,48.1375,11.575,Germany,DE,DEU,Bavaria,admin,2606021.0,1276692352,5A,348,cityidx_0348_DEU_--MUNICH.108660_IWEC Data.epw
+480,Fresno,Fresno,36.783,-119.7939,United States,US,USA,California,,719558.0,1840020319,3B,480,cityidx_0480_USA_CA-Fresno Yosemite Intl Ap.723890_TMY3.epw
+414,Muscat,Muscat,23.6139,58.5922,Oman,OM,OMN,Masqaţ,primary,1421409.0,1512035506,0B,414,cityidx_0414_ARE_--ABU DHABI.412170_IWEC Data.epw
+744,Vigo,Vigo,42.2314,-8.7124,Spain,ES,ESP,Galicia,,293837.0,1724045676,3C,744,cityidx_0744_ESP_--Pontevedra.080440_SWEC.epw
+210,Wuwei,Wuwei,37.9278,102.6329,China,CN,CHN,Gansu,minor,1815059.0,1156760291,7,210,cityidx_0210_CHN_Gansu-Wushaoling.527870_CSWD.epw
+657,Tyumen,Tyumen,57.15,65.5333,Russia,RU,RUS,Tyumenskaya Oblast’,admin,744554.0,1643040435,7,657,cityidx_0657_RUS_--EKATERINBURG.284400_IWEC Data.epw
+623,Asmara,Asmara,15.3228,38.925,Eritrea,ER,ERI,Ma’ĭkel,primary,963000.0,1232791236,0B,623,cityidx_0623_ETH_--GONDAR.633310_SWERA.epw
+453,Idaho Falls,Idaho Falls,43.4871,-112.0362,United States,US,USA,Idaho,,101326.0,1840018644,6B,453,cityidx_0453_USA_ID-Idaho Falls Fanning Field.725785_TMY3.epw
+455,Tatvan,Tatvan,38.5022,42.2814,Turkey,TR,TUR,Bitlis,minor,92695.0,1792530559,5C,455,cityidx_0455_IRN_--Tabriz.407060_ITMY.epw
+336,Trujillo,Trujillo,-8.112,-79.0288,Peru,PE,PER,La Libertad,admin,919899.0,1604613706,2B,336,cityidx_0336_PER_--LIMA.846280_IWEC Data.epw
+721,Tolyatti,Tolyatti,53.5089,49.4222,Russia,RU,RUS,Samarskaya Oblast’,,693072.0,1643256295,7,721,cityidx_0721_RUS_--SAMARA.289000_IWEC Data.epw
+515,Oxnard,Oxnard,34.1964,-119.1815,United States,US,USA,California,,366330.0,1840020474,3C,515,cityidx_0515_USA_CA-Oxnard Airport.723927_TMY3.epw
+33,São Paulo,Sao Paulo,-23.55,-46.6333,Brazil,BR,BRA,São Paulo,admin,23086000.0,1076532519,2A,33,cityidx_0033_BRA_SP-São Paulo-Congonhas AP.837800_TRY Brazil.epw
+58,Leshan,Leshan,29.5854,103.7575,China,CN,CHN,Sichuan,,3235759.0,1156203130,7,58,cityidx_0058_CHN_Sichuan-Leshan.563860_CSWD.epw
+423,Erbil,Erbil,36.1912,44.0092,Iraq,IQ,IRQ,Arbīl,admin,846000.0,1368578192,4B,423,cityidx_0423_IRN_--Tabriz.407060_ITMY.epw
+122,Shijiazhuang,Shijiazhuang,38.0422,114.5086,China,CN,CHN,Hebei,admin,4098243.0,1156217541,4B,122,cityidx_0122_CHN_Hebei-Shijiazhuang.536980_CSWD.epw
+149,Chattogram,Chattogram,22.335,91.8325,Bangladesh,BD,BGD,Chattogram,admin,7000000.0,1050830722,1A,149,cityidx_0149_BGD_--Chittagong Patenga (CI.419780_SWERA.epw
+156,Cosenza,Cosenza,39.3,16.25,Italy,IT,ITA,Calabria,minor,200257.0,1380732659,5C,156,cityidx_0156_ITA_--Bonifati.163370_IGDG.epw
+635,Chiclayo,Chiclayo,-6.763,-79.8366,Peru,PE,PER,Lambayeque,admin,552508.0,1604799615,2B,635,cityidx_0635_PER_--LIMA.846280_IWEC Data.epw
+397,Salvador,Salvador,-12.9747,-38.4767,Brazil,BR,BRA,Bahia,admin,2886698.0,1076923789,0A,397,cityidx_0397_BRA_BA-Salvador.866780_INMET.epw
+513,Albuquerque,Albuquerque,35.1054,-106.6465,United States,US,USA,New Mexico,,765693.0,1840019176,4B,513,cityidx_0513_USA_NM-ALBUQUERQUE.723650_TMY2-23050.epw
+239,Sacramento,Sacramento,38.5677,-121.4685,United States,US,USA,California,admin,1924167.0,1840021491,3B,239,cityidx_0239_USA_CA-SACRAMENTO.724835_TMY2-23232.epw
+166,Jieyang,Jieyang,23.5533,116.3649,China,CN,CHN,Guangdong,minor,6089400.0,1156260378,2A,166,cityidx_0166_CHN_Guangdong-Shantou.593160_CSWD.epw
+248,Novosibirsk,Novosibirsk,55.0333,82.9167,Russia,RU,RUS,Novosibirskaya Oblast’,admin,1625631.0,1643399240,7,248,cityidx_0248_KAZ_--SEMIPALATINSK.361770_IWEC Data.epw
+444,San Luis Potosí,San Luis Potosi,22.1511,-100.9761,Mexico,MX,MEX,San Luis Potosí,admin,772828.0,1484583620,3B,444,cityidx_0444_MEX_--MEXICO CITY.766790_IWEC Data.epw
+849,Yaroslavl,Yaroslavl,57.6167,39.85,Russia,RU,RUS,Yaroslavskaya Oblast’,admin,608079.0,1643338528,7,849,cityidx_0849_RUS_--MOSCOW.276120_IWEC Data.epw
+341,Ibadan,Ibadan,7.3964,3.9167,Nigeria,NG,NGA,Oyo,admin,3552000.0,1566366407,0A,341,cityidx_0341_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+387,As Sulaymānīyah,As Sulaymaniyah,35.5572,45.4356,Iraq,IQ,IRQ,As Sulaymānīyah,admin,878146.0,1368735317,4B,387,cityidx_0387_IRN_--Tabriz.407060_ITMY.epw
+677,North Vancouver,North Vancouver,49.3641,-123.0066,Canada,CA,CAN,British Columbia,,85935.0,1124000146,4C,677,cityidx_0677_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+157,Shuozhou,Shuozhou,39.3408,112.4292,China,CN,CHN,Shanxi,minor,1714857.0,1156227167,5B,157,cityidx_0157_CHN_Shanxi-Yuanping.536730_CSWD.epw
+705,Shiliguri,Shiliguri,26.71,88.43,India,IN,IND,West Bengal,,701489.0,1356724691,7,705,cityidx_0705_CHN_--PAGRI.557730_SWERA.epw
+649,Maseru,Maseru,-29.31,27.48,Lesotho,LS,LSO,Maseru,primary,519186.0,1426977668,3B,649,cityidx_0649_ZAF_--JOHANNESBURG.683680_IWEC Data.epw
+11,Santiago,Santiago,-33.4372,-70.6506,Chile,CL,CHL,Región Metropolitana,primary,7171000.0,1152554349,3C,11,cityidx_0011_CHL_--SANTIAGO.855740_IWEC Data.epw
+78,Baotou,Baotou,40.6562,109.8345,China,CN,CHN,Inner Mongolia,,2709378.0,1156032751,6B,78,cityidx_0078_CHN_Nei Mongol-Dongsheng.535430_CSWD.epw
+321,Multan,Multan,30.1978,71.4697,Pakistan,PK,PAK,Punjab,minor,1871843.0,1586256291,0B,321,cityidx_0321_IND_Rajasthan-Bikaner.421650_ISHRAE.epw
+331,Kirkuk,Kirkuk,35.4667,44.3167,Iraq,IQ,IRQ,Karkūk,admin,975000.0,1368344172,4B,331,cityidx_0331_IRN_--Tabriz.407060_ITMY.epw
+726,Nangong,Nangong,37.3606,115.3803,China,CN,CHN,Hebei,,476096.0,1156426803,4B,726,cityidx_0726_CHN_Hebei-Xingtai.537980_CSWD.epw
+651,Tabūk,Tabuk,28.3972,36.5789,Saudi Arabia,SA,SAU,Tabūk,admin,547957.0,1682590992,2B,651,cityidx_0651_ISR_--Eilat.401990_MSI.epw
+153,Jilin,Jilin,43.8519,126.5481,China,CN,CHN,Jilin,,2396000.0,1156646448,7,153,cityidx_0153_CHN_Jilin-Changchun.541610_CSWD.epw
+364,Baishan,Baishan,41.9377,126.4179,China,CN,CHN,Jilin,minor,1296127.0,1156960624,6A,364,cityidx_0364_CHN_Jilin-Linjiang.543740_CSWD.epw
+53,Pune,Pune,18.5203,73.8567,India,IN,IND,Mahārāshtra,,8231000.0,1356081074,1B,53,cityidx_0053_IND_Maharashtra-Pune.430630_ISHRAE.epw
+688,Port Harcourt,Port Harcourt,4.8242,7.0336,Nigeria,NG,NGA,Rivers,admin,1865000.0,1566070649,0A,688,cityidx_0688_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+732,Tampa,Tampa,27.9945,-82.4447,United States,US,USA,Florida,,2683956.0,1840015982,2A,732,cityidx_0732_USA_FL-TAMPA.722110_TMY2-12842.epw
+656,Bamenda,Bamenda,5.9614,10.1517,Cameroon,CM,CMR,North-West,admin,2000000.0,1120909610,0A,656,cityidx_0656_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+661,Nanaimo,Nanaimo,49.1642,-123.9364,Canada,CA,CAN,British Columbia,,90504.0,1124623893,4C,661,cityidx_0661_CAN_BC-Victoria Int'l.717990_WYEC2-B-24297.epw
+861,São Gonçalo,Sao Goncalo,-22.8269,-43.0539,Brazil,BR,BRA,Rio de Janeiro,,1077687.0,1076485783,1A,861,cityidx_0861_BRA_RJ-Niterói.868810_INMET.epw
+812,Yunfu,Yunfu,22.9242,112.0353,China,CN,CHN,Guangdong,minor,2526900.0,1156057251,2A,812,cityidx_0812_CHN_Guangxi Zhuang-Wuzhou.592650_CSWD.epw
+186,Dakar,Dakar,14.6928,-17.4467,Senegal,SN,SEN,Dakar,primary,1438725.0,1686604760,1B,186,cityidx_0186_SEN_--DAKAR.616410_IWEC Data.epw
+750,Jabalpur,Jabalpur,23.1667,79.9333,India,IN,IND,Madhya Pradesh,,1267564.0,1356115460,1A,750,cityidx_0750_IND_Madhya Pradesh-Jabalpur.426750_ISHRAE.epw
+578,Vilnius,Vilnius,54.6872,25.28,Lithuania,LT,LTU,Vilniaus Miestas,primary,708203.0,1440887149,6A,578,cityidx_0578_LTU_--KAUNAS.266290_IWEC Data.epw
+583,Taizhou,Taizhou,32.4831,119.9,China,CN,CHN,Jiangsu,minor,5031000.0,1156119229,4A,583,cityidx_0583_CHN_Jiangsu-Dongtai.582510_CSWD.epw
+225,Timbío,Timbio,2.3445,-76.6839,Colombia,CO,COL,Cauca,minor,4444444.0,1170815311,1A,225,cityidx_0225_ECU_--QUITO.840710_IWEC Data.epw
+289,Cizre,Cizre,37.332,42.187,Turkey,TR,TUR,Şırnak,minor,143124.0,1792431845,5C,289,cityidx_0289_IRN_--Tabriz.407060_ITMY.epw
+660,Huangshan,Huangshan,29.7132,118.3151,China,CN,CHN,Anhui,minor,1358980.0,1156527426,5A,660,cityidx_0660_CHN_Anhui-Tunxi.585310_CSWD.epw
+459,Wu’an,Wu'an,36.6941,114.1847,China,CN,CHN,Hebei,,819000.0,1156729960,4B,459,cityidx_0459_CHN_Hebei-Xingtai.537980_CSWD.epw
+112,Jeddah,Jeddah,21.5433,39.1728,Saudi Arabia,SA,SAU,Makkah al Mukarramah,,3976000.0,1682926944,0B,112,cityidx_0112_EGY_Aswan-Aswan.624140_ETMY.epw
+761,Mazār-e Sharīf,Mazar-e Sharif,36.7,67.1167,Afghanistan,AF,AFG,Balkh,admin,469247.0,1004436363,3B,761,cityidx_0761_UZB_--TASHKENT.384570_IWEC Data.epw
+754,Gdańsk,Gdansk,54.3475,18.6453,Poland,PL,POL,Pomorskie,admin,486022.0,1616406372,6A,754,cityidx_0754_POL_--Gdansk Port Polnocny.121400_IMGW.epw
+184,Tripoli,Tripoli,32.8872,13.1914,Libya,LY,LBY,Ţarābulus,primary,1293016.0,1434201852,2B,184,cityidx_0184_LBY_--TRIPOLI.620100_IWEC Data.epw
+469,Yaoundé,Yaounde,3.8667,11.5167,Cameroon,CM,CMR,Centre,primary,2440462.0,1120298240,0A,469,cityidx_0469_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+834,Yongji,Yongji,34.867,110.4417,China,CN,CHN,Shanxi,,444724.0,1156001205,6A,834,cityidx_0834_CHN_Shanxi-Yuncheng.539590_CSWD.epw
+532,Ankara,Ankara,39.93,32.85,Turkey,TR,TUR,Ankara,primary,5503985.0,1792572891,4A,532,cityidx_0532_TUR_--ANKARA.171280_IWEC Data.epw
+795,Sidi Bouzid,Sidi Bouzid,35.0381,9.4858,Tunisia,TN,TUN,Sidi Bouzid,admin,429912.0,1788196439,2B,795,cityidx_0795_TUN_--TUNIS.607150_IWEC Data.epw
+842,Fuzhou,Fuzhou,27.9814,116.3577,China,CN,CHN,Jiangxi,,4047200.0,1156915325,3A,842,cityidx_0842_CHN_Jiangxi-Nancheng.587150_CSWD.epw
+559,Tangerang,Tangerang,-6.1783,106.6319,Indonesia,ID,IDN,Jawa Barat,,2237006.0,1360002844,0A,559,cityidx_0559_SGP_--SINGAPORE.486980_IWEC Data.epw
+499,Dazhou,Dazhou,31.2152,107.4947,China,CN,CHN,Sichuan,minor,5468097.0,1156834076,3A,499,cityidx_0499_CHN_Sichuan-Wanyuan.572370_CSWD.epw
+805,Redmond,Redmond,47.6763,-122.1169,United States,US,USA,Washington,,72166.0,1840019835,4C,805,cityidx_0805_USA_WA-Seattle Boeing Field  Isis.727935_TMY3.epw
+207,Omdurman,Omdurman,15.65,32.4833,Sudan,SD,SDN,Khartoum,,2805396.0,1729912179,0B,207,cityidx_0207_ETH_--GONDAR.633310_SWERA.epw
+438,Aksu,Aksu,41.185,80.2904,China,CN,CHN,Xinjiang,minor,535657.0,1156436913,5B,438,cityidx_0438_CHN_Xinjiang Uygur-Aksu.516280_CSWD.epw
+644,Copenhagen,Copenhagen,55.6761,12.5683,Denmark,DK,DNK,Hovedstaden,primary,1366301.0,1208763942,5A,644,cityidx_0644_DNK_--COPENHAGEN.061800_IWEC Data.epw
+227,Surabaya,Surabaya,-7.2458,112.7378,Indonesia,ID,IDN,Jawa Timur,admin,6499000.0,1360484663,0A,227,cityidx_0227_MYS_--KUCHING.964130_IWEC Data.epw
+836,Odesa,Odesa,46.4775,30.7326,Ukraine,UA,UKR,Odeska Oblast,admin,1017699.0,1804178102,5A,836,cityidx_0836_UKR_--ODESSA.338370_IWEC Data.epw
+120,Changzhi,Changzhi,36.1953,113.097,China,CN,CHN,Shanxi,minor,3334565.0,1156057944,5A,120,cityidx_0120_CHN_Shanxi-Yushe.537870_CSWD.epw
+790,Hejin,Hejin,35.5914,110.706,China,CN,CHN,Shanxi,,395527.0,1156225234,4B,790,cityidx_0790_CHN_Shanxi-Yuncheng.539590_CSWD.epw
+749,Thiès,Thies,14.7833,-16.9167,Senegal,SN,SEN,Thiès,admin,394544.0,1686527948,1B,749,cityidx_0749_SEN_--DAKAR.616410_IWEC Data.epw
+843,Ajdābiyā,Ajdabiya,30.7556,20.2253,Libya,LY,LBY,Al Wāḩāt,admin,416000.0,1434401280,2B,843,cityidx_0843_GRC_--ANDRAVIDA.166820_IWEC Data.epw
+168,Maoming,Maoming,21.6618,110.9178,China,CN,CHN,Guangdong,minor,6313200.0,1156568722,1A,168,cityidx_0168_CHN_Guangdong-Dianbai.596640_CSWD.epw
+640,Bamako,Bamako,12.6458,-7.9922,Mali,ML,MLI,Bamako,primary,2009109.0,1466965925,0A,640,cityidx_0640_SEN_--DAKAR.616410_IWEC Data.epw
+26,Vancouver,Vancouver,49.25,-123.1,Canada,CA,CAN,British Columbia,,2264823.0,1124825478,4C,26,cityidx_0026_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+471,Wujiaqu,Wujiaqu,44.167,87.543,China,CN,CHN,Xinjiang,,96436.0,1156881466,6B,471,cityidx_0471_CHN_--URUMQI.514630_IWEC Data.epw
+857,Zhuzhou,Zhuzhou,27.8407,113.1469,China,CN,CHN,Hunan,minor,4020800.0,1156041962,3A,857,cityidx_0857_CHN_Hunan-Zhuzhou.577800_CSWD.epw
+334,Cochabamba,Cochabamba,-17.3833,-66.1667,Bolivia,BO,BOL,Cochabamba,admin,856198.0,1068793894,3B,334,cityidx_0334_BOL_--LA PAZ.852010_IWEC Data.epw
+850,Tallinn,Tallinn,59.4372,24.7453,Estonia,EE,EST,Tallinn,primary,438341.0,1233260021,6A,850,cityidx_0850_FIN_--HELSINKI.029740_IWEC Data.epw
+450,Sharjah,Sharjah,25.3575,55.3908,United Arab Emirates,AE,ARE,Ash Shāriqah,admin,1247749.0,1784152993,0B,450,cityidx_0450_ARE_--ABU DHABI.412170_IWEC Data.epw
+102,Victoria,Victoria,48.4283,-123.3647,Canada,CA,CAN,British Columbia,admin,335696.0,1124147219,4C,102,cityidx_0102_CAN_BC-Victoria Int'l.717990_WYEC2-B-24297.epw
+48,Nairobi,Nairobi,-1.2864,36.8172,Kenya,KE,KEN,Nairobi City,primary,5545000.0,1404000661,3C,48,cityidx_0048_KEN_--NAIROBI WILSON.637400_SWERA.epw
+669,Buraydah,Buraydah,26.3333,43.9667,Saudi Arabia,SA,SAU,Al Qaşīm,admin,467410.0,1682470726,1B,669,cityidx_0669_SAU_--RIYADH.404380_IWEC Data.epw
+155,Siping,Siping,43.1715,124.3644,China,CN,CHN,Jilin,minor,3385156.0,1156063295,6A,155,cityidx_0155_CHN_Jilin-Siping.541570_CSWD.epw
+762,İzmir,Izmir,38.42,27.14,Turkey,TR,TUR,İzmir,admin,4320519.0,1792725579,3A,762,cityidx_0762_TUR_--IZMIR.172180_IWEC Data.epw
+752,Recife,Recife,-8.05,-34.9,Brazil,BR,BRA,Pernambuco,admin,1653461.0,1076137337,0A,752,cityidx_0752_BRA_PE-Recife.819580_INMET.epw
+862,Jalingo,Jalingo,8.9195,11.3264,Nigeria,NG,NGA,Taraba,admin,660213.0,1566732241,0B,862,cityidx_0862_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+424,Nangandao,Nangandao,35.2992,113.8851,China,CN,CHN,Henan,minor,5708191.0,1156127660,4A,424,cityidx_0424_CHN_Henan-Zhengzhou.570830_CSWD.epw
+5,Mosul,Mosul,36.34,43.13,Iraq,IQ,IRQ,Nīnawá,admin,1694000.0,1368194914,5C,5,cityidx_0005_IRN_--Tabriz.407060_ITMY.epw
+192,Yingmen,Yingmen,39.9487,97.4395,China,CN,CHN,Gansu,,350000.0,1156386711,6B,192,cityidx_0192_CHN_Gansu-Yumenzhen.524360_CSWD.epw
+330,Valdivia,Valdivia,-39.8139,-73.2458,Chile,CL,CHL,Los Ríos,admin,150048.0,1152201132,4C,330,cityidx_0330_CHL_--CONCEPCION.856820_IWEC Data.epw
+307,Benxi,Benxi,41.292,123.761,China,CN,CHN,Liaoning,,1709538.0,1156097909,6A,307,cityidx_0307_CHN_Liaoning-Benxi.543460_CSWD.epw
+776,Las Condes,Las Condes,-33.4117,-70.55,Chile,CL,CHL,Región Metropolitana,,249893.0,1152858037,3C,776,cityidx_0776_CHL_--SANTIAGO.855740_IWEC Data.epw
+390,Thessaloníki,Thessaloniki,40.6403,22.9347,Greece,GR,GRC,Kentrikí Makedonía,admin,824676.0,1300397999,3B,390,cityidx_0390_GRC_--THESSALONIKI.166220_IWEC Data.epw
+637,Shekhupura,Shekhupura,31.7111,73.9878,Pakistan,PK,PAK,Punjab,minor,473129.0,1586291726,1B,637,cityidx_0637_IND_Punjab-Amritsar.420710_ISHRAE.epw
+793,Piraeus,Piraeus,37.943,23.6469,Greece,GR,GRC,Attikí,minor,448997.0,1300458367,3B,793,cityidx_0793_GRC_--ATHENS.167160_IWEC Data.epw
+335,Huanggang,Huanggang,30.45,114.875,China,CN,CHN,Hubei,minor,6333000.0,1156200037,3A,335,cityidx_0335_CHN_Hubei-Macheng.573990_CSWD.epw
+574,Patna,Patna,25.6,85.1,India,IN,IND,Bihār,admin,1684222.0,1356821429,1A,574,cityidx_0574_IND_Bihar-Patna.424920_ISHRAE.epw
+610,Xinmin,Xinmin,41.9952,122.8224,China,CN,CHN,Liaoning,,680000.0,1156368551,6A,610,cityidx_0610_CHN_Liaoning-Xinmin.543330_CSWD.epw
+654,Lianjiang,Lianjiang,21.6146,110.2794,China,CN,CHN,Guangdong,,1509400.0,1156944106,1A,654,cityidx_0654_CHN_Guangdong-Dianbai.596640_CSWD.epw
+781,Gujrat,Gujrat,32.5739,74.0789,Pakistan,PK,PAK,Punjab,minor,390533.0,1586006990,1B,781,cityidx_0781_IND_Punjab-Amritsar.420710_ISHRAE.epw
+511,Almaty,Almaty,43.2775,76.8958,Kazakhstan,KZ,KAZ,,admin,1916822.0,1398351701,5A,511,cityidx_0511_CHN_Xinjiang Uygur-Bachu.517160_CSWD.epw
+421,Lianshan,Lianshan,40.7523,120.828,China,CN,CHN,Liaoning,minor,2426000.0,1156046704,5A,421,cityidx_0421_CHN_Liaoning-Xingcheng.544550_CSWD.epw
+375,Shantou,Shantou,23.3735,116.6941,China,CN,CHN,Guangdong,minor,4312192.0,1156457499,2A,375,cityidx_0375_CHN_Guangdong-Shantou.593160_CSWD.epw
+269,Liaoyang,Liaoyang,41.2643,123.1772,China,CN,CHN,Liaoning,,1858768.0,1156202749,6A,269,cityidx_0269_CHN_Liaoning-Shenyang.543420_CSWD.epw
+357,Nouakchott,Nouakchott,18.0858,-15.9785,Mauritania,MR,MRT,Nouakchott Ouest,primary,1077169.0,1478414984,1B,357,cityidx_0357_SEN_--DAKAR.616410_IWEC Data.epw
+647,Jiujiang,Jiujiang,29.7048,116.0021,China,CN,CHN,Jiangxi,minor,4896800.0,1156206041,4A,647,cityidx_0647_CHN_Jiangxi-Nanchang.586060_CSWD.epw
+110,Kuwait City,Kuwait City,29.3697,47.9783,Kuwait,KW,KWT,Al ‘Āşimah,primary,3000000.0,1414102075,1B,110,cityidx_0110_KWT_--Kuwait Intl Airport.405820_KISR.epw
+764,Gulou,Gulou,26.0865,119.298,China,CN,CHN,Fujian,minor,2606000.0,1156680279,2A,764,cityidx_0764_CHN_Fujian-Fuzhou.588470_CSWD.epw
+467,Indore,Indore,22.7167,75.8472,India,IN,IND,Madhya Pradesh,,1994397.0,1356402812,1A,467,cityidx_0467_IND_Madhya Pradesh-Indore.427540_ISHRAE.epw
+739,Fort Collins,Fort Collins,40.5477,-105.0656,United States,US,USA,Colorado,,301596.0,1840020151,5B,739,cityidx_0739_USA_CO-Fort Collins  Awos.724769_TMY3.epw
+369,Dengtalu,Dengtalu,36.1386,114.1066,China,CN,CHN,Henan,minor,887000.0,1156202014,4B,369,cityidx_0369_CHN_Henan-Anyang.538980_CSWD.epw
+872,Chuzhou,Chuzhou,32.3062,118.3115,China,CN,CHN,Anhui,,3987054.0,1156036420,3A,872,cityidx_0872_CHN_--NANJING NANKING.582380_SWERA.epw
+358,Cawnpore,Cawnpore,26.4499,80.3319,India,IN,IND,Uttar Pradesh,,2701324.0,1356575238,1A,358,cityidx_0358_IND_Uttar Pradesh-Lucknow.423690_ISHRAE.epw
+360,Boankra,Boankra,6.6944,-1.4028,Ghana,GH,GHA,Ashanti,,3348000.0,1288164978,0A,360,cityidx_0360_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+664,Nakuru,Nakuru,-0.3,36.0667,Kenya,KE,KEN,Nakuru,admin,307990.0,1404140179,3C,664,cityidx_0664_KEN_--NAKURU.637140_SWERA.epw
+715,Al ‘Āshir min Ramaḑān,Al `Ashir min Ramadan,30.3065,31.7415,Egypt,EG,EGY,Ash Sharqīyah,,511987.0,1818297014,2B,715,cityidx_0715_EGY_--CAIRO.623660_IWEC Data.epw
+195,Wuzhong,Wuzhong,37.9874,106.1919,China,CN,CHN,Ningxia,minor,1382713.0,1156139322,5B,195,cityidx_0195_CHN_Ningxia Hui-Yinchuan.536140_CSWD.epw
+14,Cairo,Cairo,30.0444,31.2358,Egypt,EG,EGY,Al Qāhirah,primary,20296000.0,1818253931,2B,14,cityidx_0014_EGY_--CAIRO.623660_IWEC Data.epw
+199,Jining,Jining,35.4,116.5667,China,CN,CHN,Shandong,,8357897.0,1156504601,4A,199,cityidx_0199_CHN_Shandong-Yanzhou.549160_CSWD.epw
+724,Providence,Providence,41.823,-71.4187,United States,US,USA,Rhode Island,admin,1270149.0,1840003289,5A,724,cityidx_0724_USA_RI-Providence.725070_TMY--14765.epw
+296,Juárez,Juarez,31.7386,-106.487,Mexico,MX,MEX,Chihuahua,minor,1321004.0,1484840083,3B,296,cityidx_0296_USA_TX-El Paso International Ap  Ut.722700_TMY3.epw
+10,Seoul,Seoul,37.56,126.99,South Korea,KR,KOR,Seoul,primary,23016000.0,1410836482,4A,10,cityidx_0010_KOR_--INCH'ON.471120_IWEC Data.epw
+294,Zhumadian,Zhumadian,32.9773,114.0253,China,CN,CHN,Henan,,7231234.0,1156184822,4A,294,cityidx_0294_CHN_Henan-Zhumadian.572900_CSWD.epw
+572,Heyuan,Heyuan,23.7503,114.6923,China,CN,CHN,Guangdong,minor,3093900.0,1156665165,2A,572,cityidx_0572_CHN_Guangdong-Heyuan.592930_CSWD.epw
+164,Wuhan,Wuhan,30.5872,114.2881,China,CN,CHN,Hubei,admin,10251000.0,1156117184,3A,164,cityidx_0164_CHN_Hubei-Wuhan.574940_CSWD.epw
+613,Beaverton,Beaverton,45.4779,-122.8168,United States,US,USA,Oregon,,97466.0,1840018556,4C,613,cityidx_0613_USA_OR-Portland Hillsboro.726986_TMY3.epw
+799,Bauchi,Bauchi,10.3158,9.8442,Nigeria,NG,NGA,Bauchi,admin,693700.0,1566483284,0B,799,cityidx_0799_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+730,Casablanca,Casablanca,33.5333,-7.5833,Morocco,MA,MAR,Casablanca-Settat,admin,4370000.0,1504175315,3A,730,cityidx_0730_MAR_--CASABLANCA NOUASSER.601560_IWEC Data.epw
+103,Xianyang,Xianyang,34.35,108.7167,China,CN,CHN,Shaanxi,minor,5096001.0,1156120117,4B,103,cityidx_0103_CHN_Shaanxi-Xian.570360_CSWD.epw
+1,Suihua,Suihua,46.6384,126.9808,China,CN,CHN,Heilongjiang,minor,5418153.0,1156235493,7,1,cityidx_0001_CHN_Heilongjiang-Hailun.507560_CSWD.epw
+624,Vishākhapatnam,Vishakhapatnam,17.7042,83.2978,India,IN,IND,Andhra Pradesh,,2035922.0,1356692563,0A,624,cityidx_0624_IND_Andhra Pradesh-Visakhapatnam.431500_ISHRAE.epw
+165,El Kelaa des Srarhna,El Kelaa des Srarhna,32.0481,-7.4083,Morocco,MA,MAR,Marrakech-Safi,,1450021.0,1504846488,2B,165,cityidx_0165_MAR_--CASABLANCA NOUASSER.601560_IWEC Data.epw
+130,Dar es Salaam,Dar es Salaam,-6.8161,39.2803,Tanzania,TZ,TZA,Dar es Salaam,primary,7962000.0,1834843853,1A,130,cityidx_0130_KEN_--MOMBASA MOI_INTL.638200_SWERA.epw
+594,Quebec City,Quebec City,46.8139,-71.2081,Canada,CA,CAN,Quebec,admin,705103.0,1124823933,6A,594,cityidx_0594_CAN_PQ-Quebec City.717080_WYEC2-B-04708.epw
+257,Lubango,Lubango,-14.9167,13.5,Angola,AO,AGO,Huíla,admin,776249.0,1024669127,3C,257,cityidx_0257_ZWE_--HARARE.677750_IWEC Data.epw
+765,Al Jahrā’,Al Jahra',29.35,47.6833,Kuwait,KW,KWT,Al Jahrā’,,393432.0,1414182001,1B,765,cityidx_0765_KWT_--Kuwait Intl Airport.405820_KISR.epw
+458,Bellingham,Bellingham,48.7548,-122.469,United States,US,USA,Washington,,129601.0,1840018346,4C,458,cityidx_0458_USA_WA-Bellingham Intl Ap.727976_TMY3.epw
+366,Kumul,Kumul,42.8193,93.5151,China,CN,CHN,Xinjiang,minor,673383.0,1156131545,5B,366,cityidx_0366_CHN_Xinjiang Uygur-Hami.522030_CSWD.epw
+718,Huazhou,Huazhou,21.654,110.6294,China,CN,CHN,Guangdong,,1302100.0,1156282637,1A,718,cityidx_0718_CHN_Guangdong-Dianbai.596640_CSWD.epw
+339,Guayaquil,Guayaquil,-2.19,-79.8875,Ecuador,EC,ECU,Guayas,admin,2723665.0,1218802178,1A,339,cityidx_0339_ECU_--QUITO.840710_IWEC Data.epw
+201,Tijuana,Tijuana,32.525,-117.0333,Mexico,MX,MEX,Baja California,minor,2002000.0,1484708778,3B,201,cityidx_0201_USA_CA-Chula Vista Brown Field Naas.722904_TMY3.epw
+484,Sialkot City,Sialkot City,32.4925,74.5311,Pakistan,PK,PAK,Punjab,minor,655852.0,1586141444,1B,484,cityidx_0484_IND_Punjab-Amritsar.420710_ISHRAE.epw
+878,Aba,Aba,5.1167,7.3667,Nigeria,NG,NGA,Abia,minor,1530000.0,1566262000,0A,878,cityidx_0878_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+439,Yan’an,Yan'an,36.5952,109.4863,China,CN,CHN,Shaanxi,,2282581.0,1156546342,5A,439,cityidx_0439_CHN_Shaanxi-Yanan.538450_CSWD.epw
+223,Houston,Houston,29.786,-95.3885,United States,US,USA,Texas,,5650910.0,1840020925,2A,223,cityidx_0223_USA_TX-Houston William P Hobby Ap.722435_TMY3.epw
+492,Ailan Mubage,Ailan Mubage,43.908,81.2777,China,CN,CHN,Xinjiang,minor,526745.0,1156279608,5B,492,cityidx_0492_CHN_--YINING.514310_SWERA.epw
+639,Coimbatore,Coimbatore,11.0168,76.9558,India,IN,IND,Tamil Nādu,,959823.0,1356999503,0B,639,cityidx_0639_IND_Tamil Nadu-Tiruchirapalli.433440_ISHRAE.epw
+565,Viseu,Viseu,40.6667,-7.9167,Portugal,PT,PRT,Viseu,admin,99274.0,1620291266,4C,565,cityidx_0565_PRT_--COIMBRA.085490_IWEC Data.epw
+674,Yanji,Yanji,42.9044,129.5067,China,CN,CHN,Jilin,minor,513072.0,1156405468,6A,674,cityidx_0674_CHN_Jilin-Yanji.542920_CSWD.epw
+136,Montréal,Montreal,45.5089,-73.5617,Canada,CA,CAN,Quebec,,3519595.0,1124586170,6A,136,cityidx_0136_CAN_PQ-Montreal Jean Brebeuf.71612_WYEC2-B-04770.epw
+720,Davao,Davao,7.0667,125.6,Philippines,PH,PHL,Davao,admin,1776949.0,1608906877,0A,720,cityidx_0720_PHL_--MANILA.984290_IWEC Data.epw
+4,Moscow,Moscow,55.7558,37.6178,Russia,RU,RUS,Moskva,primary,17332000.0,1643318494,6A,4,cityidx_0004_RUS_--MOSCOW.276120_IWEC Data.epw
+86,San Francisco,San Francisco,37.7558,-122.4449,United States,US,USA,California,,3290197.0,1840021543,3C,86,cityidx_0086_USA_CA-San Francisco Intl Ap.724940_TMY3.epw
+521,Tainan,Tainan,22.9833,120.1833,Taiwan,TW,TWN,Tainan,admin,1874686.0,1158061376,1A,521,cityidx_0521_CHN_Fujian-Congwu.591330_CSWD.epw
+361,Fancheng,Fancheng,39.1891,113.2729,China,CN,CHN,Shanxi,minor,76088.0,1156052290,8,361,cityidx_0361_CHN_Shanxi-Yuanping.536730_CSWD.epw
+6,Zhangjiakou,Zhangjiakou,40.8108,114.8811,China,CN,CHN,Hebei,minor,4345485.0,1156800221,5B,6,cityidx_0006_CHN_Hebei-Zhangbei.533990_CSWD.epw
+255,Yangquan,Yangquan,37.8576,113.5762,China,CN,CHN,Shanxi,minor,1368502.0,1156157844,4B,255,cityidx_0255_CHN_Hebei-Shijiazhuang.536980_CSWD.epw
+611,Boise,Boise,43.6005,-116.2308,United States,US,USA,Idaho,admin,422665.0,1840027142,5B,611,cityidx_0611_USA_ID-Boise Air Terminal  Uo.726810_TMY3.epw
+261,Zhangzhou,Zhangzhou,24.5093,117.6612,China,CN,CHN,Fujian,minor,5140000.0,1156241637,2A,261,cityidx_0261_CHN_Fujian-Xiamen.591340_CSWD.epw
+45,Portland,Portland,45.5371,-122.65,United States,US,USA,Oregon,,2036875.0,1840019941,4C,45,cityidx_0045_USA_OR-Portland International Ap.726980_TMY3.epw
+606,Agwār,Agwar,27.18,78.02,India,IN,IND,Uttar Pradesh,,1585705.0,1356151564,1A,606,cityidx_0606_IND_Madhya Pradesh-Gwalior.423610_ISHRAE.epw
+276,Dali,Dali,25.6808,100.3003,China,CN,CHN,Yunnan,,771128.0,1156840276,3C,276,cityidx_0276_CHN_Yunnan-Lijiang.566510_CSWD.epw
+161,Zhoukou,Zhoukou,33.625,114.6418,China,CN,CHN,Henan,minor,9026015.0,1156272098,4A,161,cityidx_0161_CHN_Henan-Zhumadian.572900_CSWD.epw
+743,Binzhou,Binzhou,37.3806,118.0125,China,CN,CHN,Shandong,,3928568.0,1156564962,4A,743,cityidx_0743_CHN_Shandong-Huimin Xian.547250_CSWD.epw
+675,Aurora,Aurora,39.7083,-104.7237,United States,US,USA,Colorado,,383496.0,1840018794,5B,675,cityidx_0675_USA_CO-Aurora Buckley Field Angb.724695_TMY3.epw
+786,Kitchener,Kitchener,43.4186,-80.4728,Canada,CA,CAN,Ontario,,470015.0,1124158530,6A,786,cityidx_0786_CAN_ON-Simcoe.715270_WYEC2-e-94858.epw
+497,La Florida,La Florida,-33.5333,-70.5833,Chile,CL,CHL,Región Metropolitana,,366916.0,1152939649,3C,497,cityidx_0497_CHL_--SANTIAGO.855740_IWEC Data.epw
+391,Changde,Changde,29.0397,111.6839,China,CN,CHN,Hunan,minor,5827200.0,1156449091,3A,391,cityidx_0391_CHN_Hunan-Changde.576620_CSWD.epw
+577,Rangapukur,Rangapukur,25.56,89.25,Bangladesh,BD,BGD,Rangpur,,1031388.0,1050032005,7,577,cityidx_0577_BGD_--RANGPUR.418590_SWERA.epw
+693,Auburn,Auburn,47.3039,-122.2108,United States,US,USA,Washington,,85306.0,1840018416,4C,693,cityidx_0693_USA_WA-SEATTLE.727930_TMY2-24233.epw
+563,Kuqa,Kuqa,41.7156,82.9322,China,CN,CHN,Xinjiang,minor,462588.0,1156894895,5B,563,cityidx_0563_CHN_--KUQA.516440_SWERA.epw
+648,Mitchells Plain,Mitchells Plain,-34.0506,18.6181,South Africa,ZA,ZAF,Western Cape,,310485.0,1710549821,3C,648,cityidx_0648_ZAF_--CAPE TOWN.688160_IWEC Data.epw
+315,Chihuahua,Chihuahua,28.6353,-106.0889,Mexico,MX,MEX,Chihuahua,admin,878062.0,1484335603,3B,315,cityidx_0315_USA_TX-Marfa Ap.722640_TMY3.epw
+741,White Rock,White Rock,49.025,-122.8028,Canada,CA,CAN,British Columbia,,82368.0,1124260555,4C,741,cityidx_0741_USA_WA-Bellingham Intl Ap.727976_TMY3.epw
+487,Nāgpur,Nagpur,21.1497,79.0806,India,IN,IND,Mahārāshtra,admin,2405665.0,1356365743,0A,487,cityidx_0487_IND_Maharashtra-Nagpur.428670_ISHRAE.epw
+328,Korla,Korla,41.7259,86.1746,China,CN,CHN,Xinjiang,minor,770000.0,1156965620,5B,328,cityidx_0328_CHN_Xinjiang Uygur-Yanqi.515670_CSWD.epw
+422,Coquitlam,Coquitlam,49.2839,-122.7919,Canada,CA,CAN,British Columbia,,139284.0,1124000500,4C,422,cityidx_0422_CAN_BC-Vancouver Int'l.718920_WYEC2-B-94238.epw
+354,Nanchong,Nanchong,30.7991,106.0784,China,CN,CHN,Sichuan,minor,6278614.0,1156762337,3A,354,cityidx_0354_CHN_Sichuan-Nanchong.574110_CSWD.epw
+494,Hillsboro,Hillsboro,45.5273,-122.936,United States,US,USA,Oregon,,105909.0,1840019932,4C,494,cityidx_0494_USA_OR-Portland Hillsboro.726986_TMY3.epw
+359,Mecca,Mecca,21.4225,39.8233,Saudi Arabia,SA,SAU,Makkah al Mukarramah,admin,1675368.0,1682169241,0B,359,cityidx_0359_EGY_Aswan-Aswan.624140_ETMY.epw
+320,Kaohsiung,Kaohsiung,22.615,120.2975,Taiwan,TW,TWN,Kaohsiung,admin,2733566.0,1158331334,1A,320,cityidx_0320_CHN_Fujian-Congwu.591330_CSWD.epw
+873,Ad Dīwānīyah,Ad Diwaniyah,31.9892,44.9247,Iraq,IQ,IRQ,Al Qādisīyah,admin,391600.0,1368864006,2B,873,cityidx_0873_KWT_--Kuwait Intl Airport.405820_KISR.epw
+579,Spokane,Spokane,47.6671,-117.433,United States,US,USA,Washington,,440270.0,1840021093,5B,579,cityidx_0579_USA_WA-SPOKANE.727855_TMY2-24157.epw
+681,Kimberley,Kimberley,-28.7383,24.7639,South Africa,ZA,ZAF,Northern Cape,admin,500757.0,1710282622,3B,681,cityidx_0681_ZAF_--JOHANNESBURG.683680_IWEC Data.epw
+474,Astrakhan,Astrakhan,46.35,48.035,Russia,RU,RUS,Astrakhanskaya Oblast’,admin,532504.0,1643407929,5B,474,cityidx_0474_RUS_--SAMARA.289000_IWEC Data.epw
+618,Barcelona,Barcelona,41.3825,2.1769,Spain,ES,ESP,Catalonia,admin,4800000.0,1724594040,3A,618,cityidx_0618_ESP_--BARCELONA.081810_IWEC Data.epw
+662,Shenzhou,Shenzhou,38.0005,115.5541,China,CN,CHN,Hebei,,566087.0,1156921843,4B,662,cityidx_0662_CHN_Hebei-Raoyang.546060_CSWD.epw
+412,Gurgaon,Gurgaon,28.456,77.029,India,IN,IND,Haryāna,,876824.0,1356836043,1B,412,cityidx_0412_IND_Delhi-New Delhi.421820_ISHRAE.epw
+851,Gujiao,Gujiao,37.9069,112.17,China,CN,CHN,Shanxi,,216723.0,1156571525,5B,851,cityidx_0851_CHN_Shanxi-Taiyuan.537720_CSWD.epw
+38,Yakutsk,Yakutsk,62.0272,129.7319,Russia,RU,RUS,Sakha (Yakutiya),admin,311760.0,1643163546,8,38,cityidx_0038_RUS_--YAKUTSK.249590_IWEC Data.epw
+523,Bekasi,Bekasi,-6.2349,106.9923,Indonesia,ID,IDN,Jawa Barat,,2381053.0,1360006015,0A,523,cityidx_0523_SGP_--SINGAPORE.486980_IWEC Data.epw
+815,Kochi,Kochi,9.97,76.28,India,IN,IND,Kerala,,677381.0,1356707865,0B,815,cityidx_0815_IND_Kerala-Trivandrum.433710_ISHRAE.epw
+260,Chandīgarh,Chandigarh,30.75,76.78,India,IN,IND,Chandīgarh,admin,1055450.0,1356739179,2B,260,cityidx_0260_IND_Himachal Pradesh-Sundernagar.8204_ISHRAE.epw
+127,Phoenix,Phoenix,33.5722,-112.0892,United States,US,USA,Arizona,admin,4047095.0,1840020568,2B,127,cityidx_0127_USA_AZ-Deer Valley Phoenix.722784_TMY3.epw
+171,Nefteyugansk,Nefteyugansk,61.0833,72.7,Russia,RU,RUS,Khanty-Mansiyskiy Avtonomnyy Okrug-Yugra,,128159.0,1643009656,8,171,cityidx_0171_RUS_--OMSK.286980_IWEC Data.epw
+125,Longba,Longba,33.535,105.349,China,CN,CHN,Gansu,,2567718.0,1156633259,3B,125,cityidx_0125_CHN_Gansu-Wudu.560960_CSWD.epw
+266,Khanty-Mansiysk,Khanty-Mansiysk,61.0,69.0,Russia,RU,RUS,Khanty-Mansiyskiy Avtonomnyy Okrug-Yugra,admin,105995.0,1643001221,8,266,cityidx_0266_RUS_--OMSK.286980_IWEC Data.epw
+75,Kolkāta,Kolkata,22.5675,88.37,India,IN,IND,West Bengal,admin,18502000.0,1356060520,0A,75,cityidx_0075_IND_--CALCUTTA.428090_IWEC Data.epw
+441,Renqiu,Renqiu,38.7094,116.1008,China,CN,CHN,Hebei,,822455.0,1156943939,4B,441,cityidx_0441_CHN_Hebei-Raoyang.546060_CSWD.epw
+645,Kirkland,Kirkland,47.697,-122.2057,United States,US,USA,Washington,,91656.0,1840019836,4C,645,cityidx_0645_USA_WA-Seattle Boeing Field  Isis.727935_TMY3.epw
+28,New York,New York,40.6943,-73.9249,United States,US,USA,New York,,18972871.0,1840034016,4A,28,cityidx_0028_USA_NY-New York City Central..94728_TMY--94728.epw
+241,Mexicali,Mexicali,32.6633,-115.4678,Mexico,MX,MEX,Baja California,admin,1102342.0,1484788702,2B,241,cityidx_0241_USA_CA-Climate Zone 15.747185_CTZRV2.epw
+586,Mianyang,Mianyang,31.4669,104.7385,China,CN,CHN,Sichuan,minor,4868243.0,1156417758,3A,586,cityidx_0586_CHN_Sichuan-Mianyang.561960_CSWD.epw
+170,Hyderābād,Hyderabad,17.385,78.4867,India,IN,IND,Telangāna,admin,10494000.0,1356871768,0A,170,cityidx_0170_IND_Andhra Pradesh-Hyderabad.431280_ISHRAE.epw
+600,Kikuyu,Kikuyu,-1.25,36.6667,Kenya,KE,KEN,Kiambu,,323881.0,1404116834,3C,600,cityidx_0600_KEN_--NAIROBI DAGORETTI_.637400_SWERA.epw
+148,Gujranwala,Gujranwala,32.1567,74.19,Pakistan,PK,PAK,Punjab,minor,2027001.0,1586400472,1B,148,cityidx_0148_IND_Punjab-Amritsar.420710_ISHRAE.epw
+864,Shangzhi,Shangzhi,45.2116,127.962,China,CN,CHN,Heilongjiang,minor,585386.0,1156107332,7,864,cityidx_0864_CHN_Heilongjiang-Shangzhi.509680_CSWD.epw
+99,Çorum,Corum,40.5455,34.957,Turkey,TR,TUR,Çorum,admin,294807.0,1792065200,5C,99,cityidx_0099_TUR_--ANKARA.171280_IWEC Data.epw
+263,Santa Cruz,Santa Cruz,-17.7892,-63.1975,Bolivia,BO,BOL,Santa Cruz,admin,3151676.0,1068129363,1A,263,cityidx_0263_BRA_MT-Vila Bela da Santíssima Trinda.867010_INMET.epw
+311,Marysville,Marysville,48.0809,-122.1561,United States,US,USA,Washington,,164655.0,1840019789,4C,311,cityidx_0311_USA_WA-Snohomish Co.727937_TMY3.epw
+44,Toronto,Toronto,43.7417,-79.3733,Canada,CA,CAN,Ontario,admin,5429524.0,1124279679,5A,44,cityidx_0044_CAN_ON-Toronto Int'l.716240_WYEC2-B-04714.epw
+798,Vārānasi,Varanasi,25.3189,83.0128,India,IN,IND,Uttar Pradesh,,1198491.0,1356145782,1A,798,cityidx_0798_IND_Uttar Pradesh-Allahabad.424750_ISHRAE.epw
+863,Palembang,Palembang,-2.9861,104.7556,Indonesia,ID,IDN,Sumatera Selatan,admin,1535952.0,1360902897,0A,863,cityidx_0863_SGP_--SINGAPORE.486980_IWEC Data.epw
+539,Brazzaville,Brazzaville,-4.2694,15.2714,Congo (Brazzaville),CG,COG,Brazzaville,primary,1827000.0,1178340306,1A,539,cityidx_0539_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+700,Longyan,Longyan,25.0881,117.0244,China,CN,CHN,Fujian,minor,2723637.0,1156012979,2A,700,cityidx_0700_CHN_Fujian-Shanghang.589180_CSWD.epw
+221,Nanjing,Nanjing,32.0608,118.7789,China,CN,CHN,Jiangsu,admin,8422000.0,1156644065,3A,221,cityidx_0221_CHN_--NANJING NANKING.582380_SWERA.epw
+16,Delhi,Delhi,28.61,77.23,India,IN,IND,Delhi,admin,32226000.0,1356872604,1B,16,cityidx_0016_IND_Delhi-New Delhi.421820_ISHRAE.epw
+826,Ningbo,Ningbo,29.875,121.5492,China,CN,CHN,Zhejiang,minor,4087523.0,1156170787,3A,826,cityidx_0826_CHN_Zhejiang-Dinghai.584770_CSWD.epw
+567,Suzhou,Suzhou,33.6333,116.9683,China,CN,CHN,Anhui,,5352924.0,1156871297,4A,567,cityidx_0567_CHN_Jiangsu-Xuzhou.580270_CSWD.epw
+312,Yerevan,Yerevan,40.1814,44.5144,Armenia,AM,ARM,Yerevan,primary,1075800.0,1051074169,4B,312,cityidx_0312_IRN_--Tabriz.407060_ITMY.epw
+569,Mission Viejo,Mission Viejo,33.6096,-117.6551,United States,US,USA,California,,588540.0,1840020580,3B,569,cityidx_0569_USA_CA-Climate Zone 8.690140_CTZRV2.epw
+841,Agadir,Agadir,30.4333,-9.6,Morocco,MA,MAR,Souss-Massa,admin,421844.0,1504116858,3B,841,cityidx_0841_MAR_--CASABLANCA NOUASSER.601560_IWEC Data.epw
+405,Shache,Shache,38.4261,77.25,China,CN,CHN,Xinjiang,,851374.0,1156278934,4B,405,cityidx_0405_CHN_Xinjiang Uygur-Shache.518110_CSWD.epw
+840,Peñalolén,Penalolen,-33.4833,-70.55,Chile,CL,CHL,Región Metropolitana,,216060.0,1152224242,3C,840,cityidx_0840_CHL_--SANTIAGO.855740_IWEC Data.epw
+692,Prague,Prague,50.0875,14.4214,Czechia,CZ,CZE,Praha,primary,1335084.0,1203744823,5A,692,cityidx_0692_CZE_--PRAGUE.115180_IWEC Data.epw
+3,Chifeng,Chifeng,42.2663,118.9223,China,CN,CHN,Inner Mongolia,minor,4341245.0,1156277458,6B,3,cityidx_0003_CHN_Nei Mongol-Chifeng.542180_CSWD.epw
+7,Chicago,Chicago,41.8375,-87.6866,United States,US,USA,Illinois,,8595181.0,1840000494,5A,7,cityidx_0007_USA_IL-Chicago Midway.725340_TMY--14819.epw
+351,Madrid,Madrid,40.4169,-3.7033,Spain,ES,ESP,Madrid,primary,6211000.0,1724616994,4A,351,cityidx_0351_ESP_--Madrid.082210_SWEC.epw
+782,Gāzipura,Gazipura,23.9889,90.375,Bangladesh,BD,BGD,Dhaka,,1199215.0,1050449249,1A,782,cityidx_0782_BGD_--DHAKA TEJGAON_(MIL).419230_SWERA.epw
+866,Nampa,Nampa,43.5844,-116.5638,United States,US,USA,Idaho,,194547.0,1840020041,5B,866,cityidx_0866_USA_ID-Caldwell  Awos.726813_TMY3.epw
+745,San Juan,San Juan,-31.5342,-68.5261,Argentina,AR,ARG,San Juan,admin,471389.0,1032869625,3B,745,cityidx_0745_CHL_--SANTIAGO.855740_IWEC Data.epw
+407,Oakland,Oakland,37.7904,-122.2166,United States,US,USA,California,,437548.0,1840020296,3C,407,cityidx_0407_USA_CA-Oakland Metropolitan Arpt.724930_TMY3.epw
+433,Santo Domingo,Santo Domingo,18.4764,-69.8933,Dominican Republic,DO,DOM,Ozama,primary,2581827.0,1214636202,0A,433,cityidx_0433_PRI_PR-Eugenio Maria De Ho.785145_TMY3.epw
+245,Ouagadougou,Ouagadougou,12.3686,-1.5275,Burkina Faso,BF,BFA,Centre,primary,2453496.0,1854029208,0B,245,cityidx_0245_GHA_--ACCRA KOTOKA_INTL.654720_SWERA.epw
+89,Kāshān,Kashan,33.9833,51.4333,Iran,IR,IRN,Eşfahān,minor,5000000.0,1364006067,2B,89,cityidx_0089_IRN_--Tehran Mehrabad.407540_ITMY.epw
+32,Lima,Lima,-12.06,-77.0375,Peru,PE,PER,Lima,primary,10320000.0,1604728603,2B,32,cityidx_0032_PER_--LIMA.846280_IWEC Data.epw
+528,Xiaoyi,Xiaoyi,37.1449,111.7718,China,CN,CHN,Shanxi,,468770.0,1156910270,5B,528,cityidx_0528_CHN_Shanxi-Jiexiu.538630_CSWD.epw
+587,Zāhedān,Zahedan,29.4964,60.8628,Iran,IR,IRN,Sīstān va Balūchestān,admin,587730.0,1364072353,2B,587,cityidx_0587_IRN_--Bandar Abass.408750_ITMY.epw
+810,Xiaoxita,Xiaoxita,30.7083,111.2803,China,CN,CHN,Hubei,minor,4137900.0,1156764447,3A,810,cityidx_0810_CHN_Hubei-Yichang.574610_CSWD.epw
+63,Berlin,Berlin,52.52,13.405,Germany,DE,DEU,Berlin,primary,4473101.0,1276451290,5A,63,cityidx_0063_DEU_--BERLIN.103840_IWEC Data.epw
+711,Hengshui,Hengshui,37.7348,115.686,China,CN,CHN,Hebei,,4472000.0,1156803028,4A,711,cityidx_0711_CHN_Hebei-Raoyang.546060_CSWD.epw
+342,Vorkuta,Vorkuta,67.5,64.0333,Russia,RU,RUS,Komi,,77314.0,1643002916,8,342,cityidx_0342_RUS_--EKATERINBURG.284400_IWEC Data.epw
+803,Kennewick,Kennewick,46.1978,-119.1732,United States,US,USA,Washington,,241230.0,1840018481,5B,803,cityidx_0803_USA_WA-Pasco.727845_TMY3.epw
+773,Turhal,Turhal,40.39,36.09,Turkey,TR,TUR,Tokat,minor,79916.0,1792534249,4C,773,cityidx_0773_TUR_--ANKARA.171280_IWEC Data.epw
+288,Fuxin,Fuxin,42.0127,121.6486,China,CN,CHN,Liaoning,,1819339.0,1156141954,6A,288,cityidx_0288_CHN_Liaoning-Jinzhou.543370_CSWD.epw
+694,Chengjiao,Chengjiao,35.4043,114.0593,China,CN,CHN,Henan,minor,495744.0,1156571332,4B,694,cityidx_0694_CHN_Henan-Anyang.538980_CSWD.epw
+8,Seattle,Seattle,47.6211,-122.3244,United States,US,USA,Washington,,3438221.0,1840021117,4C,8,cityidx_0008_USA_WA-Seattle Boeing Field  Isis.727935_TMY3.epw
+292,Medford,Medford,42.3372,-122.854,United States,US,USA,Oregon,,178457.0,1840020076,4C,292,cityidx_0292_USA_OR-Medford.725970_TMY--24225.epw
+30,Los Angeles,Los Angeles,34.1141,-118.4068,United States,US,USA,California,,12121244.0,1840020491,3B,30,cityidx_0030_USA_CA-Burbank Glendale Passadena Ap.722880_TMY3.epw

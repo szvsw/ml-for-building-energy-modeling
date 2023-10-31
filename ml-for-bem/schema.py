@@ -5,8 +5,10 @@ from glob import glob
 from functools import reduce
 from pathlib import Path
 from typing import List
+import collections
 
 import numpy as np
+import math
 
 import matplotlib.pyplot as plt
 import logging
@@ -16,19 +18,12 @@ logger = logging.getLogger("Schema")
 logger.setLevel(logging.INFO)
 
 try:
-    from archetypal import UmiTemplateLibrary
-    from archetypal.idfclass.sql import Sql
-    from archetypal.template.schedule import UmiSchedule
     from archetypal.template.materials.material_layer import MaterialLayer
-    from archetypal.template.constructions.window_construction import WindowConstruction
-    import pandas as pd
-    from pyumi.shoeboxer.shoebox import ShoeBox
-    from pyumi.epw import EPW
 except (ImportError, ModuleNotFoundError) as e:
     logger.error("Failed to import a package! Be wary about continuing...", exc_info=e)
 
-
-from schedules import (
+from utils.constants import *
+from utils.schedules import (
     schedule_paths,
     operations,
     get_schedules,
@@ -36,488 +31,15 @@ from schedules import (
     update_schedule_objects,
 )
 
-from nrel_uitls import CLIMATEZONES_LIST, RESTYPES
-
 data_path = Path(os.path.dirname(os.path.abspath(__file__))) / "data"
 
-HIGH_LOW_MASS_THESH = 00000  # J/m2K
-
-
-class ShoeboxConfiguration:
-    """
-    Stateful class for shoebox object args
-    """
-
-    __slots__ = (
-        "width",
-        "height",
-        "facade_2_footprint",
-        "perim_2_footprint",
-        "roof_2_footprint",
-        "footprint_2_ground",
-        # "shading_fact",
-        "wwr",
-        "orientation",
-    )
-
-    def __init__(self):
-        pass
-
-
-class WhiteboxSimulation:
-    """
-    Class for configuring a whitebox simulation from a storage vector
-    """
-
-    __slots__ = (
-        "schema",
-        "storage_vector",
-        "lib",
-        "template",
-        "epw_path",
-        "shoebox_config",
-        "shoebox",
-        "hourly",
-        "monthly",
-        "epw",
-    )
-    JOULES_TO_KWH = 2.777e-7
-
-    def __init__(self, schema, storage_vector):
-        """
-        Create a whitebox simulation object
-
-        Args:
-            schema: Schema, semantic method handler
-            storage_vector: np.ndarray, shape=(len(storage_vector)), the storage vector to load
-        Returns:
-            A ready to simulate whitebox sim
-        """
-        self.schema = schema
-        self.storage_vector = storage_vector
-        self.shoebox_config = ShoeboxConfiguration()
-        self.load_template()
-        self.build_epw_path()
-        self.update_parameters()
-        self.build_shoebox()
-
-    def load_template(self):
-        """
-        Method for loading a template based off id in storage vector.
-        """
-        template_lib_idx = self.schema["climate_zone"].extract_storage_values(
-            self.storage_vector
-        )
-
-        template_lib_idx = int(template_lib_idx)
-
-        template_lib_path = (
-            data_path
-            / "template_libs"
-            / "cz_libs"
-            / "residential"
-            / f"CZ{CLIMATEZONES_LIST[template_lib_idx]}.json"
-        )
-
-        """PROG_{IDX}_VINTAGE_{IDX}_MASS_{0/1}"""
-
-        vintage = self.schema["vintage"].extract_storage_values(self.storage_vector)
-
-        vintage_idx = 0
-        if vintage < 1940:
-            pass
-        elif vintage < 1980:
-            vintage_idx = 1
-        elif vintage < 2004:
-            vintage_idx = 2
-        else:
-            vintage_idx = 3
-
-        program_type = self.schema["program_type"].extract_storage_values(
-            self.storage_vector
-        )
-        tmass = self.schema["FacadeMass"].extract_storage_values(self.storage_vector)
-
-        mass_flag = 0
-        if tmass > HIGH_LOW_MASS_THESH:
-            mass_flag = 1
-
-        n_programs = len(RESTYPES)
-        n_masses = 2
-        n_vintages = 4
-        template_idx = (
-            n_masses * n_vintages * int(program_type)
-            + n_masses * vintage_idx
-            + mass_flag
-        )
-
-        """
-        0a - template library
-            single family, pre-1940 low mass
-            single family pe-1940 high mass
-            multi family pre 1940
-            multi big family pre 1940
-            multi bigger family pre 1940
-            single family pre 1980
-
-        """
-        self.lib = UmiTemplateLibrary.open(template_lib_path)
-        self.template = self.lib.BuildingTemplates[template_idx]
-        # print("Vintage", vintage, vintage_idx)
-        # print("Program Type", int(program_type))
-        # print("FacadeMass", tmass, high_mass)
-        # print("Template Idx", template_idx)
-        # for bt in self.lib.BuildingTemplates:
-        #     print(bt.Name)
-
-    def update_parameters(self):
-        """
-        Method for mutating semantic simulation objects
-        """
-        for parameter in self.schema.parameters:
-            parameter.mutate_simulation_object(self)
-
-    def build_epw_path(self):
-        """
-        Method for building the epw path
-        """
-        # TODO: improve this to use a specific map rather than a globber
-        cityidx = self.schema["base_epw"].extract_storage_values(self.storage_vector)
-        globber = (
-            data_path / "epws" / "city_epws_indexed" / f"cityidx_{int(cityidx):04d}**"
-        )
-        files = glob(str(globber))
-        self.epw_path = data_path / files[0]
-
-    def load_epw(self):
-        self.epw = EPW(self.epw_path)
-
-    def build_shoebox(self):
-        """
-        Method for constructing the actual shoebox simulation object
-        """
-        wwr_map = {0: 0, 90: 0, 180: self.shoebox_config.wwr, 270: 0}  # N is 0, E is 90
-        # Convert to coords
-        width = self.shoebox_config.width
-        depth = self.shoebox_config.height / self.shoebox_config.facade_2_footprint
-        perim_depth = depth * self.shoebox_config.perim_2_footprint
-        height = self.shoebox_config.height
-        zones_data = [
-            {
-                "name": "Perim",
-                "coordinates": [
-                    (width, 0),
-                    (width, perim_depth),
-                    (0, perim_depth),
-                    (0, 0),
-                ],
-                "height": height,
-                "num_stories": 1,
-                "zoning": "by_storey",
-            },
-            {
-                "name": "Core",
-                "coordinates": [
-                    (width, perim_depth),
-                    (width, depth),
-                    (0, depth),
-                    (0, perim_depth),
-                ],
-                "height": height,
-                "num_stories": 1,
-                "zoning": "by_storey",
-            },
-        ]
-
-        sb = ShoeBox.from_template(
-            building_template=self.template,
-            zones_data=zones_data,
-            wwr_map=wwr_map,
-        )
-        sb.epw = self.epw_path
-
-        # Set floor and roof geometry for each zone
-        for surface in sb.getsurfaces(surface_type="roof"):
-            name = surface.Name
-            name = name.replace("Roof", "Ceiling")
-            sb.add_adiabatic_to_surface(
-                surface, name, self.shoebox_config.roof_2_footprint
-            )
-        for surface in sb.getsurfaces(surface_type="floor"):
-            name = surface.Name
-            name = name.replace("Floor", "Int Floor")
-            sb.add_adiabatic_to_surface(
-                surface, name, self.shoebox_config.footprint_2_ground
-            )
-        # Make core walls adiabatic
-        exterior_facade = sb.getsubsurfaces()[0].Building_Surface_Name
-        for surface in sb.getsurfaces(surface_type="wall"):
-            if ("Core").lower() in surface.Zone_Name.lower():
-                surface.Outside_Boundary_Condition = "Adiabatic"
-                surface.Sun_Exposure = "NoSun"
-                surface.Wind_Exposure = "NoWind"
-            if (
-                "Perim"
-            ).lower() in surface.Zone_Name.lower() and surface.Name is not exterior_facade:
-                surface.Outside_Boundary_Condition = "Adiabatic"
-                surface.Sun_Exposure = "NoSun"
-                surface.Wind_Exposure = "NoWind"
-
-        # Internal partition and glazing
-        # Orientation
-
-        # TODO: - confirm that these do not need to be moved inside of simulate parallel process
-        outputs = [
-            timeseries.to_output_dict() for timeseries in self.schema.timeseries_outputs
-        ]
-        sb.rotate(
-            self.shoebox_config.orientation * 90
-        )  # 0 is S facing windows, 90 is E facing windows
-        for surface in sb.getsubsurfaces():
-            if ("Core").lower() in surface.Building_Surface_Name.lower():
-                sb.removeidfobject(surface)
-        sb.outputs.add_custom(outputs)
-        sb.outputs.apply()
-        self.shoebox = sb
-
-    def simulate(self):
-        self.shoebox.simulate(verbose=False, prep_outputs=False, readvars=False)
-        sql = Sql(self.shoebox.sql_file)
-        series_to_retrieve = []
-        for timeseries in self.schema.timeseries_outputs:
-            if timeseries.store_output:
-                series_to_retrieve.append(timeseries.var_name)
-        ep_df_hourly = pd.DataFrame(
-            sql.timeseries_by_name(series_to_retrieve, reporting_frequency="Hourly")
-        )
-        ep_df_monthly = pd.DataFrame(
-            sql.timeseries_by_name(series_to_retrieve, reporting_frequency="Monthly")
-        )
-        self.hourly = ep_df_hourly
-        self.monthly = ep_df_monthly
-        return ep_df_hourly, ep_df_monthly
-        # ep_df_hourly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Hourly"))
-        # ep_df_hourly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Hourly"))
-        # ep_df_monthly_heating = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Heating Energy", reporting_frequency="Monthly"))
-        # ep_df_monthly_cooling = pd.DataFrame(sql.timeseries_by_name("Zone Ideal Loads Zone Total Cooling Energy", reporting_frequency="Monthly"))
-
-    @property
-    def totals(self):
-        values = self.hourly.values
-        aggregate = values.sum(axis=0) * self.JOULES_TO_KWH
-        perim_heating = aggregate[0]
-        perim_cooling = aggregate[1]
-        core_heating = aggregate[2]
-        core_cooling = aggregate[3]
-        cooling = perim_cooling + core_cooling
-        heating = perim_heating + core_heating
-        return (heating, cooling), (
-            heating / self.shoebox.total_building_area,
-            cooling / self.shoebox.total_building_area,
-        )
-
-    def plot_results(self, start=0, length=8760, normalize=True, figsize=(10, 10)):
-        if not hasattr(self, "epw"):
-            self.load_epw()
-        dbt = np.array(self.epw.dry_bulb_temperature.values)
-        dbt_trimmed = dbt[start : start + length]
-        dbt_trimmed_daily = np.mean(dbt_trimmed.reshape(-1, 24), axis=1).flatten()
-        dbt_daily = self.epw.dry_bulb_temperature.average_daily()
-        dbt_monthly = self.epw.dry_bulb_temperature.average_monthly()
-        hourly = (
-            self.hourly
-            * self.JOULES_TO_KWH
-            / (self.shoebox.total_building_area if normalize else 1)
-        )
-        hourly_trimmed = hourly[start : start + length]
-        monthly = (
-            self.monthly
-            * self.JOULES_TO_KWH
-            / (self.shoebox.total_building_area if normalize else 1)
-        )
-        lw = 2
-
-        fig, axs = plt.subplots(5, 1, figsize=figsize)
-        axs[0].plot(
-            hourly["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"]
-            .resample("1D")
-            .sum(),
-            linewidth=lw,
-            label=["Perim-Heating", "Perim-Cooling"],
-        )
-        axs[0].plot(
-            hourly["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"]
-            .resample("1D")
-            .sum(),
-            linewidth=lw,
-            label=["Core-Heating", "Core-Cooling"],
-        )
-        axs[0].set_title("Daily")
-        axs[0].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
-        axs[0].legend()
-        axs_0b = axs[0].twinx()
-        axs_0b.plot(
-            hourly.resample("1D").mean().index,
-            dbt_daily,
-            linewidth=lw / 2,
-            label="Temp",
-        )
-        axs_0b.legend()
-        axs_0b.set_ylabel("deg. C")
-
-        axs[1].plot(
-            hourly_trimmed["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"],
-            linewidth=lw,
-            label=["Perim-Heating", "Perim-Cooling"],
-        )
-        axs[1].plot(
-            hourly_trimmed["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"],
-            linewidth=lw,
-            label=["Core-Heating", "Core-Cooling"],
-        )
-        axs[1].set_title("Hourly")
-        axs[1].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
-        axs[1].legend()
-        axs_1b = axs[1].twinx()
-        axs_1b.plot(
-            hourly_trimmed.index,
-            dbt[start : start + length],
-            linewidth=lw / 2,
-            label="Temp",
-        )
-        axs_1b.legend()
-        axs_1b.set_ylabel("deg. C")
-
-        axs[2].plot(
-            hourly_trimmed["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"]
-            .resample("1D")
-            .sum(),
-            linewidth=lw,
-            label=["Perim-Heating", "Perim-Cooling"],
-        )
-        axs[2].plot(
-            hourly_trimmed["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"]
-            .resample("1D")
-            .sum(),
-            linewidth=lw,
-            label=["Core-Heating", "Core-Cooling"],
-        )
-        axs[2].set_title("Daily")
-        axs[2].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
-        axs[2].legend()
-        axs_2b = axs[2].twinx()
-        axs_2b.plot(
-            hourly_trimmed.resample("1D").mean().index,
-            dbt_trimmed_daily,
-            linewidth=lw / 2,
-            label="Temp",
-        )
-        axs_2b.legend()
-        axs_2b.set_ylabel("deg. C")
-
-        axs[3].plot(
-            monthly["System"]["BLOCK PERIM STOREY 0 IDEAL LOADS AIR SYSTEM"],
-            linewidth=lw,
-            label=["Perim-Heating", "Perim-Cooling"],
-        )
-        axs[3].plot(
-            monthly["System"]["BLOCK CORE STOREY 0 IDEAL LOADS AIR SYSTEM"],
-            linewidth=lw,
-            label=["Core-Heating", "Core-Cooling"],
-        )
-        axs[3].set_title("Monthly")
-        axs[3].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
-        axs[3].legend()
-        axs_3b = axs[3].twinx()
-        axs_3b.plot(monthly.index, dbt_monthly, linewidth=lw / 2, label="Temp")
-        axs_3b.legend()
-        axs_3b.set_ylabel("deg. C")
-
-        daily = hourly["System"].resample("1D").sum().values
-        axs[4].scatter(dbt_daily, daily[:, 0], s=lw, label="Perim Heating")
-        axs[4].scatter(dbt_daily, daily[:, 1], s=lw, label="Perim Cooling")
-        axs[4].scatter(dbt_daily, daily[:, 2], s=lw, label="Core Heating")
-        axs[4].scatter(dbt_daily, daily[:, 3], s=lw, label="Core Cooling")
-        axs[4].set_title("Load vs Daily Temp")
-        axs[4].legend()
-        axs[4].set_ylabel(f"kWhr{'/m2' if normalize else ''}")
-        axs[4].set_xlabel("deg. C")
-        plt.tight_layout(pad=1)
-
-    def summarize(self):
-        print("\n\n" + "-" * 30)
-        print("EPW:", self.epw_path)
-        print("Selected Template:", self.template.Name)
-        print("---ShoeboxConfig---")
-        print("Height", self.shoebox_config.height)
-        print("Width", self.shoebox_config.width)
-        print("WWR", self.shoebox_config.wwr)
-        print("Facade2Foot", self.shoebox_config.facade_2_footprint)
-        print("Perim2Foot", self.shoebox_config.perim_2_footprint)
-        print("Foot2Gnd [adia %]", self.shoebox_config.footprint_2_ground)
-        print("Roof2Gnd [adia %]", self.shoebox_config.roof_2_footprint)
-        print("Orientation", self.shoebox_config.orientation)
-        print("---PERIM/CORE Values---")
-        print(
-            "Heating Setpoint:",
-            self.template.Perimeter.Conditioning.HeatingSetpoint,
-            self.template.Core.Conditioning.HeatingSetpoint,
-        )
-        print(
-            "Cooling Setpoint:",
-            self.template.Perimeter.Conditioning.CoolingSetpoint,
-            self.template.Core.Conditioning.CoolingSetpoint,
-        )
-        print(
-            "Equipment Power Density:",
-            self.template.Perimeter.Loads.EquipmentPowerDensity,
-            self.template.Core.Loads.EquipmentPowerDensity,
-        )
-        print(
-            "Lighting Power Density:",
-            self.template.Perimeter.Loads.LightingPowerDensity,
-            self.template.Core.Loads.LightingPowerDensity,
-        )
-        print(
-            "People Density:",
-            self.template.Perimeter.Loads.PeopleDensity,
-            self.template.Core.Loads.PeopleDensity,
-        )
-        print(
-            "Infiltration:",
-            self.template.Perimeter.Ventilation.Infiltration,
-            self.template.Core.Ventilation.Infiltration,
-        )
-        print(
-            "Roof HeatCap:",
-            self.template.Perimeter.Constructions.Roof.heat_capacity_per_unit_wall_area,
-            self.template.Core.Constructions.Roof.heat_capacity_per_unit_wall_area,
-        )
-        print(
-            "Facade HeatCap:",
-            self.template.Perimeter.Constructions.Facade.heat_capacity_per_unit_wall_area,
-            self.template.Core.Constructions.Facade.heat_capacity_per_unit_wall_area,
-        )
-        print(
-            "U Window:", self.template.Windows.Construction.u_value
-        )  # TODO: this is slightly different!)
-        print(
-            "VLT",
-            self.template.Windows.Construction.Layers[0].Material.VisibleTransmittance,
-        )
-        print("Roof RSI:", self.template.Perimeter.Constructions.Roof.r_value)
-        print("Facade RSI:", self.template.Perimeter.Constructions.Facade.r_value)
-        print("Slab RSI:", self.template.Perimeter.Constructions.Slab.r_value)
-        print("Partition RSI:", self.template.Perimeter.Constructions.Partition.r_value)
-        print("Ground RSI:", self.template.Perimeter.Constructions.Ground.r_value)
-        print("Roof Assembly:", self.template.Perimeter.Constructions.Roof.Layers)
-        print("Facade Assembly:", self.template.Perimeter.Constructions.Facade.Layers)
-        print(
-            "Partition Assembly:",
-            self.template.Perimeter.Constructions.Partition.Layers,
-        )
-        print("Slab Assembly:", self.template.Perimeter.Constructions.Slab.Layers)
-        print("Window Assembly:", self.template.Windows.Construction.Layers)
+constructions_lib_path = os.path.join(
+    os.getcwd(),
+    "ml-for-bem",
+    "data",
+    "template_libs",
+    "ConstructionsLibrary.json",
+)
 
 
 class SchemaParameter:
@@ -599,24 +121,34 @@ class SchemaParameter:
         ]
         return data.reshape(-1, *self.shape_storage)
 
-    def to_ml(self, storage_batch):
+    def to_ml(self, storage_batch=None, value=None):
         if not self.in_ml:
             logger.warning(
                 f"Attempted to call 'SchemaParameter.to_ml(storage_batch)' on PARAMETER:{self.name} but that parameter is not included in the ML vector.  You can ignore this message."
             )
         else:
             if isinstance(self, OneHotParameter):
-                counts = self.extract_storage_values_batch(storage_batch)
+                counts = (
+                    self.extract_storage_values_batch(storage_batch)
+                    if value is None
+                    else np.array([value])
+                )
                 onehots = np.zeros((counts.shape[0], self.count))
-                onehots[np.arange(counts.shape[0]),counts[:,0].astype(int) ] = 1
+                onehots[np.arange(counts.shape[0]), counts[:].astype(int)] = 1
                 return onehots
             elif isinstance(self, SchedulesParameters):
-                return self.extract_storage_values_batch(storage_batch)
+                return (
+                    self.extract_storage_values_batch(storage_batch)
+                    if value is None
+                    else value
+                )
             else:
                 vals = self.normalize(
                     self.extract_storage_values_batch(storage_batch).reshape(
                         -1, *self.shape_ml
                     )
+                    if value is None
+                    else value
                 )
                 return vals
 
@@ -655,7 +187,7 @@ class SchemaParameter:
         """
         return val
 
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+    def mutate_simulation_object(self):
         """
         This method updates the simulation objects (archetypal template, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
@@ -663,7 +195,15 @@ class SchemaParameter:
         The default base SchemaParameter does nothing.  Children classes implement the appropriate
         semantic logic.
         Args:
-            whitebox_sim: WhiteboxSimulation
+        """
+        pass
+
+    def extract_from_template(self):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
         """
         pass
 
@@ -708,7 +248,11 @@ class OneHotParameter(SchemaParameter):
     __slots__ = "count"
 
     def __init__(self, count, shape_ml=None, **kwargs):
-        super().__init__(dtype="onehot", shape_ml=(count,) if shape_ml == None else shape_ml, **kwargs)
+        super().__init__(
+            dtype="onehot",
+            shape_ml=(count,) if shape_ml == None else shape_ml,
+            **kwargs,
+        )
         self.count = count
 
 
@@ -718,17 +262,30 @@ class ShoeboxGeometryParameter(NumericParameter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
+    def mutate_simulation_object(self, epjson):
         """
-        This method updates the simulation objects (archetypal template, shoebox config)
+        This method updates the simulation objects (epjson, shoebox config)
         by extracting values for this parameter from the sim's storage vector and using this
         parameter's logic to update the appropriate objects.
         Updates whitebox simulation's shoebox configuration dictionary class.
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        value = self.extract_storage_values(whitebox_sim.storage_vector)
+        value = self.extract_storage_values(whitebox_sim.storage_vector)  # TODO
         setattr(whitebox_sim.shoebox_config, self.name, value)
+
+    def extract_from_template(self, whitebox_sim=None):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        if whitebox_sim:
+            return self.to_ml(value=getattr(whitebox_sim.shoebox_config, self.name))
+        else:
+            return self.to_ml(value=self.mean)
 
 
 class ShoeboxOrientationParameter(OneHotParameter):
@@ -759,13 +316,27 @@ class BuildingTemplateParameter(NumericParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        value = self.extract_storage_values(whitebox_sim.storage_vector)
-        template_param = self.path[-1]
-        for zone in ["Perimeter", "Core"]:
-            path = [whitebox_sim.template, zone, *self.path]
-            path = path[:-1]
-            object_to_update = reduce(lambda a, b: a[b], path)
-            setattr(object_to_update, template_param, value)
+        pass
+        # value = self.extract_storage_values(whitebox_sim.storage_vector)
+        # template_param = self.path[-1]
+        # for zone in ["Perimeter", "Core"]:
+        #     path = [whitebox_sim.template, zone, *self.path]
+        #     path = path[:-1]
+        #     object_to_update = reduce(lambda a, b: a[b], path)
+        #     setattr(object_to_update, template_param, value)
+
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate
+        """
+        val = building_template.Perimeter
+        for attr in self.path:
+            val = getattr(val, attr)
+        return self.to_ml(value=val)
 
 
 class RValueParameter(BuildingTemplateParameter):
@@ -783,89 +354,141 @@ class RValueParameter(BuildingTemplateParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
-        desired_r_value = self.extract_storage_values(whitebox_sim.storage_vector)
-        for zone in ["Perimeter", "Core"]:
-            zone_obj = getattr(whitebox_sim.template, zone)
-            constructions = zone_obj.Constructions
-            construction = getattr(constructions, self.path[0])
-            # TODO: make sure units are correct!!!
-            # = self.infer_insulation_layer()
-            layers = construction.Layers
-            insulation_layer_ix = None
-            k_min = 999999
-            for i, layer in enumerate(layers):
-                if layer.Material.Conductivity < k_min:
-                    k_min = layer.Material.Conductivity
-                    insulation_layer_ix = i
+        pass
+        # desired_r_value = self.extract_storage_values(whitebox_sim.storage_vector)
+        # for zone in ["Perimeter", "Core"]:
+        #     zone_obj = getattr(whitebox_sim.template, zone)
+        #     constructions = zone_obj.Constructions
+        #     construction = getattr(constructions, self.path[0])
+        #     # TODO: make sure units are correct!!!
+        #     # = self.infer_insulation_layer()
+        #     layers = construction.Layers
+        #     insulation_layer_ix = None
+        #     k_min = 999999
+        #     for i, layer in enumerate(layers):
+        #         if layer.Material.Conductivity < k_min:
+        #             k_min = layer.Material.Conductivity
+        #             insulation_layer_ix = i
 
-            i = insulation_layer_ix
-            all_layers_except_insulation_layer = [a for a in layers]
-            all_layers_except_insulation_layer.pop(i)
-            insulation_layer: MaterialLayer = layers[i]
+        #     i = insulation_layer_ix
+        #     all_layers_except_insulation_layer = [a for a in layers]
+        #     all_layers_except_insulation_layer.pop(i)
+        #     insulation_layer: MaterialLayer = layers[i]
 
-            if desired_r_value <= sum(
-                [a.r_value for a in all_layers_except_insulation_layer]
-            ):
-                raise ValueError(
-                    f"Cannot set assembly r-value smaller than "
-                    f"{sum([a.r_value for a in all_layers_except_insulation_layer])} "
-                    f"because it would result in an insulation of a "
-                    f"negative thickness. Try a higher value or changing the material "
-                    f"layers instead."
-                )
+        #     if desired_r_value <= sum(
+        #         [a.r_value for a in all_layers_except_insulation_layer]
+        #     ):
+        #         raise ValueError(
+        #             f"Cannot set assembly r-value smaller than "
+        #             f"{sum([a.r_value for a in all_layers_except_insulation_layer])} "
+        #             f"because it would result in an insulation of a "
+        #             f"negative thickness. Try a higher value or changing the material "
+        #             f"layers instead."
+        #         )
 
-            alpha = float(desired_r_value) / construction.r_value
-            new_r_value = (
-                (
-                    (alpha - 1)
-                    * sum([a.r_value for a in all_layers_except_insulation_layer])
-                )
-            ) + alpha * insulation_layer.r_value
-            insulation_layer.r_value = new_r_value
-            if insulation_layer.Thickness <= 0.003:
-                construction.Layers = all_layers_except_insulation_layer
+        #     alpha = float(desired_r_value) / construction.r_value
+        #     new_r_value = (
+        #         (
+        #             (alpha - 1)
+        #             * sum([a.r_value for a in all_layers_except_insulation_layer])
+        #         )
+        #     ) + alpha * insulation_layer.r_value
+        #     insulation_layer.r_value = new_r_value
+        #     if insulation_layer.Thickness <= 0.003:
+        #         construction.Layers = all_layers_except_insulation_layer
+
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        if "Facade" in self.name:
+            surface = "Facade"
+        elif "Roof" in self.name:
+            surface = "Roof"
+        elif "Slab" in self.name:
+            surface = "Slab"
+        path = ["Constructions", surface]
+        val = building_template.Perimeter
+        for attr in path:
+            val = getattr(val, attr)
+        return self.to_ml(value=val.r_value)
 
 
-class TMassParameter(BuildingTemplateParameter):
+class TMassParameter(OneHotParameter):
+    __slots__ = "path"
+
     def __init__(self, path, **kwargs):
-        super().__init__(path, **kwargs)
+        super().__init__(count=4, **kwargs)
+        self.path = path.split(".")
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        desired_heat_capacity_per_wall_area = self.extract_storage_values(
-            whitebox_sim.storage_vector
-        )
-        for zone in ["Perimeter", "Core"]:
-            zone_obj = getattr(whitebox_sim.template, zone)
-            constructions = zone_obj.Constructions
-            construction = getattr(constructions, self.path[0])
+        pass
+        # hot_bin = self.extract_storage_values(whitebox_sim.storage_vector)
+        # # hot_bin = self.get_tmas_idx(value)
+        # desired_heat_capacity_per_wall_area = ThermalMassCapacities[
+        #     ThermalMassConstructions(hot_bin).name
+        # ].value
+        # for zone in ["Perimeter", "Core"]:
+        #     zone_obj = getattr(whitebox_sim.template, zone)
+        #     constructions = zone_obj.Constructions
+        #     construction = getattr(constructions, self.path[0])
 
-            concrete_layer = construction.Layers[0]  # concrete
-            material = concrete_layer.Material
-            cp = material.SpecificHeat
-            rho = material.Density
-            volumetric_cp = cp * rho
-            old_thermal_mass = construction.heat_capacity_per_unit_wall_area
-            thermal_mass_without_concrete = (
-                old_thermal_mass - concrete_layer.heat_capacity
-            )
-            thickness = (
-                desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
-            ) / volumetric_cp
-            # thickness = desired_heat_capacity_per_wall_area / (cp * rho)
-            if thickness < 0.004:
-                all_layers_except_mass = [a for a in construction.Layers]
-                all_layers_except_mass.pop(0)
-                construction.Layers = all_layers_except_mass
-            else:
-                concrete_layer.Thickness = thickness
+        #     concrete_layer = construction.Layers[0]  # concrete
+        #     material = concrete_layer.Material
+        #     cp = material.SpecificHeat
+        #     rho = material.Density
+        #     volumetric_cp = cp * rho
+        #     old_thermal_mass = construction.heat_capacity_per_unit_wall_area
+        #     thermal_mass_without_concrete = (
+        #         old_thermal_mass - concrete_layer.heat_capacity
+        #     )
+        #     thickness = (
+        #         desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
+        #     ) / volumetric_cp
+        #     if thickness < 0.004:
+        #         all_layers_except_mass = [a for a in construction.Layers]
+        #         all_layers_except_mass.pop(0)
+        #         construction.Layers = all_layers_except_mass
+        #     else:
+        #         concrete_layer.Thickness = thickness
+
+    def extract_from_template(self, building_template):
+        if "Facade" in self.name:
+            surface = "Facade"
+        elif "Roof" in self.name:
+            surface = "Roof"
+        elif "Slab" in self.name:
+            surface = "Slab"
+        path = ["Constructions", surface, "heat_capacity_per_unit_wall_area"]
+        val = building_template.Perimeter
+        for attr in path:
+            val = getattr(val, attr)
+        hot_bin = self.get_tmas_idx(val)
+        return self.to_ml(value=hot_bin)
+
+    def get_tmas_idx(self, val):
+        if val >= ThermalMassCapacities.Concrete:
+            hot_bin = ThermalMassConstructions.Concrete.value
+        elif (
+            val < ThermalMassCapacities.Concrete and val >= ThermalMassCapacities.Brick
+        ):
+            hot_bin = ThermalMassConstructions.Brick.value
+        elif (
+            val < ThermalMassCapacities.Brick and val >= ThermalMassCapacities.WoodFrame
+        ):
+            hot_bin = ThermalMassConstructions.WoodFrame.value
+        elif val < ThermalMassCapacities.WoodFrame:
+            hot_bin = ThermalMassConstructions.SteelFrame.value
+        return hot_bin
 
 
 class WindowParameter(NumericParameter):
     def __init__(self, min, max, **kwargs):
-        super().__init__(shape_storage=(3,), shape_ml=(3,), **kwargs)
-        self.min = np.array(min)
-        self.max = np.array(max)
-        self.range = self.max - self.min
+        super().__init__(min=min, max=max, shape_storage=(1,), shape_ml=(1,), **kwargs)
 
     def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
         """
@@ -878,32 +501,93 @@ class WindowParameter(NumericParameter):
         Args:
             whitebox_sim: WhiteboxSimulation
         """
+        pass  # TODO
+        # logger.info(
+        #     "Skipping update of window parameters - will build simple window in build_shoebox"
+        # )
         # Get the var id and batch id for naming purposes
-        variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
-            whitebox_sim.storage_vector
-        )
-        batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
-            whitebox_sim.storage_vector
-        )
+        # variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
+        #     whitebox_sim.storage_vector
+        # )
+        # batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
+        #     whitebox_sim.storage_vector
+        # )
 
-        # get the three values for u/shgc/vlt
-        values = self.extract_storage_values(whitebox_sim.storage_vector)
+        # values = self.extract_storage_values(whitebox_sim.storage_vector)
 
-        # separate them
-        u_value = values[0]
-        shgc = values[1]
-        vlt = values[2]
+        # VERSION WTIH ARCHETYPAL
+        # window_material = SimpleGlazingMaterial(Name=f"SimpleWindowMat_U{u_value}_SHGC{shgc}", Uvalue=u_value, SolarHeatGainCoefficient=shgc)
+        # window_layer = MaterialLayer(window_material, Thickness=0.06)
+        # window_construction = WindowConstruction(Name=f"SimpleWindowCon_U{u_value}_SHGC{shgc}", Layers=[window_layer])
+        # # Update the window
+        # whitebox_sim.template.Windows.Construction = (window_construction)
 
-        # create a new single layer window that has the properties from special single layer material
-        window = WindowConstruction.from_shgc(
-            Name=f"window-{int(batch_id):05d}-{int(variation_id):05d}",
-            solar_heat_gain_coefficient=shgc,
-            u_factor=u_value,
-            visible_transmittance=vlt,
-        )
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate
+        """
+        window = building_template.Windows.Construction
+        uval = window.u_value
+        if self.name == "WindowUValue":
+            return self.to_ml(value=uval)
+        elif self.name == "WindowShgc":
+            if window.glazing_count == 2:
+                value = window.shgc()
+            elif window.glazing_count == 1:
+                # Calculate shgc from t_sol of construction
+                tsol = window.Layers[0].Material.SolarTransmittance
+                value = self.single_pane_shgc_estimation(tsol, uval)
+            else:
+                # if window is not 2 layers
+                logging.info(
+                    f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
+                )
+                value = 0.6
+        return self.to_ml(value=value)
 
-        # Update the window
-        whitebox_sim.template.Windows.Construction = window
+    @classmethod
+    def single_pane_shgc_estimation(cls, tsol, uval):
+        """
+        Calculate shgc for single pane window - from Archetypal tsol calulation based on u-val and shgc
+        """
+
+        def shgc_intermediate(tsol, uval):
+            # if u_factor >= 4.5 and shgc < 0.7206:
+            #     return 0.939998 * shgc ** 2 + 0.20332 * shgc
+            if uval >= 4.5 and tsol < 0.6346:
+                return 10 / 469999 * (math.sqrt(2349995000 * tsol + 25836889) - 5083)
+            # if u_factor >= 4.5 and shgc >= 0.7206:
+            #     return 1.30415 * shgc - 0.30515
+            if uval >= 4.5 and tsol >= 0.6346:
+                return (20000 * tsol + 6103) / 26083
+            # if u_factor <= 3.4 and shgc <= 0.15:
+            #     return 0.41040 * shgc
+            if uval <= 3.4 and tsol <= 0.06156:
+                return tsol / 0.41040
+            # if u_factor <= 3.4 and shgc > 0.15:
+            #     return 0.085775 * shgc ** 2 + 0.963954 * shgc - 0.084958
+            if uval <= 3.4 and tsol > 0.06156:
+                return (
+                    -1 * 481977 + math.sqrt(239589100979 + 85775000000 * tsol)
+                ) / 85775
+            else:
+                logger.info(
+                    "WARNING: could not calculate shgc - review window parameters. Defaulting to 0.6."
+                )
+                return 0.6
+
+        if 3.4 <= uval <= 4.5:
+            return np.interp(
+                uval,
+                [3.4, 4.5],
+                [shgc_intermediate(tsol, 3.4), shgc_intermediate(tsol, 4.5)],
+            )
+        else:
+            return shgc_intermediate(tsol, uval)
 
 
 class SchedulesParameters(SchemaParameter):
@@ -929,63 +613,49 @@ class SchedulesParameters(SchemaParameter):
         Args:
             whitebox_sim (WhiteboxSimulation): the simulation object with template to configure.
         """
-        # TODO: avoid double mutation of recycled schedule - i think this is fixed, should confirm.
-        seed = int(
-            whitebox_sim.schema["schedules_seed"].extract_storage_values(
-                whitebox_sim.storage_vector
-            )
-        )
-        schedules = get_schedules(
-            whitebox_sim.template, zones=["Core"], paths=self.paths
-        )
-        operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
-        new_schedules = mutate_timeseries(schedules, operations_map, seed)
-        update_schedule_objects(
-            whitebox_sim.template,
-            timeseries=new_schedules,
-            zones=["Core"],
-            paths=self.paths,
-            id=seed,
-        )
-        update_schedule_objects(
-            whitebox_sim.template,
-            timeseries=new_schedules,
-            zones=["Perimeter"],
-            paths=self.paths,
-            id=seed,
-        )
-        whitebox_sim.template.Perimeter.Conditioning.MechVentSchedule = (
-            whitebox_sim.template.Perimeter.Loads.OccupancySchedule
-        )
-        whitebox_sim.template.Perimeter.DomesticHotWater.WaterSchedule = (
-            whitebox_sim.template.Perimeter.Loads.OccupancySchedule
-        )
+        pass
+        # # TODO: avoid double mutation of recycled schedule - i think this is fixed, should confirm.
+        # seed = int(
+        #     whitebox_sim.schema["schedules_seed"].extract_storage_values(
+        #         whitebox_sim.storage_vector
+        #     )
+        # )
+        # schedules = get_schedules(
+        #     whitebox_sim.template, zones=["Core"], paths=self.paths
+        # )
+        # operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
+        # new_schedules = mutate_timeseries(schedules, operations_map, seed)
+        # update_schedule_objects(
+        #     whitebox_sim.template,
+        #     timeseries=new_schedules,
+        #     zones=["Core"],
+        #     paths=self.paths,
+        #     id=seed,
+        # )
+        # update_schedule_objects(
+        #     whitebox_sim.template,
+        #     timeseries=new_schedules,
+        #     zones=["Perimeter"],
+        #     paths=self.paths,
+        #     id=seed,
+        # )
+        # whitebox_sim.template.Perimeter.Conditioning.MechVentSchedule = (
+        #     whitebox_sim.template.Perimeter.Loads.OccupancySchedule
+        # )
+        # whitebox_sim.template.Perimeter.DomesticHotWater.WaterSchedule = (
+        #     whitebox_sim.template.Perimeter.Loads.OccupancySchedule
+        # )
 
-
-class TimeSeriesOutput:
-    __slots__ = (
-        "name",
-        "var_name",
-        "freq",
-        "key",
-        "store_output",
-    )
-
-    def __init__(
-        self, name, var_name, store_output, freq="hourly", key="OUTPUT:VARIABLE"
-    ):
-        self.name = name
-        self.var_name = var_name
-        self.freq = freq
-        self.key = key
-        self.store_output = store_output
-
-    def to_output_dict(self):
-        return dict(
-            key=self.key,
-            Variable_Name=self.var_name,
-            Reporting_Frequency=self.freq,
-        )
+    def extract_from_template(self, building_template):
+        """
+        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
+        Works as the reverse of mutate_simulation_object
+        Args:
+            whitebox_sim: WhiteboxSimulation
+            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
+        """
+        schedules = get_schedules(building_template, zones=["Core"], paths=self.paths)
+        return self.to_ml(value=schedules)
 
 
 class Schema:
@@ -1021,21 +691,6 @@ class Schema:
                     info="variation_id of design",
                 ),
                 OneHotParameter(
-                    name="program_type",
-                    count=19,
-                    info="Indicator of program type",
-                    shape_ml=(0,),
-                ),
-                NumericParameter(
-                    name="vintage",
-                    info="The year of construction",
-                    min=1920,
-                    max=2020,
-                    mean=1980,
-                    std=20,
-                    shape_ml=(0,),
-                ),
-                OneHotParameter(
                     name="climate_zone",
                     count=17,
                     info="Lookup index of template library to use.",
@@ -1066,22 +721,22 @@ class Schema:
                     info="Height [m]",
                 ),
                 ShoeboxGeometryParameter(
-                    name="facade_2_footprint",
-                    min=0.25,
-                    max=1.5,
-                    mean=0.75,
+                    name="floor_2_facade",  # PERIM DEPTH, CORE DEPTH, GROUND DEPTH, ROOF DEPTH
+                    min=0.5,
+                    max=2.2,
+                    mean=1.3,
                     std=0.15,
                     source="dogan_shoeboxer_2017",
-                    info="Facade to footprint ratio (unitless)",
+                    info="Building floor area to facade (walls only) ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="perim_2_footprint",
+                    name="core_2_perim",
                     min=0.05,
-                    max=0.95,
+                    max=1.9,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
-                    info="Perimeter to footprint ratio (unitless)",
+                    info="Core to Perimeter ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="roof_2_footprint",
@@ -1093,22 +748,14 @@ class Schema:
                     info="Roof to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
-                    name="footprint_2_ground",
+                    name="ground_2_footprint",
                     min=0.05,
                     max=0.95,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
-                    info="Footprint to ground ratio (unitless)",
+                    info="Ground to footprint ratio (unitless)",
                 ),
-                # ShoeboxGeometryParameter(
-                #     name="shading_fact",
-                #     min=0,
-                #     max=1,
-                #     mean=0.1,
-                #     std=0.33,
-                #     info="Shading fact (unitless)",
-                # ),
                 ShoeboxGeometryParameter(
                     name="wwr",
                     min=0.05,
@@ -1121,22 +768,31 @@ class Schema:
                     name="orientation",
                     info="Shoebox Orientation",
                 ),
+                NumericParameter(
+                    name="shading_seed",
+                    info="Seed to generate random shading angles, turns into sched.",
+                    min=0,
+                    max=90,
+                    mean=20,
+                    std=10,
+                    shape_ml=(0,),
+                ),
                 BuildingTemplateParameter(
                     name="HeatingSetpoint",
                     path="Conditioning.HeatingSetpoint",
                     min=14,
-                    max=30,
+                    max=24,
                     mean=21,
-                    std=4,
+                    std=2,
                     info="Heating setpoint",
                 ),
                 BuildingTemplateParameter(
                     name="CoolingSetpoint",
                     path="Conditioning.CoolingSetpoint",
-                    min=14,
+                    min=22,
                     max=30,
-                    mean=22,
-                    std=4,
+                    mean=24,
+                    std=1,
                     info="Cooling setpoint",
                 ),
                 # BuildingTemplateParameter(
@@ -1192,32 +848,49 @@ class Schema:
                 BuildingTemplateParameter(
                     name="Infiltration",
                     path="Ventilation.Infiltration",
-                    min=0.1,
-                    max=4,
-                    mean=2,
-                    std=1,
+                    min=0.0,
+                    max=0.001,
+                    mean=0.0006,
+                    std=0.0002,
                     source="tacit",
-                    info="Infiltration rate [ach]",
+                    info="Infiltration rate [m3/s/m2 ext area]",
+                ),
+                BuildingTemplateParameter(
+                    name="VentilationPerArea",
+                    path="Conditioning.MinFreshAirPerArea",  # TODO check & set max and min
+                    min=0.0,
+                    max=0.005,
+                    mean=0.0004,
+                    std=0.0002,
+                    source="tacit",
+                    info="Outdoor air flow per floor area, minimum (m3/s/m2)",
+                ),
+                BuildingTemplateParameter(
+                    name="VentilationPerPerson",
+                    path="Conditioning.MinFreshAirPerPerson",  # TODO check & set max and min
+                    min=0,
+                    max=0.015,
+                    mean=0.002,
+                    std=0.001,
+                    source="tacit",
+                    info="Outdoor air flow per person, minimum (m3/s/person)",
+                ),
+                OneHotParameter(
+                    name="VentilationMode",
+                    count=3,
+                    info="Mode setter for mechanical ventilation response schedule",
                 ),
                 TMassParameter(
                     name="FacadeMass",
                     path="Facade",
-                    min=13000,
-                    max=800000,
-                    mean=80000,
-                    std=20000,
                     source="https://www.designingbuildings.co.uk/",
                     info="Exterior wall thermal mass (J/Km2)",
                 ),
                 TMassParameter(
                     name="RoofMass",
                     path="Roof",
-                    min=13000,
-                    max=1500000,
-                    mean=200000,
-                    std=200000,
                     source="https://www.designingbuildings.co.uk/",
-                    info="Exterior roof thermal mass (J/Km2)",
+                    info="Exterior wall thermal mass (J/Km2)",
                 ),
                 RValueParameter(
                     name="FacadeRValue",
@@ -1250,13 +923,32 @@ class Schema:
                     info="Slab R-value",
                 ),
                 WindowParameter(
-                    name="WindowSettings",
-                    min=(0.3, 0.05, 0.05),
-                    max=(7.0, 0.99, 0.99),
-                    mean=np.array([5, 0.5, 0.5]),
-                    std=np.array([2, 0.1, 0.1]),
+                    name="WindowUValue",
+                    min=0.3,
+                    max=7.0,
+                    mean=5.0,
+                    std=2.0,
                     source="climate studio",
-                    info="U-value (m2K/W), shgc, vlt",
+                    info="U-value (m2K/W)",
+                ),
+                WindowParameter(
+                    name="WindowShgc",
+                    min=0.05,
+                    max=0.99,
+                    mean=0.5,
+                    std=0.1,
+                    source="climate studio",
+                    info="SHGC",
+                ),
+                OneHotParameter(
+                    name="EconomizerSettings",
+                    count=2,
+                    info="Flag for economizer use.",
+                ),
+                OneHotParameter(
+                    name="RecoverySettings",
+                    count=3,
+                    info="Index for use of heat recovery (type) - none, hrv, erv.",
                 ),
                 SchemaParameter(
                     name="schedules_seed",
@@ -1269,38 +961,38 @@ class Schema:
                 ),
             ]
 
-        if timeseries_outputs != None:
-            self.timeseries_outputs = timeseries_outputs
         self.timeseries_outputs = [
             TimeSeriesOutput(
                 name="Heating",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Ideal Loads Zone Total Heating Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=True,
             ),
             TimeSeriesOutput(
                 name="Cooling",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Ideal Loads Zone Total Cooling Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=True,
             ),
             TimeSeriesOutput(
                 name="Lighting",
                 key="OUTPUT:VARIABLE",
                 var_name="Lights Total Heating Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=False,
             ),
             TimeSeriesOutput(
                 name="TransmittedSolar",
                 key="OUTPUT:VARIABLE",
                 var_name="Zone Windows Total Transmitted Solar Radiation Energy",
-                freq="hourly",
+                freq="Hourly",
                 store_output=False,
             ),
         ]
+        if timeseries_outputs != None:
+            self.timeseries_outputs.extend(timeseries_outputs)
         # multiply len by 2 because perim/core
         self.sim_output_shape = (
             len([series for series in self.timeseries_outputs if series.store_output])
@@ -1326,7 +1018,7 @@ class Schema:
         """Return a list of the named parameters in the schema"""
         return list(self._key_ix_lookup.keys())
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> SchemaParameter:
         """
         Args:
             key: str, name of parameter
@@ -1436,6 +1128,36 @@ class Schema:
                     ml_vector_components.append(vector_components)
         ml_vectors = np.hstack(ml_vector_components)
         return ml_vectors, timeseries_ops
+
+    def extract_from_template(self, building_template):
+        # storage_vector = self.generate_empty_storage_vector()
+        template_vect = []
+        schedules_vect = []
+        parameters = self.parameters
+        for parameter in parameters:
+            if parameter.in_ml:
+                if isinstance(parameter, SchedulesParameters):
+                    schedules_vect = parameter.extract_from_template(building_template)
+                elif isinstance(parameter, TMassParameter):
+                    vals = parameter.extract_from_template(building_template)
+                    # append to template vector
+                    template_vect.extend(
+                        vals[0]
+                    )  # Never occurs for batch (one template at a time)
+                elif (
+                    isinstance(parameter, BuildingTemplateParameter)
+                    or isinstance(parameter, RValueParameter)
+                    or isinstance(parameter, WindowParameter)
+                ):
+                    val = parameter.extract_from_template(building_template)
+                    # append to template vector
+                    template_vect.append(val)
+
+        # return values which will be used for a building parameter vector and/or timeseries vector (schedules)
+        return dict(
+            template_vect=np.array(template_vect),
+            schedules_vect=schedules_vect,
+        )
 
 
 if __name__ == "__main__":
