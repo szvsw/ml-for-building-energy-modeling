@@ -327,18 +327,18 @@ class Umi:
         # TODO: how to deal with things that are named weird
         vent_sched_name = building_template.Perimeter.Conditioning.MechVentSchedule.Name
         if building_template.Perimeter.Conditioning.MechVentSchedule == 0:
-            vent_mode = MechVentMode.Off.value
+            vent_mode = MechVentMode.Off
         elif "ALWAYSOFF" in vent_sched_name.upper():
-            vent_mode = MechVentMode.AllOn.value
+            vent_mode = MechVentMode.AllOn
         elif "ALWAYSON" in vent_sched_name.upper():
-            vent_mode = MechVentMode.OccupancySchedule.value
+            vent_mode = MechVentMode.OccupancySchedule
         elif "OCC" in vent_sched_name.upper():
-            vent_mode = MechVentMode.OccupancySchedule.value
+            vent_mode = MechVentMode.OccupancySchedule
         else:
             logger.warning(
                 "Mechanical ventilation response for schedule {vent_sched_name} is not supported. Defaulting to occupancy."
             )
-            vent_mode = MechVentMode.OccupancySchedule.value
+            vent_mode = MechVentMode.OccupancySchedule
 
         recovery_type = building_template.Perimeter.Conditioning.HeatRecoveryType.name
         if recovery_type == "NONE":
@@ -364,8 +364,8 @@ class Umi:
             ventilation_mode=vent_mode,
             heating_sp=building_template.Perimeter.Conditioning.HeatingSetpoint,
             cooling_sp=building_template.Perimeter.Conditioning.CoolingSetpoint,
-            heat_recovery=getattr(HRV, recovery_type).value,
-            economizer=getattr(Econ, econ_type).value,
+            heat_recovery=getattr(HRV, recovery_type),
+            economizer=getattr(Econ, econ_type),
             wall_r_val=wall_r,
             wall_mass=wall_mass,
             roof_r_val=roof_r,
@@ -378,18 +378,29 @@ class Umi:
 
     @classmethod
     def sort_tmass(cls, val):
+        """
+        Sorts thermal mass into categories based on capacity
+
+        Args:
+            val (float): heat capacity
+
+        Returns:
+            category (ThermalMassCapacities): category of thermal mass
+
+
+        """
         if val >= ThermalMassCapacities.Concrete:
-            return ThermalMassConstructions.Concrete.value
+            return ThermalMassConstructions.Concrete
         elif (
             val < ThermalMassCapacities.Concrete and val >= ThermalMassCapacities.Brick
         ):
-            return ThermalMassConstructions.Brick.value
+            return ThermalMassConstructions.Brick
         elif (
             val < ThermalMassCapacities.Brick and val >= ThermalMassCapacities.WoodFrame
         ):
-            return ThermalMassConstructions.WoodFrame.value
+            return ThermalMassConstructions.WoodFrame
         elif val < ThermalMassCapacities.WoodFrame:
-            return ThermalMassConstructions.SteelFrame.value
+            return ThermalMassConstructions.SteelFrame
 
     @classmethod
     def single_pane_shgc_estimation(cls, tsol, uval):
