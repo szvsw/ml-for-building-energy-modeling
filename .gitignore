@@ -163,3 +163,5 @@ ml-for-bem/data/hdf5/full_climate_zone/
 ml-for-bem/scratch*
 **/*.mtx
 **/*.wea
+
+**scratch**
