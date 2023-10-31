@@ -38,12 +38,6 @@ from archetypal.template.window_setting import WindowSetting
 from archetypal.template.zone_construction_set import ZoneConstructionSet
 from archetypal.template.zonedefinition import ZoneDefinition
 
-# module_path = os.path.abspath(
-#     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-# )
-# if module_path not in sys.path:
-#     sys.path.append(str(module_path))
-
 from shoeboxer.builder import template_dict
 from utils.constants import *
 from utils.schedules import get_schedules

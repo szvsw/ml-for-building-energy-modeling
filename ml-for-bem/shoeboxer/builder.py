@@ -11,13 +11,6 @@ import copy
 import math
 import calendar
 
-module_path = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-)
-# module_path = Path(module_path, "ml-for-bem")
-if module_path not in sys.path:
-    sys.path.append(str(module_path))
-
 import archetypal as ar
 from archetypal.idfclass import IDF
 from archetypal import settings
@@ -36,7 +29,7 @@ import numpy as np
 import pandas as pd
 
 
-EPW_PATH = Path(module_path, EPW_RELATIVE_PATH)
+EPW_PATH = Path(EPW_RELATIVE_PATH)
 
 logging.basicConfig()
 logger = logging.getLogger("ShoeBox")

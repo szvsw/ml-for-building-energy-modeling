@@ -4,11 +4,7 @@ from pathlib import Path
 
 from utils.constants import DEFAULT_SCHEDULES_PATH
 
-module_path = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-)
-
-SCHEDULES_ARR_PATH = Path(module_path, DEFAULT_SCHEDULES_PATH)
+SCHEDULES_ARR_PATH = Path(DEFAULT_SCHEDULES_PATH)
 
 default_schedules = np.load(SCHEDULES_ARR_PATH)
 
