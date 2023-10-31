@@ -9,5 +9,6 @@
     "terminal.integrated.env.linux": {
         "PYTHONPATH": "${workspaceFolder}/ml-for-bem"
     },
+    "terminal.integrated.cwd": "${workspaceFolder}/ml-for-bem",
     "jupyter.notebookFileRoot": "${workspaceFolder}/ml-for-bem",
 }
