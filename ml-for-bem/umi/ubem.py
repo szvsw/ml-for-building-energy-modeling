@@ -1,3 +1,4 @@
+from typing import Tuple
 import sys
 import os
 from pathlib import Path
@@ -42,6 +43,7 @@ from shoeboxer.builder import template_dict
 from utils.constants import *
 from utils.schedules import get_schedules
 from weather.weather import extract
+from umi.trace import Tracer, Sky
 
 logging.basicConfig()
 logger = logging.getLogger("UMI")
@@ -198,6 +200,10 @@ class Umi:
     def __init__(
         self,
         gdf: GeoDataFrame,
+        height_col: str,
+        wwr_col: str,
+        id_col: str,
+        template_name_col: str,
         epw: EPW,
         template_lib: UmiTemplateLibrary,
         shoebox_width=3,  # Can be list (for each bldg) or single value TODO
@@ -205,6 +211,18 @@ class Umi:
         perim_offset=PERIM_OFFSET,
         calculate_shading=False,
     ):
+        assert len([t.Name for t in template_lib.BuildingTemplates]) == len(
+            set([t.Name for t in template_lib.BuildingTemplates])
+        ), "Duplicate names in template library!  Aborting."
+
+        # Store column metadata for building_gdf
+        self.height_col = height_col
+        self.id_col = id_col
+        self.wwr_col = wwr_col
+        self.template_name_col = template_name_col
+        self.template_idx_col = "template_idx"
+
+        # store objects
         self.building_gdf = gdf
         self.epw = epw
         self.template_lib = template_lib
@@ -215,73 +233,117 @@ class Umi:
         self.perim_offset = perim_offset
 
         start_time = time.time()
-        self.schedules_array, self.features_df = self.pepare_archetypal_features(
-            self.template_lib
+        (
+            self.template_features_df,
+            self.schedules_array,
+        ) = self.prepare_archetypal_features(self.template_lib)
+        # Add in template_idx for feature array
+        self.building_gdf[self.template_idx_col] = list(
+            self.template_features_df.loc[self.building_gdf[self.template_name_col]][
+                self.template_idx_col
+            ]
         )
         self.epw_array = self.prepare_epw_features()
-        self.prepare_gis_features()
-        self.prepare_shoeboxes(calculate_shading)
-
-        # Add in template_idx for feature array
-        if "template_idx" not in self.building_gdf.columns:
-            self.building_gdf["template_idx"] = list(
-                self.features_df.loc[self.building_gdf["template_name"]]["template_idx"]
-            )
+        self.gis_features_df = self.prepare_gis_features()
+        self.shoeboxes_df = self.prepare_shoeboxes(calculate_shading)
 
         logger.info(f"Processed UMI in {time.time() - start_time:,.2f} seconds")
 
-    def prepare_gis_features(self):
+    def prepare_gis_features(self) -> pd.DataFrame:
+        """
+        Prepares geometric features from gis data.  These are the geometric features which
+        are always constant for entire buildings, e.g. heights, core_2_perim, floor_2_facade,
+        floor_count, footprint_area, etc, but does not include e.g. roof_2_footprint,
+        ground_2_footprint, or shading
+
+        Returns:
+            geometric_features_df (pd.DataFrame): df with geometric features
+        """
         # TODO: courtyards
-        self.building_gdf["footprint_area"] = self.building_gdf["geometry"].area
         self.building_gdf["cores"] = self.building_gdf["geometry"].buffer(
             -1 * self.perim_offset
         )
-        core_areas = self.building_gdf["cores"].area
-        perim_areas = self.building_gdf["footprint_area"] - core_areas
-        self.building_gdf["core_2_perim"] = core_areas / perim_areas
-        perimeter_length = self.building_gdf["geometry"].length
-        facade_area = perimeter_length * self.building_gdf["height"]
-        self.building_gdf["floor_2_facade"] = perim_areas / facade_area
-        self.building_gdf["floor_count"] = round(
-            self.building_gdf["height"] / self.floor_to_floor_height
-        )  # TODO reset floor_to_floor height so there is a whole number of floors?
-        self.building_gdf["roof_2_footprint"] = (
-            1 / self.building_gdf["floor_count"]
-        )  # fooprint_A / TFA = fooprint_A/(fooprint_A * n_floors)
-        self.building_gdf["ground_2_footprint"] = self.building_gdf[
-            "roof_2_footprint"
-        ]  # Always the same for 2.5D
+        ids = self.building_gdf[self.id_col]
+        if len(ids) != len(ids.unique()):
+            logger.warning("Duplicate ids in building gdf! Overwriting with new ids.")
+            self.building_gdf[self.id_col] = range(len(ids))
+            ids = self.building_gdf[self.id_col]
 
-    @classmethod
-    def pepare_archetypal_features(cls, template_lib: UmiTemplateLibrary):
+        heights = self.building_gdf[self.height_col]
+        wwrs = self.building_gdf[self.wwr_col]
+        template_names = self.building_gdf[self.template_name_col]
+        footprint_areas = self.building_gdf.geometry.area
+        perimeter_length = self.building_gdf.geometry.length
+        core_areas = self.building_gdf.cores.area
+
+        perim_areas = footprint_areas - core_areas
+        core_2_perim = core_areas / perim_areas
+        facade_area = perimeter_length * heights
+        floor_2_facade = perim_areas / facade_area
+        floor_count = round(heights / self.floor_to_floor_height)
+        # TODO: reset floor_to_floor height so there is a whole number of floors?
+
+        geometric_features_df = pd.DataFrame()
+        geometric_features_df["building_id"] = ids
+        geometric_features_df["wwr"] = wwrs
+        geometric_features_df["height"] = heights
+        geometric_features_df["footprint_area"] = footprint_areas
+        geometric_features_df["core_2_perim"] = core_2_perim
+        geometric_features_df["floor_2_facade"] = floor_2_facade
+        geometric_features_df["floor_count"] = floor_count
+        geometric_features_df["template_name"] = template_names
+
+        return geometric_features_df
+
+    def prepare_archetypal_features(
+        self,
+        template_lib: UmiTemplateLibrary,
+    ) -> Tuple[pd.DataFrame, np.ndarray]:
         """
         Fetches data from archetypal building templates for shoeboxes.
 
         Args:
-            UmiTemplateLibrary (default=None): archetypal template library; if none passed, uses registered UTL in self.template_lib
+            UmiTemplateLibrary: archetypal template library
 
         Returns:
-            schedules:  a numpy array of schedule data for each building template [n_templates, n_used_templates (3), 8760]
-            template_df: a pandas df of template features that are used in the template_dict of the shoebox builder (and surrogate)
+            template_df (pd.DataFrame): a pandas df of template features that are used in the template_dict of the shoebox builder (and surrogate)
+            schedules (np.ndarray):  a numpy array of schedule data for each building template (n_templates, n_used_templates (3), 8760)
         """
-        # TODO pass over unused templates
-        template_vectors_dict = {}
+
         # check that there are no duplicate names in the template library
         names = [t.Name for t in template_lib.BuildingTemplates]
         assert len(names) == len(
             set(names)
         ), "Duplicate names in template library!  Aborting."
-        for building_template in template_lib.BuildingTemplates:
-            data = cls.dict_from_buildingtemplate(building_template)
-            template_vectors_dict[building_template.Name] = data
+
+        # Check that all the templates in the gdf are in the template library
+        needed_templates = list(self.building_gdf[self.template_name_col].unique())
+        assert all(
+            [temp_name in names for temp_name in needed_templates]
+        ), f"At least one of the templates in the GDF template assignment column {self.template_name_col} is not in the template library.  Aborting!"
+
+        # get the template data
+        template_data_dict = {}
+        for i, building_template in enumerate(template_lib.BuildingTemplates):
+            # Skip unneeded templates
+            if building_template.Name not in needed_templates:
+                logger.debug(
+                    f"Skipping {building_template.Name} since it is not used in the GDF."
+                )
+                continue
+
+            data = self.dict_from_buildingtemplate(building_template)
+            data[self.template_name_col] = building_template.Name
+            data[self.template_idx_col] = i
+            template_data_dict[building_template.Name] = data
 
         n_templates = len(template_lib.BuildingTemplates)
         schedules = np.zeros((n_templates, len(SCHEDULE_PATHS), 8760))
-        for i, (_, d) in enumerate(template_vectors_dict.items()):
+        for i, (_, d) in enumerate(template_data_dict.items()):
             schedules[i] = d.pop("schedules")
-        features = pd.DataFrame.from_dict(template_vectors_dict).T
-        features["template_idx"] = list(range(features.shape[0]))
-        return schedules, features
+        # TODO: many of these are not returning with correct dtypes
+        template_features = pd.DataFrame.from_dict(template_data_dict).T
+        return template_features, schedules
 
     @classmethod
     def dict_from_buildingtemplate(cls, building_template: BuildingTemplate):
@@ -458,19 +520,31 @@ class Umi:
             "direct_normal_radiation",
             "diffuse_horizontal_radiation",
         ],
-    ):
+    ) -> np.ndarray:
+        """
+        Extracts timeseries data from epw and returns numpy array
+
+        Returns:
+            epw_array (np.ndarray): array of timeseries data (n_weather_channels, 8760)
+        """
         return extract(self.epw, timeseries)
 
     def prepare_shoeboxes(self, calculate_shading):
+        """
+        Build a dataframe of shoeboxes for the entire scene. This includes the final weighting needed
+        to combine the shoeboxes into a single prediction for each building.
+
+        Returns:
+            shoeboxes_df (pd.DataFrame): df with shoebox features and weights
+        """
         if calculate_shading:
             logger.info("Running raytracer...")
             logger.warning("RAYTRACER NOT SETUP. SKIPPING.")
-            self.allocate_shaded_shoeboxes()  # TODO
+            shoeboxes_df = self.allocate_shaded_shoeboxes()  # TODO
         else:
             # Make
-            self.allocate_unshaded_shoeboxes()
-        shading_cols = [f"shading_{x}" for x in range(SHADING_DIV_SIZE)]
-        self.shoebox_gdf[shading_cols] = 0
+            shoeboxes_df = self.allocate_unshaded_shoeboxes()
+        return shoeboxes_df
 
     def prepare_shading(self):
         pass
@@ -490,72 +564,140 @@ class Umi:
         weights_df["South"] = 0.5
         return weights_df
 
-    def allocate_unshaded_shoeboxes(self):
+    def allocate_unshaded_shoeboxes(self) -> pd.DataFrame:
         """
         Returns:
-            shoebox_df: Pandas DF with sizing details, building_id, orientation, and template_name, template_idx (joined with template_df that has template_dict column names)
-                NOTE: X-to-footprint values will be overwritten
-            schedules_array: same order as template_idx
-            epw_array: numpy array
-            shoebox_weights: pandas series, merged from weights per building_id for columns = ["N_weight", "E_weight", "S_weight", "W_weight"]
+            shoebox_df (pd.DataFrame): df with sizing details, building_id, orientation, and template_name, template_idx, joined with template_df that has template_dict column names, etc
         """
-        n_buildings = self.building_gdf.shape[0]
-        shoebox_gdf = self.building_gdf.merge(
-            self.features_df.reset_index(),
+        sky = Sky(
+            epw=self.epw,
+            mfactor=4,
+            n_azimuths=SHADING_DIV_SIZE * 2,
+            dome_radius=200,
+            run_conversion=False,
+        )
+        tracer = Tracer(
+            sky=sky,
+            gdf=self.building_gdf,
+            height_col=self.height_col,
+            id_col=self.id_col,
+            archetype_col=self.template_name_col,
+            node_width=1,
+            sensor_spacing=self.shoebox_width,
+            f2f_height=self.floor_to_floor_height,
+        )
+
+        # Compute and store the N/E/S/W weights for each building
+        tracer.compute_edge_orientation_weights()
+        self.gis_features_df["north_weight"] = tracer.buildings.north_weight.to_numpy()
+        self.gis_features_df["east_weight"] = tracer.buildings.east_weight.to_numpy()
+        self.gis_features_df["south_weight"] = tracer.buildings.south_weight.to_numpy()
+        self.gis_features_df["west_weight"] = tracer.buildings.west_weight.to_numpy()
+
+        # Compute the floor weight for each building
+        # If there is more than 1 floor, then we use the four shoeboxes from the bottom floor exactly once
+        # and the four shoeboxes from the top floor exactly once
+        # If there are more than 2 floors, then we use the four shoeboxes from the middle floors floor_count - 2 times
+        # Otherwise if there is exactly 1 floor, then we use the Exclusive shoeboxes for each direction exactly once
+        floor_names = ["bottom", "middle", "top", "exclusive"]
+        self.gis_features_df["bottom"] = (
+            self.gis_features_df["floor_count"] > 1
+        ).astype(int)
+        self.gis_features_df["top"] = (self.gis_features_df["floor_count"] > 1).astype(
+            int
+        )
+        self.gis_features_df["middle"] = (
+            self.gis_features_df["floor_count"] > 2
+        ).astype(int) * (self.gis_features_df["floor_count"] - 2)
+
+        self.gis_features_df["exclusive"] = (
+            self.gis_features_df["floor_count"] == 1
+        ).astype(int)
+        floor_counts = self.gis_features_df["floor_count"].values.reshape(-1, 1)
+
+        # normalize floor_totals
+        self.gis_features_df[floor_names] = (
+            self.gis_features_df[floor_names].values / floor_counts
+        ).clip(0, 1)
+
+        n_buildings = len(self.gis_features_df)
+
+        # TODO: check orientation # ordinal mapping
+        shoeboxes_df = pd.DataFrame(
+            {
+                "building_id": self.gis_features_df["building_id"].values.repeat(16),
+                "orientation": sorted(["east", "north", "south", "west"] * 4)
+                * n_buildings,
+                "roof_2_footprint": ([0.0, 0.0, 1.0, 1.0] * 4) * n_buildings,
+                "ground_2_footprint": ([1.0, 0.0, 0.0, 1.0] * 4) * n_buildings,
+                "floor_name": (floor_names * 4) * n_buildings,
+            }
+        )
+        # Bring in the building's geometric features like core_2_perim and floor_2_facade, height, etc
+        shoeboxes_df = shoeboxes_df.merge(
+            self.gis_features_df, left_on="building_id", right_on="building_id"
+        )
+        # bring in the template features like heating setpoint, etc
+        shoeboxes_df = shoeboxes_df.merge(
+            self.template_features_df,
             left_on="template_name",
-            right_on="index",
-            suffixes=(None, "_y"),
+            right_on=self.template_name_col,
         )
-        # # Make a shoebox for each floor
-        # shoebox_df = shoebox_df.loc[
-        #     shoebox_df.index.repeat(self.building_gdf["floor_count"])
-        # ]
-        # Make 4 shoeboxes for each building
-        shoebox_gdf = shoebox_gdf.loc[shoebox_gdf.index.repeat(4)].reset_index(
-            drop=True
+
+        # calculate the shoebox weights
+        # the shoebox weights are the product of the orientation weight and the floor weight
+        shoeboxes_df["oriented_weight"] = 0
+        shoeboxes_df["floor_weight"] = 0
+
+        # select the weight for each shoeboxes correct orientation
+        # Iterate over the four orientations
+        for orientation in shoeboxes_df.orientation.unique():
+            # make a mask for all the shoeboxes that match this orientation
+            is_aligned = shoeboxes_df["orientation"] == orientation
+            weight_key = orientation.lower() + "_weight"
+            # multiply the orientation weight by the is_aligned mask to zero out the weight
+            # if it is not aligned with an orientation
+            orientation_weight = shoeboxes_df[weight_key] * is_aligned.astype(float)
+            # update the oriented_weight vector
+            shoeboxes_df["oriented_weight"] = (
+                shoeboxes_df["oriented_weight"] + orientation_weight
+            )
+
+        # do the same thing for the floors
+        for floor_name in floor_names:
+            is_on_floor = shoeboxes_df["floor_name"] == floor_name
+            floor_weight = shoeboxes_df[floor_name] * is_on_floor.astype(float)
+            shoeboxes_df["floor_weight"] = shoeboxes_df["floor_weight"] + floor_weight
+
+        # multiply the oriented_weight and floor_weight to get the final weight
+        # final weights for a building sum to 1
+        # the oriented weight determines how much a shoebox contributes to the prediction for a single floor
+        # of a building
+        # and the floor_weight determines how much all the shoeboxes on that floor contribute to the whole building
+        shoeboxes_df["weight"] = (
+            shoeboxes_df["oriented_weight"] * shoeboxes_df["floor_weight"]
         )
-        shoebox_gdf["roof_2_footprint"] = [0, 0, 1.0, 1.0] * (n_buildings)
-        shoebox_gdf["ground_2_footprint"] = [1.0, 0, 0, 1.0] * (n_buildings)
-        n_sbs = shoebox_gdf.shape[0]
 
-        # Make a shoebox for each orientation
-        shoebox_gdf = shoebox_gdf.loc[shoebox_gdf.index.repeat(4)].reset_index(
-            drop=True
-        )
-        shoebox_gdf["orientation"] = ["North", "East", "South", "West"] * n_sbs
+        logger.debug("Dropping unnecessary shoeboxes...")
+        shoeboxes_df = shoeboxes_df[(shoeboxes_df.weight - 0).abs() > 1e-6]
 
-        wdf = shoebox_gdf.merge(
-            self.calculate_weights(), on="guid", suffixes=(None, "_y")
-        )
-        wdf[["guid", "orientation", "North", "East", "South", "West"]]
-        shoebox_weights = []
-        for _, row in wdf.T.to_dict().items():
-            shoebox_weights.append(row[row["orientation"]])
+        shading_cols = [f"shading_{x}" for x in range(SHADING_DIV_SIZE)]
+        shoeboxes_df[shading_cols] = 0.0
+        return shoeboxes_df
 
-        # drop duplicate columns
-        shoebox_gdf.drop(shoebox_gdf.filter(regex="_y$").columns, axis=1, inplace=True)
-
-        self.shoebox_weights = pd.Series(shoebox_weights)
-        self.shoebox_gdf = shoebox_gdf
-
-        return shoebox_gdf, self.schedules_array, self.epw_array, self.shoebox_weights
-
-    def allocate_shaded_shoeboxes(self):
+    def allocate_shaded_shoeboxes(self) -> pd.DataFrame:
         """
         Future
         Returns:
-            shoebox_df: Pandas DF with sizing details, building_id, orientation, and template_name, template_idxx (joined with template_df that has template_dict column names)
-                NOTE: X-to-footprint values will be overwritten
-            schedules_array: same order as template_idxx
-            epw_array: numpy array
-            shoebox_weights: pandas df index = "building_id", columns = ["N_weight", "E_weight", "S_weight", "W_weight"]
+            shoeboxes_df (pd.DataFrame): df with sizing details, building_id, orientation, and template_name, template_idx, joined with template_df that has template_dict column names, etc
+
         """
         pass
 
     def visualize_2d(self, ax=None, gdf=None, max_polys=1000, **kwargs):
         if ax is None:
             _, ax = plt.subplots()
-        if gdf:
+        if gdf is None:
             max_idx = min(gdf.shape[0], max_polys)
             gdf.iloc[:max_idx].plot(**kwargs)
         else:
@@ -568,6 +710,7 @@ class Umi:
                     facecolor="none", edgecolor="red", ax=ax
                 )
             except:
+                logger.error("Failed to plot cores!")
                 pass
         ax.axis("off")
         return ax
@@ -638,15 +781,27 @@ class Umi:
                 #         ].agg("_".join, axis=1)
                 #     else:
                 #         gdf["template_name"] = gdf[keyfields["primary"]]
-                gdf["template_idx"] = np.random.randint(
-                    len(template_lib.BuildingTemplates), size=gdf.shape[0]
+                dummy_template_name_col = "template_name"
+                dummy_wwr_col_name = "wwr"
+                gdf[dummy_template_name_col] = np.random.randint(
+                    [t.Name for t in template_lib.BuildingTemplates], size=gdf.shape[0]
                 )
-                umi_gdf = gdf[[keyfields["height"], "geometry", "template_idx"]]
-                umi_gdf.columns = ["height", "geometry", "template_idx"]
-                umi_gdf["wwr"] = wwr
+                umi_gdf = gdf[
+                    [
+                        "geometry",
+                        keyfields["height"],
+                        keyfields["id"],
+                        dummy_template_name_col,
+                    ]
+                ]
+                umi_gdf[dummy_wwr_col_name] = wwr
 
             return cls(
                 gdf=umi_gdf,
+                id_col=keyfields["id"],
+                height_col=keyfields["height"],
+                wwr_col=dummy_wwr_col_name,
+                template_name_col=dummy_template_name_col,
                 template_lib=template_lib,
                 epw=epw,
             )
@@ -742,27 +897,20 @@ class Umi:
                 f2f_height = gdf["FloorToFloorHeight"][0]
                 perim_offset = gdf["PerimeterOffset"][0]
                 width = gdf["RoomWidth"][0]
-                prev_c = [
-                    "HEIGHT",
-                    "geometry",
-                    "TemplateName",
-                    "WindowToWallRatioN",
-                ]
-                new_c = [
-                    "height",
-                    "geometry",
-                    "template_name",
-                    "wwr",
-                ]  # TODO: make arguments
-                # umi_gdf = gdf[[prev_c]]
-                # umi_gdf.columns = new_c
-                umi_gdf = gdf.rename(columns={A: a for A, a in zip(prev_c, new_c)})
+                height_col = "HEIGHT"
+                id_col = "guid"
+                template_name_col = "TemplateName"
+                wwr_col = "WindowToWallRatioN"
                 umi_gdf = umi_gdf[
-                    ["height", "geometry", "template_name", "wwr", "guid"]
+                    ["geometry", height_col, id_col, template_name_col, wwr_col]
                 ]
 
             return cls(
                 gdf=umi_gdf,
+                height_col=height_col,
+                wwr_col=wwr_col,
+                id_col=id_col,
+                template_name_col=template_name_col,
                 template_lib=template_lib,
                 epw=epw,
                 shoebox_width=width,
@@ -772,17 +920,58 @@ class Umi:
 
 
 if __name__ == "__main__":
-    umi_test = Umi.open_uio(
-        filename="D:/Users/zoelh/GitRepos/ml-for-building-energy-modeling/umi_data/Florianopolis/Florianopolis_Baseline.uio",
-        epw_path="ml-for-bem/data/epws/global_epws_indexed/cityidx_0033_BRA_SP-São Paulo-Congonhas AP.837800_TRY Brazil.epw",
-        archetypal_path="ml-for-bem/data/template_libs/cz_libs/residential/CZ3A.json",
-    )
-    print("SCHEDULES ARRAY: ", umi_test.schedules_array.shape)
-    print("TEMPLATE DF: ", umi_test.features_df.shape)
-    print("EPW ARRAY: ", umi_test.epw_array.shape)
-    print(umi_test.building_gdf.head())
-    umi_test.visualize_2d()
+    # umi_test = Umi.open_uio(
+    #     filename="D:/Users/zoelh/GitRepos/ml-for-building-energy-modeling/umi_data/Florianopolis/Florianopolis_Baseline.uio",
+    #     epw_path="ml-for-bem/data/epws/global_epws_indexed/cityidx_0033_BRA_SP-São Paulo-Congonhas AP.837800_TRY Brazil.epw",
+    #     archetypal_path="ml-for-bem/data/template_libs/cz_libs/residential/CZ3A.json",
+    # )
+    gdf = gpd.read_file(Path("data") / "gis" / "Florianopolis_Baseline.zip")
 
-# TODO
-# Shading vector
+    # dict to store key fields for known gis files
+    id_cols = {
+        "florianpolis": {
+            "height_col": "HEIGHT",
+            "id_col": "OBJECTID",
+            "template_name_col": "template_name",
+            "wwr_col": "wwr",
+        }
+    }
+
+    epw_fp = (
+        Path("data")
+        / "epws"
+        / "global_epws_indexed"
+        / "cityidx_0033_BRA_SP-São Paulo-Congonhas AP.837800_TRY Brazil.epw"
+    )
+
+    epw = EPW(epw_fp)
+    template_lib = UmiTemplateLibrary.open(
+        Path("data") / "template_libs" / "BostonTemplateLibrary.json"
+    )
+
+    # Insert dummy template names
+    gdf[id_cols["florianpolis"]["template_name_col"]] = np.random.choice(
+        [t.Name for t in template_lib.BuildingTemplates], size=gdf.shape[0]
+    )
+    # insert dummy wwrs
+    gdf[id_cols["florianpolis"]["wwr_col"]] = 0.4
+
+    umi_test = Umi(
+        gdf=gdf,
+        **id_cols["florianpolis"],
+        epw=epw,
+        template_lib=template_lib,
+        shoebox_width=3,
+        floor_to_floor_height=4,
+        perim_offset=PERIM_OFFSET,
+    )
+
+    print("SCHEDULES ARRAY: ", umi_test.schedules_array.shape)
+    print("TEMPLATE DF: ", umi_test.template_features_df.shape)
+    print("EPW ARRAY: ", umi_test.epw_array.shape)
+
+# TODO:
+# Shading vector / RayTracing
 # mapping
+# using numerics for orientation instead of words?
+# infiltration/ventilation etc

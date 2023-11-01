@@ -11,8 +11,13 @@ import geopandas as gpd
 import pandas as pd
 import pyradiance as pr
 
-from shapely import Polygon
+try:
+    from shapely import Polygon
+except ImportError:
+    from shapely.geometry import Polygon
+# from shapely import Polygon
 from ladybug.wea import Wea
+from ladybug.epw import EPW
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)
@@ -46,6 +51,10 @@ class Building:
     edge_start_ix: int
     edge_end_ix: int
     edge_ct: int
+    north_weight: float
+    east_weight: float
+    south_weight: float
+    west_weight: float
 
 
 @ti.dataclass
@@ -139,7 +148,7 @@ class Tracer:
     def __init__(
         self,
         sky: "Sky",
-        filepath: Union[str, bytes, PathLike],
+        gdf: gpd.GeoDataFrame,
         height_col: str,
         id_col: str,
         archetype_col: str,
@@ -177,9 +186,9 @@ class Tracer:
         )  # TODO: this should be a class property but it throws an error in the static unroll command in the kernel if so
 
         # Load the GDF
-        self.gdf: gpd.GeoDataFrame = gpd.read_file(
-            filepath
-        )  # nb: assumes a flattened projection already holds.
+        # nb: assumes a flattened projection already holds.
+        self.gdf: gpd.GeoDataFrame = gdf
+
         assert (
             len(self.gdf) < 2**16
         ), f"Currently, only {2**16-1} buildings are supported, but this GIS file has {len(self.gdf)} buildings."
@@ -296,6 +305,7 @@ class Tracer:
         logger.info("Extracting edges...")
         self.extract_flat_edge_list()
 
+    def ray_trace(self):
         # add edges to quadtree
         logger.info("Populating tree...")
         self.add_edges_to_tree()
@@ -710,6 +720,66 @@ class Tracer:
 
             # Add it to the parent buildings edge count
             self.buildings[self.edges[edge_ix].building_id].edge_ct += 1
+
+    @ti.kernel
+    def compute_edge_orientation_weights(self):
+        for edge_ix in self.edges:
+            edge = self.edges[edge_ix]
+            building_id = edge.building_id
+            building = self.buildings[building_id]
+            normal_theta = (edge.normal_theta + 2 * np.pi) % (2 * np.pi)
+            edge_start = edge.start
+            edge_end = edge.end
+            edge_length = ti.sqrt(
+                (edge_start.x - edge_end.x) ** 2 + (edge_start.y - edge_end.y) ** 2
+            )
+            # compute the weight in each orientation, where normal_theta = 0 corresponds to east
+            north_weight = 0.0
+            east_weight = 0.0
+            south_weight = 0.0
+            west_weight = 0.0
+
+            if normal_theta > 0 and normal_theta < np.pi / 2:
+                # north and east
+                north_weight = normal_theta / (np.pi / 2)
+                east_weight = 1.0 - north_weight
+            elif normal_theta > np.pi / 2 and normal_theta < np.pi:
+                # north and west
+                north_weight = (np.pi - normal_theta) / (np.pi / 2)
+                west_weight = 1.0 - north_weight
+            elif normal_theta > np.pi and normal_theta < 3 * np.pi / 2:
+                # south and west
+                south_weight = (normal_theta - np.pi) / (np.pi / 2)
+                west_weight = 1.0 - south_weight
+            elif normal_theta > 3 * np.pi / 2 and normal_theta < 2 * np.pi:
+                # south and east
+                south_weight = (2 * np.pi - normal_theta) / (np.pi / 2)
+                east_weight = 1.0 - south_weight
+            else:
+                # this should never happen
+                assert False
+
+            # store the weights
+            self.buildings[building_id].north_weight += north_weight * edge_length
+            self.buildings[building_id].east_weight += east_weight * edge_length
+            self.buildings[building_id].south_weight += south_weight * edge_length
+            self.buildings[building_id].west_weight += west_weight * edge_length
+
+        ti.sync()
+        # normalize the weights
+        for building_ix in self.buildings:
+            building = self.buildings[building_ix]
+            weight_sum = (
+                building.north_weight
+                + building.east_weight
+                + building.south_weight
+                + building.west_weight
+            )
+            self.buildings[building_ix].north_weight /= weight_sum
+            self.buildings[building_ix].east_weight /= weight_sum
+            self.buildings[building_ix].south_weight /= weight_sum
+            self.buildings[building_ix].west_weight /= weight_sum
+        ti.sync()
 
     @ti.kernel
     def add_edges_to_tree(self):
@@ -1595,41 +1665,58 @@ class Sky:
 
     def __init__(
         self,
-        epw_fp: Path,
+        epw: EPW,
         mfactor: int,
         n_azimuths: int,
         dome_radius: float,
+        run_conversion=True,
     ):
         logger.info("Beginning sky matrix extraction...")
-        self.epw_fp = epw_fp
+        self.epw = epw
         self.mfactor = mfactor
         self.n_azimuths = n_azimuths
-        self.wea_fp = (
-            Path(os.path.abspath(os.path.dirname(__file__)))
-            / "data"
-            / "mtxs"
-            / f"{self.epw_fp.stem}.wea"
-        )
-        logger.info("Converting EPW to WEA...")
-        epw_to_wea(self.epw_fp, self.wea_fp)
-        logger.info("Converting WEA to MTX...")
-        res = pr.gendaymtx(
-            self.wea_fp,
-            verbose=True,
-            average=False,
-            mfactor=mfactor,
-            rotate=270,
-            sky_color=[1, 1, 1],
-            solar_radiance=True,
-        )
-        mtx = BytesIO(res)
-        logger.info("Converting Reinhart to meridinal/parallel...")
-        logger.info("Completed sky matrix extraction.")
-        self.reinhart_to_meridinal_parallel_sky(mtx)
-        del mtx
 
-        self.dome_radius = dome_radius
-        # self.render()
+        # TODO: these properties are duplicate computed in the conversion method
+        # azimuthal aperture is trivial
+        self.azimuthal_aperture = np.radians(360) / self.n_azimuths
+        base_patches_per_elevation = np.array(
+            [30, 30, 24, 24, 18, 12, 6], dtype=np.int64
+        )
+        patches_per_elevation = (
+            base_patches_per_elevation.repeat(self.mfactor) * self.mfactor
+        )
+        self.n_elevations = patches_per_elevation.shape[0]
+        self.elevational_aperture = np.radians(90 - 6) / (self.n_elevations)
+        self.elevation_centers = (
+            self.elevational_aperture * np.arange(self.n_elevations)
+            + self.elevational_aperture / 2
+        )
+        if run_conversion:
+            wea_fn = Path(self.epw.file_path).stem
+            self.wea_fp = Path("data") / "mtxs" / f"{wea_fn}.wea"
+            logger.info("Converting EPW to WEA...")
+            # TODO: make sure matrices are identical
+            # epw_to_wea(self.epw_fp, self.wea_fp)
+            self.epw.to_wea(str(self.wea_fp))
+            logger.info("Converting WEA to MTX...")
+            res = pr.gendaymtx(
+                self.wea_fp,
+                verbose=True,
+                average=False,
+                mfactor=mfactor,
+                rotate=270,
+                sky_color=[1, 1, 1],
+                solar_radiance=True,
+            )
+            mtx = BytesIO(res)
+            logger.info("Completed sky matrix extraction.")
+            logger.info("Converting Reinhart to meridinal/parallel...")
+            self.reinhart_to_meridinal_parallel_sky(mtx)
+            logger.info("Converted Reinhart to meridinal/parallel.")
+            del mtx
+
+            self.dome_radius = dome_radius
+            # self.render()
 
     def reinhart_to_meridinal_parallel_sky(self, mtx):
         """
@@ -1725,8 +1812,6 @@ class Sky:
         self.elevation_starts_per_band = (
             np.arange(self.n_elevations).astype(float) * self.elevational_aperture
         )
-        # azimuthal aperture is trivial
-        self.azimuthal_aperture = np.radians(360) / self.n_azimuths
 
         # Compute the elevation of the center for each parallel band (i.e. spherical zone)
         self.elevation_centers = (
@@ -1881,40 +1966,38 @@ if __name__ == "__main__":
     import os
     from pathlib import Path
 
-    fp = Path(os.path.abspath(os.path.dirname(__file__))) / "Braga_Baseline.zip"
+    fp = Path("data") / "gis" / "Braga_Baseline.zip"
     height_col = "height (m)"
     id_col = "id"
     archetype_col = "Archetype"
 
-    fp = (
-        Path(os.path.abspath(os.path.dirname(__file__)))
-        / "data"
-        / "Florianopolis_Baseline.zip"
-    )
+    fp = Path("data") / "gis" / "Florianopolis_Baseline.zip"
     height_col = "HEIGHT"
     id_col = "OBJECTID"
     archetype_col = "BUILTYPE"
 
     epw_fp = (
-        Path(os.path.abspath(os.path.dirname(__file__)))
-        / "data"
+        Path("data")
         / "epws"
         / "city_epws_indexed"
         / "cityidx_0000_USA_CA-Climate Zone 9.722880_CTZRV2.epw"
     )
-    sky = Sky(epw_fp=epw_fp, mfactor=4, n_azimuths=96, dome_radius=200)
+    epw = EPW(epw_fp)
+    sky = Sky(epw=epw, mfactor=4, n_azimuths=24, dome_radius=200)
     # sky.render()
     sky.init_rendering_fields()
 
+    gdf = gpd.read_file(fp)
     tracer = Tracer(
-        filepath=fp,
+        gdf=gdf,
         height_col=height_col,
         id_col=id_col,
         archetype_col=archetype_col,
-        node_width=1,
+        sensor_spacing=3,
         sky=sky,
     )
 
+    tracer.ray_trace()
     ti.sync()
     tracer.print_column_stats(0)
     ti.sync()
