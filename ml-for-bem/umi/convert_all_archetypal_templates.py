@@ -10,7 +10,7 @@ from mongoengine.queryset.visitor import Q
 from tqdm import tqdm
 from umitemplatedb.mongodb_schema import BuildingTemplate
 
-from umi.ubem import Umi
+from umi.ubem import UBEM
 
 load_dotenv()
 user = dotenv_values(".env").get("MONGODB_USER")
@@ -55,7 +55,7 @@ for page_ix in tqdm(range(count // page_size + 1), desc="DB Page"):
     template_dicts = []
     for template in tqdm(templates, desc="Template"):
         new_temp = template.to_template()
-        td = Umi.dict_from_buildingtemplate(building_template=new_temp)
+        td = UBEM.dict_from_buildingtemplate(building_template=new_temp)
         scheds = td.pop("schedules")
         all_schedules.append(scheds)
         td["TemplateName"] = template.Name

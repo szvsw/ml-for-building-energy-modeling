@@ -191,7 +191,7 @@ def init_template(datastore):
     return t
 
 
-class Umi:
+class UBEM:
     def __init__(
         self,
         gdf: GeoDataFrame,
@@ -951,7 +951,7 @@ if __name__ == "__main__":
     # insert dummy wwrs
     gdf[id_cols["florianpolis"]["wwr_col"]] = 0.4
 
-    umi_test = Umi(
+    umi_test = UBEM(
         gdf=gdf,
         **id_cols["florianpolis"],
         epw=epw,
