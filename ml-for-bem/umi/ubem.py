@@ -17,17 +17,14 @@ import pandas as pd
 from archetypal import UmiTemplateLibrary
 from archetypal.template.building_template import BuildingTemplate
 from archetypal.template.conditioning import ZoneConditioning
-from archetypal.template.constructions.opaque_construction import \
-    OpaqueConstruction
-from archetypal.template.constructions.window_construction import \
-    WindowConstruction
+from archetypal.template.constructions.opaque_construction import OpaqueConstruction
+from archetypal.template.constructions.window_construction import WindowConstruction
 from archetypal.template.dhw import DomesticHotWaterSetting
 from archetypal.template.load import ZoneLoad
 from archetypal.template.materials.gas_material import GasMaterial
 from archetypal.template.materials.glazing_material import GlazingMaterial
 from archetypal.template.materials.opaque_material import OpaqueMaterial
-from archetypal.template.schedule import (DaySchedule, WeekSchedule,
-                                          YearSchedule)
+from archetypal.template.schedule import DaySchedule, WeekSchedule, YearSchedule
 from archetypal.template.structure import StructureInformation
 from archetypal.template.ventilation import VentilationSetting
 from archetypal.template.window_setting import WindowSetting
@@ -781,7 +778,7 @@ class Umi:
                 #         gdf["template_name"] = gdf[keyfields["primary"]]
                 dummy_template_name_col = "template_name"
                 dummy_wwr_col_name = "wwr"
-                gdf[dummy_template_name_col] = np.random.randint(
+                gdf[dummy_template_name_col] = np.random.choices(
                     [t.Name for t in template_lib.BuildingTemplates], size=gdf.shape[0]
                 )
                 umi_gdf = gdf[
