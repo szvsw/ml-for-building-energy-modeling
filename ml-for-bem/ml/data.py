@@ -336,6 +336,9 @@ class PredictBuildingDataset(Dataset):
 
         # Store the schedules
         self.schedules = schedules.astype(np.float32)
+        assert (
+            self.schedules.min() > 0 and self.schedules.max() < 1
+        ), "Some of the provided schedules are not in the range [0, 1]!"
 
         # Store the climate array
         self.climate_array = climate_array.astype(np.float32)
@@ -353,7 +356,7 @@ class PredictBuildingDataset(Dataset):
         Returns:
             features (np.ndarray): the features
             schedules (np.ndarray): the schedules
-            climate_data (np.ndarray): the climate data
+            climate_data (np.ndarray): the climate data, untransformed
         """
 
         # get the features, which are already transformed
@@ -629,6 +632,7 @@ class BuildingDataModule(pl.LightningDataModule):
         # Load the space config definition
         with open(self.space_config_path, "r") as f:
             space_config = json.load(f)
+        self.space_config = space_config
 
         # Load the climate array and apply weather transform
         climate_array = np.load(self.climate_array_path)
