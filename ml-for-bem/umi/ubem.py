@@ -975,3 +975,4 @@ if __name__ == "__main__":
 # mapping
 # using numerics for orientation instead of words?
 # infiltration/ventilation etc
+# enable providing a template_df directly in addition to a UTL object
