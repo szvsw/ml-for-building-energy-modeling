@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from ml.networks import EnergyCNN2, ConvNet, Conv1DStageConfig
-from ml.data import MinMaxTransform, StdNormalTransform
+from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform
 
 
 class MultiModalModel(nn.Module):
@@ -69,6 +69,8 @@ class Surrogate(pl.LightningModule):
     def __init__(
         self,
         target_transform: Union[MinMaxTransform, StdNormalTransform],
+        weather_transform: WeatherStdNormalTransform,
+        space_config: dict,
         net_config: Literal["Base", "Small"] = "Small",
         lr: float = 1e-3,
         lr_gamma: float = 0.5,
@@ -86,6 +88,8 @@ class Surrogate(pl.LightningModule):
 
         Args:
             target_transform (nn.Module): a transform to apply to targets.  Should implement the `inverse_transform` method.
+            weather_transform (nn.Module): a transform to apply to weather data.  Only used in predict step; Training DataLoaders handle weather transforms.
+            space_config (dict): the configuration of the design space
             net_config (Literal["Base", "Small"], optional): the configuration of the timeseries net architecture.  Defaults to "Small".
             lr (float, optional): the learning rate.  Defaults to 1e-3.
             lr_gamma (float, optional): the learning rate decay.  Defaults to 0.5. Called after each epoch completes.
@@ -109,6 +113,7 @@ class Surrogate(pl.LightningModule):
         super().__init__()
 
         # Store all the hyperparameters
+        self.space_config = space_config
         self.lr = lr
         self.lr_gamma = lr_gamma
         self.net_config = net_config
@@ -155,7 +160,9 @@ class Surrogate(pl.LightningModule):
         )
 
         # Store the target transform module
+        # TODO: ignore these as hyperparams
         self.target_transform = target_transform
+        self.weather_transform = weather_transform
 
     def configure_optimizers(self):
         optimizer = optim.Adam(
@@ -277,6 +284,7 @@ class Surrogate(pl.LightningModule):
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         features, schedules, climates = batch
+        climates = self.weather_transform(climates)
         preds = self.model(features, schedules, climates)
         preds = preds.reshape(features.shape[0], -1)
         preds = self.target_transform.inverse_transform(preds)
@@ -326,6 +334,8 @@ if __name__ == "__main__":
     dm.prepare_data()
     dm.setup(stage=None)
     target_transform = dm.target_transform
+    weather_transform = dm.weather_transform
+    space_config = dm.space_config
 
     # TODO: these should be inferred automatically from the datasets
     n_climate_timeseries = 7
@@ -350,6 +360,8 @@ if __name__ == "__main__":
         lr=lr,
         lr_gamma=lr_gamma,
         target_transform=target_transform,
+        weather_transform=weather_transform,
+        space_config=space_config,
         net_config=net_config,
         latent_factor=latent_factor,
         energy_cnn_feature_maps=energy_cnn_feature_maps,
