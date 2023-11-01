@@ -5,7 +5,7 @@ import wandb
 from lightning.pytorch import Trainer
 from torch.utils.data import DataLoader
 
-from ml.train import Surrogate
+from ml.surrogate import Surrogate
 from ml.data import PredictBuildingDataset
 
 
