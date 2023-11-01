@@ -1,4 +1,6 @@
 from typing import Literal, Union
+from pathlib import Path
+import wandb
 import lightning.pytorch as pl
 import torch
 import torch.nn as nn
@@ -290,11 +292,38 @@ class Surrogate(pl.LightningModule):
         preds = self.target_transform.inverse_transform(preds)
         return preds
 
+    @classmethod
+    def load_from_registry(
+        cls,
+        registry="ml-for-building-energy-modeling/model-registry",
+        model: str = "Global UBEM Shoebox Surrogate with Combined TS Embedder",
+        tag: str = "latest",
+        resource: str = "model.ckpt",
+    ) -> "Surrogate":
+        """
+        Fetches a surrogate model from the W&B cloud.
+
+        Args:
+            registry (str): The W&B registry to fetch the model from.
+            model (str): The model name.
+            tag (str): The model tag.
+            resource (str): The file resource to fetch from within the model artifact.
+
+        Returns:
+            surrogate (Surrogate): The surrogate model.
+        """
+        api = wandb.Api()
+        local_dir = Path("data") / "models" / tag
+        model_str = f"{registry}/{model}:{tag}"
+        surrogate_artifact = api.artifact(model_str, type="model")
+        pth = surrogate_artifact.get_path(resource)
+        model_path = pth.download(local_dir)
+        surrogate = cls.load_from_checkpoint(model_path)
+        return surrogate
+
 
 if __name__ == "__main__":
     from ml.data import BuildingDataModule
-    from pathlib import Path
-    import wandb
     import os
     from lightning.pytorch.loggers import WandbLogger, TensorBoardLogger
 
