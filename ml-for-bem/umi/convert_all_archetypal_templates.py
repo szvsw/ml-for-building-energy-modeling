@@ -8,7 +8,7 @@ from umitemplatedb.mongodb_schema import BuildingTemplate
 from dotenv import load_dotenv
 from dotenv import dotenv_values
 from tqdm import tqdm
-from umi import Umi
+from umi.ubem import Umi
 import boto3
 
 load_dotenv()
@@ -76,7 +76,6 @@ for page_ix in tqdm(range(count // page_size + 1), desc="DB Page"):
 
 df = pd.DataFrame.from_records(all_template_dicts)
 df = df.reindex(range(len(df)))
-# df.rename(columns={"infiltration_per_area": "InfiltrationACH", "VentilationPer"}, inplace=True)
 all_schedules = np.array(all_schedules, dtype=np.float32)
 
 client = boto3.client("s3")
@@ -97,3 +96,5 @@ client.upload_file(
 
 os.remove("data/ref_templates.hdf")
 os.remove("data/ref_templates_schedules.npy")
+
+print(df.head())
