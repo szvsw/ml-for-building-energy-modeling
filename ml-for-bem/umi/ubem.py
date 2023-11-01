@@ -273,8 +273,9 @@ class UBEM:
 
         perim_areas = footprint_areas - core_areas
         core_2_perim = core_areas / perim_areas
-        facade_area = perimeter_length * heights
-        floor_2_facade = perim_areas / facade_area
+        # facade_area = self.shoebox_width * self.floor_to_floor_height
+        # floor_2_facade = perim_areas / facade_area
+        floor_2_facade = self.perim_offset / self.floor_to_floor_height
         floor_count = round(heights / self.floor_to_floor_height)
         # TODO: reset floor_to_floor height so there is a whole number of floors?
 
@@ -802,7 +803,7 @@ class UBEM:
             )
 
     @classmethod
-    def open_umi(cls, filename):
+    def open_umi(cls, filename, height_col="HEIGHT", id_col="guid"):
         """
         WARNING: THIS CURRENTLY ONLY WORKS WITH SIMULATED UMI FILES (shoebox weights and gdf are only created in sdl_common post simulation)
         """
@@ -892,11 +893,9 @@ class UBEM:
                 f2f_height = gdf["FloorToFloorHeight"][0]
                 perim_offset = gdf["PerimeterOffset"][0]
                 width = gdf["RoomWidth"][0]
-                height_col = "HEIGHT"
-                id_col = "guid"
                 template_name_col = "TemplateName"
                 wwr_col = "WindowToWallRatioN"
-                umi_gdf = umi_gdf[
+                umi_gdf = gdf[
                     ["geometry", height_col, id_col, template_name_col, wwr_col]
                 ]
 
@@ -958,12 +957,16 @@ if __name__ == "__main__":
         template_lib=template_lib,
         shoebox_width=3,
         floor_to_floor_height=4,
-        perim_offset=PERIM_OFFSET,
+        perim_offset=4,
     )
 
     print("SCHEDULES ARRAY: ", umi_test.schedules_array.shape)
     print("TEMPLATE DF: ", umi_test.template_features_df.shape)
     print("EPW ARRAY: ", umi_test.epw_array.shape)
+    print(umi_test.shoeboxes_df[["core_2_perim", "floor_2_facade"]])
+
+    umi_test = UBEM.open_umi("data/Braga_Baseline.umi", height_col="height (m)")
+    print(umi_test.shoeboxes_df)
 
 # TODO:
 # Shading vector / RayTracing
