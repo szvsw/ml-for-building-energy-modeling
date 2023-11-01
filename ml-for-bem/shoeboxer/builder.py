@@ -1,32 +1,31 @@
 """Module for dynamically building shoebox idfs from a seed JSON file, shoebox-template.JSON."""
 
+import calendar
+import copy
 import json
 import logging
-from pathlib import Path
-import subprocess
-import os
-import sys
-import jsondiff
-import copy
 import math
-import calendar
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import archetypal as ar
-from archetypal.idfclass import IDF
+import jsondiff
+import numpy as np
+import pandas as pd
 from archetypal import settings
+from archetypal.idfclass import IDF
 from archetypal.idfclass.sql import Sql
 from archetypal.schedule import Schedule, ScheduleTypeLimits
 
-from utils.schedules import mutate_timeseries
-from utils.constants import *
-
-from shoeboxer.shoebox_config import ShoeboxConfiguration
 import shoeboxer.geometry_utils as gu
+from shoeboxer.shoebox_config import ShoeboxConfiguration
+from utils.constants import *
+from utils.schedules import mutate_timeseries
 
 # from schema import Schema
 
-import numpy as np
-import pandas as pd
 
 
 EPW_PATH = Path(EPW_RELATIVE_PATH)

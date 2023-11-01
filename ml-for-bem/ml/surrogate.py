@@ -1,13 +1,16 @@
-from typing import Literal, Union
 from pathlib import Path
-import wandb
+from typing import Literal, Union
+
 import lightning.pytorch as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from ml.networks import EnergyCNN2, ConvNet, Conv1DStageConfig
-from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform
+
+import wandb
+from ml.data import (MinMaxTransform, StdNormalTransform,
+                     WeatherStdNormalTransform)
+from ml.networks import Conv1DStageConfig, ConvNet, EnergyCNN2
 
 
 class MultiModalModel(nn.Module):
@@ -323,9 +326,11 @@ class Surrogate(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    from ml.data import BuildingDataModule
     import os
-    from lightning.pytorch.loggers import WandbLogger, TensorBoardLogger
+
+    from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
+
+    from ml.data import BuildingDataModule
 
     # TODO: batch size should be in config
     # TODO: thresh should be in config

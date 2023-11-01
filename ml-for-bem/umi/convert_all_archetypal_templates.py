@@ -1,15 +1,16 @@
-from mongoengine import connect
 import os
+from typing import List
+
+import boto3
 import numpy as np
 import pandas as pd
-from typing import List
+from dotenv import dotenv_values, load_dotenv
+from mongoengine import connect
 from mongoengine.queryset.visitor import Q
-from umitemplatedb.mongodb_schema import BuildingTemplate
-from dotenv import load_dotenv
-from dotenv import dotenv_values
 from tqdm import tqdm
+from umitemplatedb.mongodb_schema import BuildingTemplate
+
 from umi.ubem import Umi
-import boto3
 
 load_dotenv()
 user = dotenv_values(".env").get("MONGODB_USER")

@@ -1,6 +1,7 @@
-import math
-import numpy as np
 import logging
+import math
+
+import numpy as np
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)

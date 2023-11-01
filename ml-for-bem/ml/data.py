@@ -1,17 +1,18 @@
-from pathlib import Path
-import boto3
-import os
 import json
-import pandas as pd
+import os
+from pathlib import Path
+from typing import Literal, Union
+
+import boto3
+import lightning.pytorch as pl
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader, random_split
-from typing import Literal, Union
-import lightning.pytorch as pl
+from torch.utils.data import DataLoader, Dataset, random_split
 
-from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
 from shoeboxer.schedules import schedules_from_seed
+from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
 
 # TODO: store and fetch weather data from s3
 # TODO: store and return the weather transform
@@ -726,6 +727,7 @@ if __name__ == "__main__":
     """
 
     import time
+
     from tqdm import tqdm
 
     with open("data/space_definition.json", "r") as f:

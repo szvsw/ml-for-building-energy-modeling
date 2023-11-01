@@ -1,49 +1,47 @@
-from typing import Tuple
-import sys
-import os
-from pathlib import Path
-from zipfile import ZipFile, ZipInfo
 import json
-import tempfile
 import logging
-import time
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import math
-
-from ladybug.epw import EPW
-import geopandas as gpd
-from geopandas import GeoDataFrame
-from pyproj import CRS
+import os
+import sys
+import tempfile
+import time
 from json import JSONDecodeError
+from pathlib import Path
+from typing import Tuple
+from zipfile import ZipFile, ZipInfo
 
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from archetypal import UmiTemplateLibrary
 from archetypal.template.building_template import BuildingTemplate
 from archetypal.template.conditioning import ZoneConditioning
-from archetypal.template.constructions.opaque_construction import OpaqueConstruction
-from archetypal.template.constructions.window_construction import WindowConstruction
+from archetypal.template.constructions.opaque_construction import \
+    OpaqueConstruction
+from archetypal.template.constructions.window_construction import \
+    WindowConstruction
 from archetypal.template.dhw import DomesticHotWaterSetting
 from archetypal.template.load import ZoneLoad
 from archetypal.template.materials.gas_material import GasMaterial
 from archetypal.template.materials.glazing_material import GlazingMaterial
 from archetypal.template.materials.opaque_material import OpaqueMaterial
-from archetypal.template.schedule import (
-    DaySchedule,
-    WeekSchedule,
-    YearSchedule,
-)
+from archetypal.template.schedule import (DaySchedule, WeekSchedule,
+                                          YearSchedule)
 from archetypal.template.structure import StructureInformation
 from archetypal.template.ventilation import VentilationSetting
 from archetypal.template.window_setting import WindowSetting
 from archetypal.template.zone_construction_set import ZoneConstructionSet
 from archetypal.template.zonedefinition import ZoneDefinition
+from geopandas import GeoDataFrame
+from ladybug.epw import EPW
+from pyproj import CRS
 
 from shoeboxer.builder import template_dict
+from umi.trace import Sky, Tracer
 from utils.constants import *
 from utils.schedules import get_schedules
 from weather.weather import extract
-from umi.trace import Tracer, Sky
 
 logging.basicConfig()
 logger = logging.getLogger("UMI")

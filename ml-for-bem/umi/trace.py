@@ -1,23 +1,22 @@
 import logging
-
+from io import BytesIO
 from os import PathLike
 from pathlib import Path
-from io import BytesIO
-from typing import List, Union, Literal
+from typing import List, Literal, Union
 
-import taichi as ti
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import pyradiance as pr
+import taichi as ti
 
 try:
     from shapely import Polygon
 except ImportError:
     from shapely.geometry import Polygon
 # from shapely import Polygon
-from ladybug.wea import Wea
 from ladybug.epw import EPW
+from ladybug.wea import Wea
 
 # ti.init(arch=ti.gpu, device_memory_fraction=0.7, kernel_profiler=True, debug=True)
 # ti.init(arch=ti.cpu, kernel_profiler=True)

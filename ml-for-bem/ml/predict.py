@@ -1,11 +1,12 @@
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from lightning.pytorch import Trainer
 from torch.utils.data import DataLoader
 
-from ml.surrogate import Surrogate
 from ml.data import PredictBuildingDataset
+from ml.surrogate import Surrogate
 
 
 # TODO: Make sure that climate array is transformed

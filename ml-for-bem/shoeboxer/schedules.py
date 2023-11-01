@@ -1,6 +1,7 @@
-import numpy as np
 import os
 from pathlib import Path
+
+import numpy as np
 
 from utils.constants import DEFAULT_SCHEDULES_PATH
 
