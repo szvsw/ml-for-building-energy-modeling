@@ -238,7 +238,7 @@ class UBEM:
                 self.template_idx_col
             ]
         )
-        self.epw_array = self.prepare_epw_features()
+        self.epw_array = self.prepare_epw_features(self.epw)
         self.gis_features_df = self.prepare_gis_features()
         self.shoeboxes_df = self.prepare_shoeboxes(calculate_shading)
         # TODO: should these allow for lists?
@@ -518,8 +518,10 @@ class UBEM:
         else:
             return shgc_intermediate(tsol, uval)
 
+    @classmethod
     def prepare_epw_features(
-        self,
+        cls,
+        epw,
         timeseries=[
             "dry_bulb_temperature",
             "dew_point_temperature",
@@ -536,7 +538,7 @@ class UBEM:
         Returns:
             epw_array (np.ndarray): array of timeseries data (n_weather_channels, 8760)
         """
-        return extract(self.epw, timeseries)
+        return extract(epw, timeseries)
 
     def prepare_shoeboxes(self, calculate_shading):
         """
