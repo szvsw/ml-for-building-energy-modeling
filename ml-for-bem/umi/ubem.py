@@ -247,14 +247,6 @@ class UBEM:
 
         logger.info(f"Processed UMI in {time.time() - start_time:,.2f} seconds")
 
-    def prepare_for_surrogate(self):
-        features = self.shoeboxes_df
-        # Convert orientations to numerical
-        features["orientation"] = [
-            OrientationNum[x].value for x in features["orientation"]
-        ]
-        return features, self.schedules_array, self.epw_array
-
     def prepare_gis_features(self) -> pd.DataFrame:
         """
         Prepares geometric features from gis data.  These are the geometric features which
@@ -763,6 +755,21 @@ class UBEM:
                 pass
         ax.axis("off")
         return ax
+    
+    def prepare_for_surrogate(self):
+        features = self.shoeboxes_df
+        # Convert orientations to numerical
+        features["orientation"] = [
+            OrientationNum[x].value for x in features["orientation"]
+        ]
+        return features, self.schedules_array, self.epw_array
+    
+    def parse_energy_results(self):
+        pass
+    
+    @classmethod
+    def predict_ubem(cls):
+        pass
 
     @classmethod
     def open_uio(
