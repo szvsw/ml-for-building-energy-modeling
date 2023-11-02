@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import torch
 from lightning.pytorch import Trainer
 from torch.utils.data import DataLoader
 
@@ -35,8 +36,14 @@ def predict_ubem(
     dataset = PredictBuildingDataset(features, schedules, climate, space_config)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     predictions = trainer.predict(surrogate, dataloader)
+    predictions = torch.cat(predictions)
+    try:
+        predictions = predictions.cpu().numpy()
+    except:
+        predictions = predictions.numpy()
+    print(predictions.shape)
     predictions = pd.DataFrame(
-        predictions.cpu().numpy(),
+        predictions,
         columns=surrogate.target_transform.columns,
     )
     predictions = predictions.set_index(features.index)
