@@ -46,10 +46,10 @@ def transform_dataframe(space_config, features):
         assert (
             key in features.columns
         ), f"{key} was in the provided space definition but not in the features dataframe"
-    for column in features.columns:
-        assert (
-            column in space_config
-        ), f"{column} was in the features dataframe but not in the provided space definition"
+    # for column in features.columns:
+    #     assert (
+    #         column in space_config
+    #     ), f"{column} was in the features dataframe but not in the provided space definition"
 
     # Do the conversion
     for key in space_config:
@@ -338,7 +338,7 @@ class PredictBuildingDataset(Dataset):
         # Store the schedules
         self.schedules = schedules.astype(np.float32)
         assert (
-            self.schedules.min() > 0 and self.schedules.max() < 1
+            self.schedules.min() >= 0.0 and self.schedules.max() <= 1.0
         ), "Some of the provided schedules are not in the range [0, 1]!"
 
         # Store the climate array

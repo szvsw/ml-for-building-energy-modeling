@@ -241,8 +241,19 @@ class UBEM:
         self.epw_array = self.prepare_epw_features()
         self.gis_features_df = self.prepare_gis_features()
         self.shoeboxes_df = self.prepare_shoeboxes(calculate_shading)
+        # TODO: should these allow for lists?
+        self.shoeboxes_df["width"] = self.shoebox_width
+        self.shoeboxes_df["height"] = self.floor_to_floor_height
 
         logger.info(f"Processed UMI in {time.time() - start_time:,.2f} seconds")
+
+    def prepare_for_surrogate(self):
+        features = self.shoeboxes_df
+        # Convert orientations to numerical
+        features["orientation"] = [
+            OrientationNum[x].value for x in features["orientation"]
+        ]
+        return features, self.schedules_array, self.epw_array
 
     def prepare_gis_features(self) -> pd.DataFrame:
         """
@@ -340,10 +351,14 @@ class UBEM:
             schedules[i] = d.pop("schedules")
         # TODO: many of these are not returning with correct dtypes
         template_features = pd.DataFrame.from_dict(template_data_dict).T
-        
-        #TODO: can remove later
-        template_features["cop_heating"] = building_template.Perimeter.Conditioning.HeatingCoeffOfPerf
-        template_features["cop_cooling"] = building_template.Perimeter.Conditioning.CoolingCoeffOfPerf
+
+        # TODO: can remove later
+        template_features[
+            "cop_heating"
+        ] = building_template.Perimeter.Conditioning.HeatingCoeffOfPerf
+        template_features[
+            "cop_cooling"
+        ] = building_template.Perimeter.Conditioning.CoolingCoeffOfPerf
 
         return template_features, schedules
 
