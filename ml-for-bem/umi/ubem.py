@@ -286,6 +286,7 @@ class UBEM:
         geometric_features_df["footprint_area"] = footprint_areas
         geometric_features_df["core_2_perim"] = core_2_perim
         geometric_features_df["floor_2_facade"] = floor_2_facade
+        geometric_features_df["building_perimeter"] = floor_2_facade
         geometric_features_df["floor_count"] = floor_count
         geometric_features_df["template_name"] = template_names
 
@@ -540,6 +541,38 @@ class UBEM:
         else:
             # Make
             shoeboxes_df = self.allocate_unshaded_shoeboxes()
+
+        # Calculate infiltration TODO: do we want this here? before the merge? Should this be calculated based on shoeboxes or total building?
+        logger.debug(
+            f"Input infiltration values range between {shoeboxes_df['Infiltration'].max()} and {shoeboxes_df['Infiltration'].min()} ach"
+        )
+        shoeboxes_df = self.convert_ach_to_infiltration_per_exposed_area(shoeboxes_df)
+
+        return shoeboxes_df
+
+    def convert_ach_to_infiltration_per_exposed_area(self, shoeboxes_df):
+        """
+        Infiltration calculated with:
+        I/surface_area = ACH * V / 3.6 / surface_area
+        = ACH * (A * h) / 3.6 / (A_facade + A_roof)
+        = ACH * (A * h) / 3.6 / (2(w + l) * h + (A_perim_roof + A_core_roof))
+        """
+        logger.info("Recalculating infiltration values for each shoebox.")
+        ach = shoeboxes_df["Infiltration"]
+        shoeboxes_df["ach"] = ach  # TODO remove this
+        w = self.shoebox_width
+        h = self.floor_to_floor_height
+        p_depth = self.perim_offset  # TODO: or floor_2_facade * height
+        c_depths = p_depth * shoeboxes_df["core_2_perim"]
+        l = c_depths + p_depth
+        a = l * w
+        p_roof_areas = shoeboxes_df["roof_2_footprint"] * p_depth * w
+        c_roof_areas = shoeboxes_df["roof_2_footprint"] * c_depths * w
+        surface_area = 2 * (w + l) * h + p_roof_areas + c_roof_areas
+
+        infiltration_per_exposed_area = ach * a * h / 3600 / surface_area
+        shoeboxes_df["Infiltration"] = infiltration_per_exposed_area.astype("float64")
+
         return shoeboxes_df
 
     def prepare_shading(self):
