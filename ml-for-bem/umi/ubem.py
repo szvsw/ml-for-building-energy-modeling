@@ -340,6 +340,11 @@ class UBEM:
             schedules[i] = d.pop("schedules")
         # TODO: many of these are not returning with correct dtypes
         template_features = pd.DataFrame.from_dict(template_data_dict).T
+        
+        #TODO: can remove later
+        template_features["cop_heating"] = building_template.Perimeter.Conditioning.HeatingCoeffOfPerf
+        template_features["cop_cooling"] = building_template.Perimeter.Conditioning.CoolingCoeffOfPerf
+
         return template_features, schedules
 
     @classmethod
@@ -726,17 +731,17 @@ class UBEM:
     def visualize_2d(self, ax=None, gdf=None, max_polys=1000, **kwargs):
         if ax is None:
             _, ax = plt.subplots()
-        if gdf is None:
+        if gdf is not None:
             max_idx = min(gdf.shape[0], max_polys)
-            gdf.iloc[:max_idx].plot(**kwargs)
+            gdf.iloc[:max_idx].plot(aspect=1, **kwargs)
         else:
             max_idx = min(self.building_gdf.shape[0], max_polys)
             self.building_gdf.iloc[:max_idx].plot(
-                column="template_name", **kwargs, ax=ax
+                column=self.template_name_col, ax=ax, aspect=1, **kwargs
             )
             try:
                 self.building_gdf.iloc[:max_idx]["cores"].plot(
-                    facecolor="none", edgecolor="red", ax=ax
+                    facecolor="none", edgecolor="red", ax=ax, aspect=1, **kwargs
                 )
             except:
                 logger.error("Failed to plot cores!")
