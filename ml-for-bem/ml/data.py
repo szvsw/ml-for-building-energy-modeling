@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Literal, Union
@@ -14,11 +15,14 @@ from torch.utils.data import DataLoader, Dataset, random_split
 from shoeboxer.schedules import schedules_from_seed
 from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 # TODO: store and fetch weather data from s3
 # TODO: store and return the weather transform
 
 
-def transform_dataframe(space_config, features):
+def transform_dataframe(space_config, features, allow_oob=False):
     """
     Transforms a dataframe of features into a dataframe of features that can be used as input to a neural network
 
@@ -33,6 +37,7 @@ def transform_dataframe(space_config, features):
                 }
             }
         features (pd.DataFrame): a dataframe of features
+        allow_oob (bool, default False): if True, allow values outside of the range [0, 1] for continuous features.  If False, throw an error if a value is outside of the range [0, 1]
 
     Returns:
         df: a dataframe of features that can be used as input to a neural network
@@ -54,13 +59,31 @@ def transform_dataframe(space_config, features):
     # Do the conversion
     for key in space_config:
         # Get the current data
-        column_data = features[key]
+        column_data_og = features[key]
 
         if space_config[key]["mode"] == "Continuous":
             # Convert continuous parameters
             min_val = space_config[key]["min"]
             max_val = space_config[key]["max"]
-            column_data = (column_data - min_val) / (max_val - min_val)
+            column_data = (column_data_og - min_val) / (max_val - min_val)
+            if not allow_oob:
+                assert column_data.min() >= 0.0 and column_data.max() <= 1.0, (
+                    f"Values for {key} are outside of the range "
+                    + f"[{space_config[key]['min']}, {space_config[key]['max']}]!\n"
+                    + f"min: {column_data_og.min()}, max: {column_data_og.max()}"
+                )
+
+            else:
+                # Clip the values
+                # warn if values are outside of the range
+                if column_data.min() < 0.0 or column_data.max() > 1.0:
+                    logger.warning(
+                        f"Values for {key} are outside of the range "
+                        + f"[{space_config[key]['min']}, {space_config[key]['max']}]! "
+                        + f"Provided data min: {column_data_og.min()}, max: {column_data_og.max()}. "
+                        + "Data will be clipped before prediction."
+                    )
+                column_data = column_data.clip(0.0, 1.0)
 
             # Store the converted data
             df[key] = column_data
@@ -68,9 +91,13 @@ def transform_dataframe(space_config, features):
         elif space_config[key]["mode"] == "Onehot":
             # Convert onehot parameters
             onehots = np.zeros((len(column_data), space_config[key]["option_count"]))
-            column_data = column_data.astype(int)
-            onehots[np.arange(len(column_data)), column_data] = 1
+            column_data_og = column_data_og.astype(int)
+            onehots[np.arange(len(column_data_og)), column_data_og] = 1
             column_data = onehots
+            assert column_data_og.max() < space_config[key]["option_count"], (
+                f"Max Value for {key} is {column_data_og.max()}, "
+                f"but option count is {space_config[key]['option_count']}"
+            )
 
             # Store the converted data
             for i in range(space_config[key]["option_count"]):
@@ -332,7 +359,7 @@ class PredictBuildingDataset(Dataset):
         self.template_idx = features["template_idx"].astype(int)
         self.features_untransformed = features.drop("template_idx", axis=1)
         self.features = transform_dataframe(
-            space_config, self.features_untransformed
+            space_config, self.features_untransformed, allow_oob=True
         ).astype(np.float32)
 
         # Store the schedules

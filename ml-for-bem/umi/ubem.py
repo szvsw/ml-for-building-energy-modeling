@@ -755,18 +755,18 @@ class UBEM:
                 pass
         ax.axis("off")
         return ax
-    
+
     def prepare_for_surrogate(self):
-        features = self.shoeboxes_df
+        features = self.shoeboxes_df.copy(deep=True)
         # Convert orientations to numerical
         features["orientation"] = [
             OrientationNum[x].value for x in features["orientation"]
         ]
         return features, self.schedules_array, self.epw_array
-    
+
     def parse_energy_results(self):
         pass
-    
+
     @classmethod
     def predict_ubem(cls):
         pass
