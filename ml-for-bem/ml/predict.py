@@ -81,19 +81,14 @@ def predict_ubem(
     # already applied the weight factors so summation is correct
     monthly_predictions = monthly_predictions.T.groupby(level=[1, 2]).sum().T
 
-    # apply COPs
-    monthly_predictions["Heating"] = monthly_predictions["Heating"] / features[
-        "cop_heating"
-    ].values.reshape(-1, 1)
-    monthly_predictions["Cooling"] = monthly_predictions["Cooling"] / features[
-        "cop_cooling"
-    ].values.reshape(-1, 1)
-    # monthly_predictions = monthly_predictions.rename(
-    #     columns={
-    #         "Heating": "HeatingDemandIntensity",
-    #         "Cooling": "CoolingDemandIntensity",
-    #     }
-    # )
+    if apply_cops:
+        # apply COPs
+        monthly_predictions["Heating"] = monthly_predictions["Heating"] / features[
+            "cop_heating"
+        ].values.reshape(-1, 1)
+        monthly_predictions["Cooling"] = monthly_predictions["Cooling"] / features[
+            "cop_cooling"
+        ].values.reshape(-1, 1)
 
     # aggregate by building
     # already applied weight factors so summation is correct
