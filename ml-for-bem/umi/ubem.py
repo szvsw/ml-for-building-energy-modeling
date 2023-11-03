@@ -206,6 +206,9 @@ class UBEM:
         perim_offset=PERIM_OFFSET,
         calculate_shading=False,
     ):
+        # TODO:
+        # WHY ARE THE NUMBER OF SBS DIFFERENT when opening an UMI vs from gdf only
+
         assert len([t.Name for t in template_lib.BuildingTemplates]) == len(
             set([t.Name for t in template_lib.BuildingTemplates])
         ), "Duplicate names in template library!  Aborting."
@@ -243,7 +246,6 @@ class UBEM:
         self.shoeboxes_df = self.prepare_shoeboxes(calculate_shading)
         # TODO: should these allow for lists?
         self.shoeboxes_df["width"] = self.shoebox_width
-        self.shoeboxes_df["height"] = self.floor_to_floor_height
 
         logger.info(f"Processed UMI in {time.time() - start_time:,.2f} seconds")
 
@@ -324,6 +326,7 @@ class UBEM:
 
         # get the template data
         template_data_dict = {}
+        template_names = []
         for i, building_template in enumerate(template_lib.BuildingTemplates):
             # Skip unneeded templates
             if building_template.Name not in needed_templates:
@@ -337,9 +340,11 @@ class UBEM:
             data[self.template_idx_col] = i
             template_data_dict[building_template.Name] = data
 
+        template_names = [x.Name for x in template_lib.BuildingTemplates]
         n_templates = len(template_lib.BuildingTemplates)
         schedules = np.zeros((n_templates, len(SCHEDULE_PATHS), 8760))
-        for i, (_, d) in enumerate(template_data_dict.items()):
+        for name, d in template_data_dict.items():
+            i = template_names.index(name)
             schedules[i] = d.pop("schedules")
         # TODO: many of these are not returning with correct dtypes
         template_features = pd.DataFrame.from_dict(template_data_dict).T
@@ -560,7 +565,15 @@ class UBEM:
         logger.debug(
             f"Input infiltration values range between {shoeboxes_df['Infiltration'].max()} and {shoeboxes_df['Infiltration'].min()} ach"
         )
+        assert (
+            shoeboxes_df.isna().sum().any() <= 0
+        ), f"{shoeboxes_df.isna().sum().sum()} NaNs found in shoebox df"
         shoeboxes_df = self.convert_ach_to_infiltration_per_exposed_area(shoeboxes_df)
+        errors = shoeboxes_df.isna().sum()
+        for n, count in errors.items():
+            if count > 0:
+                logger.warning(f"{count} NaNs found in shoebox column {n}.")
+                raise ValueError
 
         return shoeboxes_df
 
@@ -585,6 +598,10 @@ class UBEM:
         surface_area = 2 * (w + l) * h + p_roof_areas + c_roof_areas
 
         infiltration_per_exposed_area = ach * a * h / 3600 / surface_area
+        # Check for nans
+        if infiltration_per_exposed_area.isna().sum() > 0:
+            logger.warning("NaNs in infiltration. Replacing with zero.")
+            infiltration_per_exposed_area = infiltration_per_exposed_area.fillna(0)
         shoeboxes_df["Infiltration"] = infiltration_per_exposed_area.astype("float64")
 
         return shoeboxes_df
@@ -677,8 +694,13 @@ class UBEM:
             }
         )
         # Bring in the building's geometric features like core_2_perim and floor_2_facade, height, etc
+        gis_with_heights = self.gis_features_df
+        gis_with_heights["height"] = self.floor_to_floor_height
         shoeboxes_df = shoeboxes_df.merge(
-            self.gis_features_df, left_on="building_id", right_on="building_id"
+            gis_with_heights, left_on="building_id", right_on="building_id"
+        )
+        logger.debug(
+            f"Built sb df from gis features, {shoeboxes_df.isna().sum().sum()} NaNs"
         )
         # bring in the template features like heating setpoint, etc
         shoeboxes_df = shoeboxes_df.merge(
@@ -686,6 +708,7 @@ class UBEM:
             left_on="template_name",
             right_on=self.template_name_col,
         )
+        logger.debug(f"Added template features, {shoeboxes_df.isna().sum().sum()} NaNs")
 
         # calculate the shoebox weights
         # the shoebox weights are the product of the orientation weight and the floor weight
@@ -726,6 +749,7 @@ class UBEM:
 
         shading_cols = [f"shading_{x}" for x in range(SHADING_DIV_SIZE)]
         shoeboxes_df[shading_cols] = 0.0
+        logger.debug(f"Shoeboxes built... {shoeboxes_df.isna().sum().sum()} NaNs")
         return shoeboxes_df
 
     def allocate_shaded_shoeboxes(self) -> pd.DataFrame:
@@ -865,7 +889,14 @@ class UBEM:
             )
 
     @classmethod
-    def open_umi(cls, filename, height_col="HEIGHT", id_col="guid"):
+    def open_umi(
+        cls,
+        filename,
+        height_col="HEIGHT",
+        id_col="guid",
+        template_name_col="TemplateName",
+        wwr_col="WindowToWallRatioN",
+    ):
         """
         WARNING: THIS CURRENTLY ONLY WORKS WITH SIMULATED UMI FILES (shoebox weights and gdf are only created in sdl_common post simulation)
         """
@@ -886,11 +917,12 @@ class UBEM:
                     raise ImportError(f"Error opening EPW {epw_file}.")
 
                 # 3. Parse the templates library.
+                logger.debug(umizip.namelist())
                 try:
                     template_file, *_ = (
                         file
                         for file in umizip.namelist()
-                        if file.endswith("template-library.json")
+                        if file.endswith(".json") and "sdl-common" not in file
                     )
                     logger.info(f"Opening archetpal templates at {template_file}")
                     umizip.extract(template_file, tempdir)
@@ -922,6 +954,7 @@ class UBEM:
                         with umizip.open(file) as gdf_f:
                             gdf = GeoDataFrame.from_file(gdf_f)
                             gdf._crs = utm_crs
+                            logger.debug(gdf.columns)
                         logger.info(
                             f"Read {gdf.memory_usage(index=True).sum() / 1000:,.1f}KB from"
                             f" {filename} in"
@@ -952,14 +985,40 @@ class UBEM:
 
                 # 4. Check the templates against the gdf and remap gdf template names
                 # TODO: mapping of templates to gdf
-                f2f_height = gdf["FloorToFloorHeight"][0]
-                perim_offset = gdf["PerimeterOffset"][0]
-                width = gdf["RoomWidth"][0]
-                template_name_col = "TemplateName"
-                wwr_col = "WindowToWallRatioN"
+                try:
+                    f2f_height = gdf["FloorToFloorHeight"][0]
+                except:
+                    logger.info("Calculating individual floor-to-floor heights.")
+                    logger.debug(f"Min building height: {gdf[height_col].min()}")
+                    logger.debug(f"Max floor count: {gdf['FloorCount'].min()}")
+                    f2f_height = gdf[height_col] / gdf["FloorCount"]
+                    gdf["FloorToFloorHeight"] = f2f_height
+                    logger.debug(
+                        f"Floor-to-floor height: {f2f_height.min()} to {f2f_height.max()}"
+                    )
+                try:
+                    perim_offset = gdf["PerimeterOffset"][0]
+                except:
+                    logger.warning(
+                        f"No perimeter offset in gdf, defaulting to {PERIM_OFFSET}"
+                    )
+                    perim_offset = PERIM_OFFSET
+                try:
+                    width = gdf["RoomWidth"][0]
+                except:
+                    logger.warning(
+                        f"No shoebox width in gdf, defaulting to {PERIM_OFFSET}"
+                    )
+                    width = PERIM_OFFSET
                 umi_gdf = gdf[
                     ["geometry", height_col, id_col, template_name_col, wwr_col]
                 ]
+
+                errors = umi_gdf.isna().sum()
+                for n, count in errors.items():
+                    if count > 0:
+                        logger.warning(f"{count} NaNs found in GDF column {n}.")
+                        raise ValueError
 
             return cls(
                 gdf=umi_gdf,
