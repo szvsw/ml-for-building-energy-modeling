@@ -27,7 +27,6 @@ from utils.schedules import mutate_timeseries
 # from schema import Schema
 
 
-
 EPW_PATH = Path(EPW_RELATIVE_PATH)
 
 logging.basicConfig()
@@ -100,7 +99,7 @@ def template_dict(
     PeopleDensity=0.05,
     LightingPowerDensity=2,
     EquipmentPowerDensity=5,
-    Infiltration=0.0001, # m3/s/m2 of exterior exposure
+    Infiltration=0.0001,  # m3/s/m2 of exterior exposure
     VentilationPerArea=0.0004,
     VentilationPerPerson=0.0025,
     VentilationMode=1,  # one hot of 0-2

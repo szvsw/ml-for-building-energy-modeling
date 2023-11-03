@@ -204,7 +204,7 @@ class UBEM:
         shoebox_width=3,  # Can be list (for each bldg) or single value TODO
         floor_to_floor_height=4,  # Can be list (for each bldg) or single value TODO,
         perim_offset=PERIM_OFFSET,
-        calculate_shading=False,
+        shoebox_gen_type="unshaded",
     ):
         # TODO:
         # WHY ARE THE NUMBER OF SBS DIFFERENT when opening an UMI vs from gdf only
@@ -212,6 +212,10 @@ class UBEM:
         assert len([t.Name for t in template_lib.BuildingTemplates]) == len(
             set([t.Name for t in template_lib.BuildingTemplates])
         ), "Duplicate names in template library!  Aborting."
+        sb_calculation_options = ["unshaded", "raytrace", "area"]
+        assert (
+            shoebox_gen_type in sb_calculation_options
+        ), f"Shoebox generation type must be one of {sb_calculation_options}"
 
         # Store column metadata for building_gdf
         self.height_col = height_col
@@ -243,7 +247,7 @@ class UBEM:
         )
         self.epw_array = self.prepare_epw_features(self.epw)
         self.gis_features_df = self.prepare_gis_features()
-        self.shoeboxes_df = self.prepare_shoeboxes(calculate_shading)
+        self.shoeboxes_df = self.prepare_shoeboxes(shoebox_gen_type)
         # TODO: should these allow for lists?
         self.shoeboxes_df["width"] = self.shoebox_width
 
@@ -434,6 +438,8 @@ class UBEM:
             econ_type = "DifferentialEnthalpy"
         assert econ_type in (x.name for x in Econ)
 
+        logger.debug(f"Thermal mass roof {RoofMass}, walls {FacadeMass}.")
+
         td = template_dict(
             schedules=scheds,
             PeopleDensity=building_template.Perimeter.Loads.PeopleDensity,
@@ -471,17 +477,17 @@ class UBEM:
 
         """
         if val >= ThermalMassCapacities.Concrete:
-            return ThermalMassConstructions.Concrete
+            return ThermalMassConstructions.Concrete.value
         elif (
             val < ThermalMassCapacities.Concrete and val >= ThermalMassCapacities.Brick
         ):
-            return ThermalMassConstructions.Brick
+            return ThermalMassConstructions.Brick.value
         elif (
             val < ThermalMassCapacities.Brick and val >= ThermalMassCapacities.WoodFrame
         ):
-            return ThermalMassConstructions.WoodFrame
+            return ThermalMassConstructions.WoodFrame.value
         elif val < ThermalMassCapacities.WoodFrame:
-            return ThermalMassConstructions.SteelFrame
+            return ThermalMassConstructions.SteelFrame.value
 
     @classmethod
     def single_pane_shgc_estimation(cls, tsol, uval):
@@ -545,7 +551,7 @@ class UBEM:
         """
         return extract(epw, timeseries)
 
-    def prepare_shoeboxes(self, calculate_shading):
+    def prepare_shoeboxes(self, shoebox_gen_type):
         """
         Build a dataframe of shoeboxes for the entire scene. This includes the final weighting needed
         to combine the shoeboxes into a single prediction for each building.
@@ -553,13 +559,15 @@ class UBEM:
         Returns:
             shoeboxes_df (pd.DataFrame): df with shoebox features and weights
         """
-        if calculate_shading:
+        if shoebox_gen_type == "raytrace":
             logger.info("Running raytracer...")
             logger.warning("RAYTRACER NOT SETUP. SKIPPING.")
             shoeboxes_df = self.allocate_shaded_shoeboxes()  # TODO
-        else:
+        elif shoebox_gen_type == "unshaded":
             # Make
             shoeboxes_df = self.allocate_unshaded_shoeboxes()
+        elif shoebox_gen_type == "area":
+            shoeboxes_df = self.allocate_area_methods_shoeboxess()
 
         # Calculate infiltration TODO: do we want this here? before the merge? Should this be calculated based on shoeboxes or total building?
         logger.debug(
@@ -752,6 +760,40 @@ class UBEM:
         logger.debug(f"Shoeboxes built... {shoeboxes_df.isna().sum().sum()} NaNs")
         return shoeboxes_df
 
+    def allocate_area_methods_shoeboxess(self) -> pd.DataFrame:
+        """
+        A method for calculating building energy use based on a standard south-facing shoebox,
+        multiplied out by the total building area.
+        """
+        shoeboxes_df = pd.DataFrame(
+            {
+                "building_id": self.gis_features_df["building_id"].values,
+                "orientation": "south",
+                "roof_2_footprint": 1 / self.gis_features_df["floor_count"],
+                "ground_2_footprint": 1 / self.gis_features_df["floor_count"],
+            }
+        )
+        # Bring in the building's geometric features like core_2_perim and floor_2_facade, height, etc
+        gis_with_heights = self.gis_features_df
+        gis_with_heights["height"] = self.floor_to_floor_height
+        shoeboxes_df = shoeboxes_df.merge(
+            gis_with_heights, left_on="building_id", right_on="building_id"
+        )
+        shoeboxes_df = shoeboxes_df.merge(
+            self.template_features_df,
+            left_on="template_name",
+            right_on=self.template_name_col,
+        )
+        shoeboxes_df["weight"] = 1
+        # apply zero shading
+        shading_cols = [f"shading_{x}" for x in range(SHADING_DIV_SIZE)]
+        shoeboxes_df[shading_cols] = 0.0
+
+        logger.debug(
+            f"Built simple area method shoeboxes, with shape {shoeboxes_df.shape}"
+        )
+        return shoeboxes_df
+
     def allocate_shaded_shoeboxes(self) -> pd.DataFrame:
         """
         Future
@@ -790,13 +832,6 @@ class UBEM:
         ]
         return features, self.schedules_array, self.epw_array
 
-    def parse_energy_results(self):
-        pass
-
-    @classmethod
-    def predict_ubem(cls):
-        pass
-
     @classmethod
     def open_uio(
         cls,
@@ -806,6 +841,7 @@ class UBEM:
         template_map=None,
         results_df=None,
         wwr=0.4,
+        shoebox_gen_type="unshaded",
     ):
         filename = Path(filename)
         logger.info("Opening UIO model...")
@@ -886,6 +922,7 @@ class UBEM:
                 template_name_col=dummy_template_name_col,
                 template_lib=template_lib,
                 epw=epw,
+                shoebox_gen_type=shoebox_gen_type,
             )
 
     @classmethod
@@ -896,6 +933,7 @@ class UBEM:
         id_col="guid",
         template_name_col="TemplateName",
         wwr_col="WindowToWallRatioN",
+        shoebox_gen_type="unshaded",
     ):
         """
         WARNING: THIS CURRENTLY ONLY WORKS WITH SIMULATED UMI FILES (shoebox weights and gdf are only created in sdl_common post simulation)
@@ -1031,6 +1069,7 @@ class UBEM:
                 shoebox_width=width,
                 floor_to_floor_height=f2f_height,
                 perim_offset=perim_offset,
+                shoebox_gen_type=shoebox_gen_type,
             )
 
 
