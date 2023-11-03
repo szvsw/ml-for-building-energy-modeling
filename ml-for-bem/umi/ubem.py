@@ -405,9 +405,9 @@ class UBEM:
         if building_template.Perimeter.Conditioning.MechVentSchedule == 0:
             vent_mode = MechVentMode.Off
         elif "ALWAYSOFF" in vent_sched_name.upper():
-            vent_mode = MechVentMode.AllOn
+            vent_mode = MechVentMode.AllOff
         elif "ALWAYSON" in vent_sched_name.upper():
-            vent_mode = MechVentMode.OccupancySchedule
+            vent_mode = MechVentMode.AllOn
         elif "OCC" in vent_sched_name.upper():
             vent_mode = MechVentMode.OccupancySchedule
         else:
