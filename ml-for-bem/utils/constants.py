@@ -55,8 +55,8 @@ class BooleanParam(IntEnum):
 class OrientationNum(IntEnum):
     south = 0
     east = 1
-    west = 2
-    north = 3
+    north = 2
+    west = 3
 
 
 SCHEDULE_PATHS = [
