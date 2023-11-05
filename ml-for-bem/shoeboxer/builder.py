@@ -17,7 +17,7 @@ import pandas as pd
 from archetypal import settings
 from archetypal.idfclass import IDF
 from archetypal.idfclass.sql import Sql
-from archetypal.schedule import Schedule, ScheduleTypeLimits
+from archetypal.schedule import Schedule
 
 import shoeboxer.geometry_utils as gu
 from shoeboxer.shoebox_config import ShoeboxConfiguration
@@ -31,8 +31,8 @@ EPW_PATH = Path(EPW_RELATIVE_PATH)
 
 logging.basicConfig()
 logger = logging.getLogger("ShoeBox")
-# logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.INFO)
 
 
 def day_to_epbunch(dsched, idx=0, sched_lim=sched_type_limits):
@@ -160,6 +160,9 @@ class ShoeBox:
         change_summary=False,
     ):
         self.name = name
+        # Check if output directory exists and create if not
+        output_directory = Path(output_directory)
+        output_directory.mkdir(parents=True, exist_ok=True)
         self.output_directory = output_directory
         self.shoebox_config = shoebox_config  # TODO if this changes, update the json
         self.epw = epw
@@ -639,12 +642,22 @@ class ShoeBox:
             "outdoor_air_schedule_name": "",  # AllOn
         }
 
-        if mech_vent_sched_mode == MechVentMode.OccupancySchedule:
+        if mech_vent_sched_mode == MechVentMode.OccupancySchedule.name:
+            logger.debug("Setting demand controlled ventilation to Occupancy Schedule.")
             for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
                 zone["demand_controlled_ventilation_type"] = mech_vent_sched_mode
-        else:
+        elif mech_vent_sched_mode == MechVentMode.AllOn.name:
+            logger.debug("Setting demand controlled ventilation to AllOn.")
             for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
                 zone["demand_controlled_ventilation_type"] = "None"
+        else:
+            logger.debug("Setting demand controlled ventilation to Off.")
+            for zone in self.epjson["ZoneHVAC:IdealLoadsAirSystem"].values():
+                zone["demand_controlled_ventilation_type"] = "None"
+            # make outdoor air schedule zero if mech vent mode is off
+            self.epjson["DesignSpecification:OutdoorAir"]["SharedDesignSpecOutdoorAir"][
+                "outdoor_air_schedule_name"
+            ] = "Off"
 
     def handle_thermostat(self, template_dict):
         # TODO: allow for schedule?
@@ -789,7 +802,8 @@ class ShoeBox:
 
 
 if __name__ == "__main__":
-    settings.energyplus_location = Path("D:\EnergyPlusV22-2-0")
+    settings.energyplus_location = Path("C:\EnergyPlusV22-2-0")
+    # settings.energyplus_location = Path("D:\EnergyPlusV22-2-0")
     settings.ep_version = "22.2.0"
     shoebox_config = ShoeboxConfiguration()
     shoebox_config.width = 10
@@ -820,17 +834,21 @@ if __name__ == "__main__":
     # build timeseries
     scheds = mutate_timeseries(np.ones((3, 8760)), schedules, 0)
 
-    epw = "D:/Users/zoelh/GitRepos/ml-for-building-energy-modeling/ml-for-bem/data/epws/city_epws_indexed/cityidx_0001_USA_NY-New York Central Prk Obs Belv.725033_TMY3.epw"
+    epw = Path(
+        "./ml-for-bem/data/epws/city_epws_indexed/cityidx_0001_USA_NY-New York Central Prk Obs Belv.725033_TMY3.epw"
+    )
     out_dir = Path("./ml-for-bem/shoeboxer/cache")
     d = template_dict(scheds)
-    d["VentilationMode"] = 1
-    sb = ShoeBox(
-        name="test",
-        shoebox_config=shoebox_config,
-        epw=epw,
-        output_directory=out_dir,
-        template_dict=d,
-        change_summary=True,
-    )
-    idf = sb.idf(run_simulation=True)
-    idf.view_model()
+    for i in range(3):
+        d["VentilationMode"] = i
+        sb = ShoeBox(
+            name=f"test_ventilation_{i}",
+            seed_model=Path("./ml-for-bem/shoeboxer/shoebox-template.json"),
+            shoebox_config=shoebox_config,
+            epw=epw,
+            output_directory=out_dir,
+            template_dict=d,
+            change_summary=True,
+        )
+        idf = sb.idf(run_simulation=True)
+        # idf.view_model()
