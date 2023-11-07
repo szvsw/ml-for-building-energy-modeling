@@ -260,8 +260,8 @@ class ShoeBox:
 
     def update_epjson(self, template_dict, change_summary=True):
         # Rotate North
-        new_north_deg = self.shoebox_config.orientation * 90
-        self.rotate_relative_north(new_north_deg)
+        # new_north_deg =  self.shoebox_config.orientation * 90
+        self.rotate_relative_north(self.shoebox_config.orientation)
 
         # Update characteristics based on archetypal template
         self.handle_template(template_dict)
