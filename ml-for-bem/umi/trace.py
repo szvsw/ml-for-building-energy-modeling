@@ -738,19 +738,19 @@ class Tracer:
             south_weight = 0.0
             west_weight = 0.0
 
-            if normal_theta > 0 and normal_theta < np.pi / 2:
+            if normal_theta >= 0 and normal_theta <= np.pi / 2:
                 # north and east
                 north_weight = normal_theta / (np.pi / 2)
                 east_weight = 1.0 - north_weight
-            elif normal_theta > np.pi / 2 and normal_theta < np.pi:
+            elif normal_theta > np.pi / 2 and normal_theta <= np.pi:
                 # north and west
                 north_weight = (np.pi - normal_theta) / (np.pi / 2)
                 west_weight = 1.0 - north_weight
-            elif normal_theta > np.pi and normal_theta < 3 * np.pi / 2:
+            elif normal_theta > np.pi and normal_theta <= 3 * np.pi / 2:
                 # south and west
                 south_weight = (normal_theta - np.pi) / (np.pi / 2)
                 west_weight = 1.0 - south_weight
-            elif normal_theta > 3 * np.pi / 2 and normal_theta < 2 * np.pi:
+            elif normal_theta > 3 * np.pi / 2 and normal_theta <= 2 * np.pi:
                 # south and east
                 south_weight = (2 * np.pi - normal_theta) / (np.pi / 2)
                 east_weight = 1.0 - south_weight
