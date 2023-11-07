@@ -51,4 +51,4 @@ WORKDIR /usr/src/ml-for-bem
 
 
 # Run app.py when the container launches
-CMD ["python", "full_climate_seed.py", "--n", "10", "--bucket", "ml-for-bem", "--experiment_name", "full_climate_zone/docker-test/train", "--train_or_test","train"]
+CMD ["python", "worker.py", "--n", "10", "--bucket", "ml-for-bem", "--experiment_name", "full_climate_zone/docker-test/train", "--train_or_test","train"]
