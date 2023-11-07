@@ -108,14 +108,14 @@ def template_dict(
     sat_max=28,
     sat_min=17,
     RecoverySettings=0,
-    EconomizerSettings=1,
+    EconomizerSettings=0,
     FacadeRValue=2,
-    FacadeMass=2,  # need to revisit minimums
-    RoofRValue=6,
+    FacadeMass=1,  # need to revisit minimums
+    RoofRValue=2,
     RoofMass=1,
-    SlabRValue=4,
-    WindowShgc=0.5,
-    WindowUValue=1.0,
+    SlabRValue=2,
+    WindowShgc=0.65,
+    WindowUValue=3.0,
     visible_transmittance=0.8,
 ):
     return dict(
