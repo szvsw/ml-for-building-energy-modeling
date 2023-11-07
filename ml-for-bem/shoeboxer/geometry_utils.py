@@ -3,8 +3,11 @@ import math
 
 import numpy as np
 
+from shoeboxer.shoebox_config import ShoeboxConfiguration
+
 logging.basicConfig()
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 logger.setLevel(logging.INFO)
 
 BASE_PERIM_DEPTH = 5  # TODO make dynamic
@@ -20,11 +23,9 @@ def scale_shoebox(
     sb,
     width,
     height,
-    floor_2_facade,
-    core_2_perim,
+    perim_depth,
+    core_depth,
 ):
-    perim_depth = floor_2_facade * height
-    core_depth = core_2_perim * perim_depth
     logger.info(f"New perimeter depth: {perim_depth}")
     logger.info(f"New core depth: {core_depth}")
 
@@ -105,17 +106,21 @@ def zone_depth(zone_coords):
     return max(y_coords) - min(y_coords)
 
 
-def set_adiabatic_surfaces(
-    sb,
-    height,
-    floor_2_facade,
-    core_2_perim,
-    roof_2_footprint,
-    ground_2_footprint,
-):
+def set_adiabatic_surfaces(sb, shoebox_config: ShoeboxConfiguration):
     logger.info("Updating adiabatic surfaces.")
-    perim_depth = floor_2_facade * height
-    core_depth = core_2_perim * perim_depth
+
+    perim_depth = shoebox_config.perim_depth
+    core_depth = shoebox_config.core_depth
+    roof_2_footprint = shoebox_config.roof_2_footprint
+    ground_2_footprint = shoebox_config.ground_2_footprint
+
+    # SET PARTITION BETWEEN ZONES TO AN ADIABATIC SURFACE
+    if shoebox_config.adiabatic_partition_flag == 1:
+        for x, y in sb["BuildingSurface:Detailed"].items():
+            if y["outside_boundary_condition"].upper() == "SURFACE":
+                logger.debug(f"Setting {x} as adiabatic.")
+                y.pop("outside_boundary_condition_object")
+                y["outside_boundary_condition"] = "Adiabatic"
 
     perim_roof_exposed_depth = (
         roof_2_footprint * perim_depth

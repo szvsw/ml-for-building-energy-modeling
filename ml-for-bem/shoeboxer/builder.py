@@ -7,7 +7,6 @@ import logging
 import math
 import os
 import subprocess
-import sys
 from pathlib import Path
 
 import archetypal as ar
@@ -31,8 +30,7 @@ EPW_PATH = Path(EPW_RELATIVE_PATH)
 
 logging.basicConfig()
 logger = logging.getLogger("ShoeBox")
-logger.setLevel(logging.DEBUG)
-# logger.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
 
 
 def day_to_epbunch(dsched, idx=0, sched_lim=sched_type_limits):
@@ -158,7 +156,13 @@ class ShoeBox:
         seed_model=Path("shoeboxer/shoebox-template.json"),
         output_directory=None,
         change_summary=False,
+        verbose=False,
     ):
+        if verbose:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+
         self.name = name
         # Check if output directory exists and create if not
         output_directory = Path(output_directory)
@@ -166,12 +170,12 @@ class ShoeBox:
         self.output_directory = output_directory
         self.shoebox_config = shoebox_config  # TODO if this changes, update the json
         self.epw = epw
-        self.hourly = None
-        self.monthly = None
-        perim_depth = shoebox_config.floor_2_facade * shoebox_config.height
-        core_depth = shoebox_config.core_2_perim * perim_depth
-        length = perim_depth + core_depth
-        self.floor_area = shoebox_config.width * length
+        # self.floor_2_facade = shoebox_config.perim_depth / shoebox_config.height
+        # self.core_2_perim = shoebox_config.core_depth / shoebox_config.perim_depth
+        # perim_depth = shoebox_config.floor_2_facade * shoebox_config.height
+        # core_depth = shoebox_config.core_2_perim * shoebox_config.perim_depth
+        total_depth = shoebox_config.perim_depth + shoebox_config.core_depth
+        self.floor_area = shoebox_config.width * total_depth
 
         # Load the seed model
         with open(seed_model, "r") as f:
@@ -674,19 +678,14 @@ class ShoeBox:
             sb=self.epjson,
             width=self.shoebox_config.width,
             height=self.shoebox_config.height,
-            floor_2_facade=self.shoebox_config.floor_2_facade,
-            core_2_perim=self.shoebox_config.core_2_perim,
+            perim_depth=self.shoebox_config.perim_depth,
+            core_depth=self.shoebox_config.core_depth,
         )
         # Update window to wall ratio
         self.epjson = gu.update_wwr(self.epjson, self.shoebox_config.wwr)
         # Change adiabatic roof and floor dimensions
         self.epjson = gu.set_adiabatic_surfaces(
-            sb=self.epjson,
-            height=self.shoebox_config.height,
-            floor_2_facade=self.shoebox_config.floor_2_facade,
-            core_2_perim=self.shoebox_config.core_2_perim,
-            roof_2_footprint=self.shoebox_config.roof_2_footprint,
-            ground_2_footprint=self.shoebox_config.ground_2_footprint,
+            sb=self.epjson, shoebox_config=self.shoebox_config
         )
 
     def handle_shading(self):
@@ -808,10 +807,13 @@ if __name__ == "__main__":
     shoebox_config = ShoeboxConfiguration()
     shoebox_config.width = 10
     shoebox_config.height = 10
-    shoebox_config.floor_2_facade = 0.9
-    shoebox_config.core_2_perim = 0.4
+    shoebox_config.perim_depth = 5
+    shoebox_config.core_depth = 4
+    shoebox_config.adiabatic_partition_flag = 1
+    # shoebox_config.floor_2_facade = 0.9
+    # shoebox_config.core_2_perim = 0.4
     shoebox_config.roof_2_footprint = 0.25
-    shoebox_config.ground_2_footprint = 0.99
+    shoebox_config.ground_2_footprint = 0.5
     shoebox_config.wwr = 0.2
     shoebox_config.orientation = 0
     shoebox_config.shading_vect = np.random.random(SHADING_DIV_SIZE) * math.pi / 3
@@ -839,16 +841,19 @@ if __name__ == "__main__":
     )
     out_dir = Path("./ml-for-bem/shoeboxer/cache")
     d = template_dict(scheds)
-    for i in range(3):
-        d["VentilationMode"] = i
-        sb = ShoeBox(
-            name=f"test_ventilation_{i}",
-            seed_model=Path("./ml-for-bem/shoeboxer/shoebox-template.json"),
-            shoebox_config=shoebox_config,
-            epw=epw,
-            output_directory=out_dir,
-            template_dict=d,
-            change_summary=True,
-        )
-        idf = sb.idf(run_simulation=True)
-        # idf.view_model()
+    d["VentilationMode"] = 1
+
+    sb = ShoeBox(
+        name=f"test",
+        seed_model=Path("./ml-for-bem/shoeboxer/shoebox-template.json"),
+        shoebox_config=shoebox_config,
+        epw=epw,
+        output_directory=out_dir,
+        template_dict=d,
+        change_summary=True,
+    )
+    idf = sb.idf(run_simulation=False)
+    hourly, monthly = sb.simulate(idf=idf)
+    print("HEATING/COOLING EUI")
+    print(monthly.sum() / sb.floor_area * 2.77e-07)
+    # idf.view_model()
