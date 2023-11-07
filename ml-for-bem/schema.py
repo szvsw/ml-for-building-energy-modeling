@@ -480,7 +480,7 @@ class Schema:
                     name="LightingPowerDensity",
                     path="Loads.LightingPowerDensity",
                     min=0,
-                    max=20,
+                    max=30,
                     mean=10,
                     std=6,
                     source="ComStock",
@@ -490,7 +490,7 @@ class Schema:
                     name="EquipmentPowerDensity",
                     path="Loads.EquipmentPowerDensity",
                     min=0,
-                    max=150,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
+                    max=60,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
                     mean=10,
                     std=6,
                     source="ComStock",
