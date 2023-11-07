@@ -15269,7 +15269,7 @@
     "ZoneHVAC:IdealLoadsAirSystem": {
         "Core Ideal Loads Air": {
             "cooling_availability_schedule_name": "AllOn",
-            "cooling_limit": "NoLimit",
+            "cooling_limit": "LimitFlowRateAndCapacity",
             "dehumidification_control_type": "None",
             "demand_controlled_ventilation_type": "OccupancySchedule",
             "design_specification_outdoor_air_object_name": "SharedDesignSpecOutdoorAir",
@@ -15293,7 +15293,7 @@
         },
         "Perimeter Ideal Loads Air": {
             "cooling_availability_schedule_name": "AllOn",
-            "cooling_limit": "NoLimit",
+            "cooling_limit": "LimitFlowRateAndCapacity",
             "dehumidification_control_type": "None",
             "demand_controlled_ventilation_type": "OccupancySchedule",
             "design_specification_outdoor_air_object_name": "SharedDesignSpecOutdoorAir",
