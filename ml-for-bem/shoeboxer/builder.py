@@ -94,29 +94,29 @@ def schedule_to_epbunch(name, values, sched_lims_bunch=sched_type_limits):
 
 def template_dict(
     schedules,
-    PeopleDensity=0.05,
-    LightingPowerDensity=2,
-    EquipmentPowerDensity=5,
-    Infiltration=0.0001,  # m3/s/m2 of exterior exposure
-    VentilationPerArea=0.0004,
-    VentilationPerPerson=0.0025,
-    VentilationMode=1,  # one hot of 0-2
-    HeatingSetpoint=18,
-    CoolingSetpoint=24,
-    humid_max=81,
-    humid_min=21,
-    sat_max=28,
-    sat_min=17,
-    RecoverySettings=0,
-    EconomizerSettings=0,
-    FacadeRValue=2,
-    FacadeMass=1,  # need to revisit minimums
-    RoofRValue=2,
-    RoofMass=1,
-    SlabRValue=2,
-    WindowShgc=0.65,
-    WindowUValue=3.0,
-    visible_transmittance=0.8,
+    PeopleDensity: float,
+    LightingPowerDensity: float,
+    EquipmentPowerDensity: float,
+    Infiltration: float,  # m3/s/m2 of exterior exposure
+    VentilationPerArea: float,
+    VentilationPerPerson: float,
+    VentilationMode: int,  # one hot of 0-2
+    HeatingSetpoint: float,
+    CoolingSetpoint: float,
+    # humid_max: float,
+    # humid_min: float,
+    # sat_max: float,
+    # sat_min: float,
+    RecoverySettings: int,
+    EconomizerSettings: int,
+    FacadeRValue: float,
+    FacadeMass: int,  # need to revisit minimums
+    RoofRValue: float,
+    RoofMass: int,
+    SlabRValue: float,
+    WindowShgc: float,
+    WindowUValue: float,
+    # visible_transmittance=0.8,
 ):
     return dict(
         schedules=schedules,
@@ -129,10 +129,10 @@ def template_dict(
         VentilationMode=VentilationMode,
         HeatingSetpoint=HeatingSetpoint,
         CoolingSetpoint=CoolingSetpoint,
-        humid_max=humid_max,
-        humid_min=humid_min,
-        sat_max=sat_max,
-        sat_min=sat_min,
+        # humid_max=humid_max,
+        # humid_min=humid_min,
+        # sat_max=sat_max,
+        # sat_min=sat_min,
         RecoverySettings=RecoverySettings,
         EconomizerSettings=EconomizerSettings,
         FacadeRValue=FacadeRValue,
@@ -142,7 +142,7 @@ def template_dict(
         SlabRValue=SlabRValue,
         WindowShgc=WindowShgc,
         WindowUValue=WindowUValue,
-        visible_transmittance=visible_transmittance,
+        # visible_transmittance=visible_transmittance,
     )
 
 
@@ -448,7 +448,7 @@ class ShoeBox:
         window_material_def = {
             "solar_heat_gain_coefficient": template_dict["WindowShgc"],
             "u_factor": template_dict["WindowUValue"],
-            "visible_transmittance": template_dict["visible_transmittance"],
+            # "visible_transmittance": template_dict["visible_transmittance"],
         }
         window_material_name = f"SimpleGlazing"
         if window_material_type not in self.epjson:
@@ -840,8 +840,27 @@ if __name__ == "__main__":
         "./ml-for-bem/data/epws/city_epws_indexed/cityidx_0001_USA_NY-New York Central Prk Obs Belv.725033_TMY3.epw"
     )
     out_dir = Path("./ml-for-bem/shoeboxer/cache")
-    d = template_dict(scheds)
-    d["VentilationMode"] = 1
+    d = template_dict(
+        schedules=scheds,
+        PeopleDensity=0.05,
+        LightingPowerDensity=2,
+        EquipmentPowerDensity=5,
+        Infiltration=0.0001,
+        VentilationPerArea=0.0004,
+        VentilationPerPerson=0.0025,
+        VentilationMode=1,  # one hot of 0-2
+        HeatingSetpoint=18,
+        CoolingSetpoint=24,
+        RecoverySettings=0,
+        EconomizerSettings=0,
+        FacadeRValue=2,
+        FacadeMass=2,  # need to revisit minimums
+        RoofRValue=6,
+        RoofMass=1,
+        SlabRValue=4,
+        WindowShgc=0.5,
+        WindowUValue=3.0,
+    )
 
     sb = ShoeBox(
         name=f"test",
