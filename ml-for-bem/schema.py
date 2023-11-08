@@ -262,42 +262,6 @@ class ShoeboxGeometryParameter(NumericParameter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def mutate_simulation_object(self, epjson):
-        """
-        This method updates the simulation objects (epjson, shoebox config)
-        by extracting values for this parameter from the sim's storage vector and using this
-        parameter's logic to update the appropriate objects.
-        Updates whitebox simulation's shoebox configuration dictionary class.
-        Args:
-            whitebox_sim: WhiteboxSimulation
-        """
-        value = self.extract_storage_values(whitebox_sim.storage_vector)  # TODO
-        setattr(whitebox_sim.shoebox_config, self.name, value)
-
-    def extract_from_template(self, whitebox_sim=None):
-        """
-        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
-        Works as the reverse of mutate_simulation_object
-        Args:
-            whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
-        """
-        if whitebox_sim:
-            return self.to_ml(value=getattr(whitebox_sim.shoebox_config, self.name))
-        else:
-            return self.to_ml(value=self.mean)
-
-
-class ShoeboxOrientationParameter(OneHotParameter):
-    __slots__ = ()
-
-    def __init__(self, **kwargs):
-        super().__init__(count=4, **kwargs)
-
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        value = self.extract_storage_values(whitebox_sim.storage_vector)
-        setattr(whitebox_sim.shoebox_config, self.name, value)
-
 
 class BuildingTemplateParameter(NumericParameter):
     __slots__ = "path"
@@ -306,116 +270,10 @@ class BuildingTemplateParameter(NumericParameter):
         super().__init__(**kwargs)
         self.path = path.split(".")
 
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        """
-        This method updates the simulation objects (archetypal template, shoebox config)
-        by extracting values for this parameter from the sim's storage vector and using this
-        parameter's logic to update the appropriate objects.
-        Updates whitebox simulation's direct building template parameters.
-
-        Args:
-            whitebox_sim: WhiteboxSimulation
-        """
-        pass
-        # value = self.extract_storage_values(whitebox_sim.storage_vector)
-        # template_param = self.path[-1]
-        # for zone in ["Perimeter", "Core"]:
-        #     path = [whitebox_sim.template, zone, *self.path]
-        #     path = path[:-1]
-        #     object_to_update = reduce(lambda a, b: a[b], path)
-        #     setattr(object_to_update, template_param, value)
-
-    def extract_from_template(self, building_template):
-        """
-        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
-        Works as the reverse of mutate_simulation_object
-        Args:
-            whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate
-        """
-        val = building_template.Perimeter
-        for attr in self.path:
-            val = getattr(val, attr)
-        return self.to_ml(value=val)
-
 
 class RValueParameter(BuildingTemplateParameter):
     def __init__(self, path, **kwargs):
         super().__init__(path, **kwargs)
-
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        """
-        Thi updates the simulation objects (archetypal template, shoebox config)
-        by extracting values for this parameter from the sim's storage vector and using this
-        parameter's logic to update the appropriate objects.
-        Updates whitebox simulation's r value parameter by inferring the insulation layer and updating its
-        thickness automaticaly.
-
-        Args:
-            whitebox_sim: WhiteboxSimulation
-        """
-        pass
-        # desired_r_value = self.extract_storage_values(whitebox_sim.storage_vector)
-        # for zone in ["Perimeter", "Core"]:
-        #     zone_obj = getattr(whitebox_sim.template, zone)
-        #     constructions = zone_obj.Constructions
-        #     construction = getattr(constructions, self.path[0])
-        #     # TODO: make sure units are correct!!!
-        #     # = self.infer_insulation_layer()
-        #     layers = construction.Layers
-        #     insulation_layer_ix = None
-        #     k_min = 999999
-        #     for i, layer in enumerate(layers):
-        #         if layer.Material.Conductivity < k_min:
-        #             k_min = layer.Material.Conductivity
-        #             insulation_layer_ix = i
-
-        #     i = insulation_layer_ix
-        #     all_layers_except_insulation_layer = [a for a in layers]
-        #     all_layers_except_insulation_layer.pop(i)
-        #     insulation_layer: MaterialLayer = layers[i]
-
-        #     if desired_r_value <= sum(
-        #         [a.r_value for a in all_layers_except_insulation_layer]
-        #     ):
-        #         raise ValueError(
-        #             f"Cannot set assembly r-value smaller than "
-        #             f"{sum([a.r_value for a in all_layers_except_insulation_layer])} "
-        #             f"because it would result in an insulation of a "
-        #             f"negative thickness. Try a higher value or changing the material "
-        #             f"layers instead."
-        #         )
-
-        #     alpha = float(desired_r_value) / construction.r_value
-        #     new_r_value = (
-        #         (
-        #             (alpha - 1)
-        #             * sum([a.r_value for a in all_layers_except_insulation_layer])
-        #         )
-        #     ) + alpha * insulation_layer.r_value
-        #     insulation_layer.r_value = new_r_value
-        #     if insulation_layer.Thickness <= 0.003:
-        #         construction.Layers = all_layers_except_insulation_layer
-
-    def extract_from_template(self, building_template):
-        """
-        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
-        Works as the reverse of mutate_simulation_object
-        Args:
-            whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
-        """
-        if "Facade" in self.name:
-            surface = "Facade"
-        elif "Roof" in self.name:
-            surface = "Roof"
-        elif "Slab" in self.name:
-            surface = "Slab"
-        path = ["Constructions", surface]
-        val = building_template.Perimeter
-        for attr in path:
-            val = getattr(val, attr)
-        return self.to_ml(value=val.r_value)
 
 
 class TMassParameter(OneHotParameter):
@@ -424,51 +282,6 @@ class TMassParameter(OneHotParameter):
     def __init__(self, path, **kwargs):
         super().__init__(count=4, **kwargs)
         self.path = path.split(".")
-
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        pass
-        # hot_bin = self.extract_storage_values(whitebox_sim.storage_vector)
-        # # hot_bin = self.get_tmas_idx(value)
-        # desired_heat_capacity_per_wall_area = ThermalMassCapacities[
-        #     ThermalMassConstructions(hot_bin).name
-        # ].value
-        # for zone in ["Perimeter", "Core"]:
-        #     zone_obj = getattr(whitebox_sim.template, zone)
-        #     constructions = zone_obj.Constructions
-        #     construction = getattr(constructions, self.path[0])
-
-        #     concrete_layer = construction.Layers[0]  # concrete
-        #     material = concrete_layer.Material
-        #     cp = material.SpecificHeat
-        #     rho = material.Density
-        #     volumetric_cp = cp * rho
-        #     old_thermal_mass = construction.heat_capacity_per_unit_wall_area
-        #     thermal_mass_without_concrete = (
-        #         old_thermal_mass - concrete_layer.heat_capacity
-        #     )
-        #     thickness = (
-        #         desired_heat_capacity_per_wall_area - thermal_mass_without_concrete
-        #     ) / volumetric_cp
-        #     if thickness < 0.004:
-        #         all_layers_except_mass = [a for a in construction.Layers]
-        #         all_layers_except_mass.pop(0)
-        #         construction.Layers = all_layers_except_mass
-        #     else:
-        #         concrete_layer.Thickness = thickness
-
-    def extract_from_template(self, building_template):
-        if "Facade" in self.name:
-            surface = "Facade"
-        elif "Roof" in self.name:
-            surface = "Roof"
-        elif "Slab" in self.name:
-            surface = "Slab"
-        path = ["Constructions", surface, "heat_capacity_per_unit_wall_area"]
-        val = building_template.Perimeter
-        for attr in path:
-            val = getattr(val, attr)
-        hot_bin = self.get_tmas_idx(val)
-        return self.to_ml(value=hot_bin)
 
     def get_tmas_idx(self, val):
         if val >= ThermalMassCapacities.Concrete:
@@ -490,105 +303,6 @@ class WindowParameter(NumericParameter):
     def __init__(self, min, max, **kwargs):
         super().__init__(min=min, max=max, shape_storage=(1,), shape_ml=(1,), **kwargs)
 
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        """
-        This method updates the simulation objects (archetypal template, shoebox config)
-        by extracting values for this parameter from the sim's storage vector and using this
-        parameter's logic to update the appropriate objects.
-        Updates whitebox simulation's r value parameter by inferring the insulation layer and updating its
-        thickness automaticaly.
-
-        Args:
-            whitebox_sim: WhiteboxSimulation
-        """
-        pass  # TODO
-        # logger.info(
-        #     "Skipping update of window parameters - will build simple window in build_shoebox"
-        # )
-        # Get the var id and batch id for naming purposes
-        # variation_id = whitebox_sim.schema["variation_id"].extract_storage_values(
-        #     whitebox_sim.storage_vector
-        # )
-        # batch_id = whitebox_sim.schema["batch_id"].extract_storage_values(
-        #     whitebox_sim.storage_vector
-        # )
-
-        # values = self.extract_storage_values(whitebox_sim.storage_vector)
-
-        # VERSION WTIH ARCHETYPAL
-        # window_material = SimpleGlazingMaterial(Name=f"SimpleWindowMat_U{u_value}_SHGC{shgc}", Uvalue=u_value, SolarHeatGainCoefficient=shgc)
-        # window_layer = MaterialLayer(window_material, Thickness=0.06)
-        # window_construction = WindowConstruction(Name=f"SimpleWindowCon_U{u_value}_SHGC{shgc}", Layers=[window_layer])
-        # # Update the window
-        # whitebox_sim.template.Windows.Construction = (window_construction)
-
-    def extract_from_template(self, building_template):
-        """
-        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
-        Works as the reverse of mutate_simulation_object
-        Args:
-            whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate
-        """
-        window = building_template.Windows.Construction
-        uval = window.u_value
-        if self.name == "WindowUValue":
-            return self.to_ml(value=uval)
-        elif self.name == "WindowShgc":
-            if window.glazing_count == 2:
-                value = window.shgc()
-            elif window.glazing_count == 1:
-                # Calculate shgc from t_sol of construction
-                tsol = window.Layers[0].Material.SolarTransmittance
-                value = self.single_pane_shgc_estimation(tsol, uval)
-            else:
-                # if window is not 2 layers
-                logging.info(
-                    f"Window is {window.glazing_count} layers. Assuming SHGC is 0.6"
-                )
-                value = 0.6
-        return self.to_ml(value=value)
-
-    @classmethod
-    def single_pane_shgc_estimation(cls, tsol, uval):
-        """
-        Calculate shgc for single pane window - from Archetypal tsol calulation based on u-val and shgc
-        """
-
-        def shgc_intermediate(tsol, uval):
-            # if u_factor >= 4.5 and shgc < 0.7206:
-            #     return 0.939998 * shgc ** 2 + 0.20332 * shgc
-            if uval >= 4.5 and tsol < 0.6346:
-                return 10 / 469999 * (math.sqrt(2349995000 * tsol + 25836889) - 5083)
-            # if u_factor >= 4.5 and shgc >= 0.7206:
-            #     return 1.30415 * shgc - 0.30515
-            if uval >= 4.5 and tsol >= 0.6346:
-                return (20000 * tsol + 6103) / 26083
-            # if u_factor <= 3.4 and shgc <= 0.15:
-            #     return 0.41040 * shgc
-            if uval <= 3.4 and tsol <= 0.06156:
-                return tsol / 0.41040
-            # if u_factor <= 3.4 and shgc > 0.15:
-            #     return 0.085775 * shgc ** 2 + 0.963954 * shgc - 0.084958
-            if uval <= 3.4 and tsol > 0.06156:
-                return (
-                    -1 * 481977 + math.sqrt(239589100979 + 85775000000 * tsol)
-                ) / 85775
-            else:
-                logger.info(
-                    "WARNING: could not calculate shgc - review window parameters. Defaulting to 0.6."
-                )
-                return 0.6
-
-        if 3.4 <= uval <= 4.5:
-            return np.interp(
-                uval,
-                [3.4, 4.5],
-                [shgc_intermediate(tsol, 3.4), shgc_intermediate(tsol, 4.5)],
-            )
-        else:
-            return shgc_intermediate(tsol, uval)
-
 
 class SchedulesParameters(SchemaParameter):
     __slots__ = ()
@@ -604,58 +318,6 @@ class SchedulesParameters(SchemaParameter):
             shape_ml=(len(self.paths), 8760),
             **kwargs,
         )
-
-    def mutate_simulation_object(self, whitebox_sim: WhiteboxSimulation):
-        """
-        Mutate a template's schedules according to a deterministic sequence of operations stored in the
-        storage vector
-
-        Args:
-            whitebox_sim (WhiteboxSimulation): the simulation object with template to configure.
-        """
-        pass
-        # # TODO: avoid double mutation of recycled schedule - i think this is fixed, should confirm.
-        # seed = int(
-        #     whitebox_sim.schema["schedules_seed"].extract_storage_values(
-        #         whitebox_sim.storage_vector
-        #     )
-        # )
-        # schedules = get_schedules(
-        #     whitebox_sim.template, zones=["Core"], paths=self.paths
-        # )
-        # operations_map = self.extract_storage_values(whitebox_sim.storage_vector)
-        # new_schedules = mutate_timeseries(schedules, operations_map, seed)
-        # update_schedule_objects(
-        #     whitebox_sim.template,
-        #     timeseries=new_schedules,
-        #     zones=["Core"],
-        #     paths=self.paths,
-        #     id=seed,
-        # )
-        # update_schedule_objects(
-        #     whitebox_sim.template,
-        #     timeseries=new_schedules,
-        #     zones=["Perimeter"],
-        #     paths=self.paths,
-        #     id=seed,
-        # )
-        # whitebox_sim.template.Perimeter.Conditioning.MechVentSchedule = (
-        #     whitebox_sim.template.Perimeter.Loads.OccupancySchedule
-        # )
-        # whitebox_sim.template.Perimeter.DomesticHotWater.WaterSchedule = (
-        #     whitebox_sim.template.Perimeter.Loads.OccupancySchedule
-        # )
-
-    def extract_from_template(self, building_template):
-        """
-        This method extracts the parameter value from an archetypal building template for the creation of a building vector.
-        Works as the reverse of mutate_simulation_object
-        Args:
-            whitebox_sim: WhiteboxSimulation
-            building_template: Archetypal BuildingTemplate #TODO: should the building template be a parameter of the whitebox object?
-        """
-        schedules = get_schedules(building_template, zones=["Core"], paths=self.paths)
-        return self.to_ml(value=schedules)
 
 
 class Schema:
@@ -704,8 +366,8 @@ class Schema:
                 ),
                 ShoeboxGeometryParameter(
                     name="width",
-                    min=3,
-                    max=12,
+                    min=2,
+                    max=8,
                     mean=5,
                     std=1,
                     source="battini_shoeboxing_2023",
@@ -721,27 +383,27 @@ class Schema:
                     info="Height [m]",
                 ),
                 ShoeboxGeometryParameter(
-                    name="floor_2_facade",  # PERIM DEPTH, CORE DEPTH, GROUND DEPTH, ROOF DEPTH
-                    min=0.5,
-                    max=2.2,
-                    mean=1.3,
-                    std=0.15,
-                    source="dogan_shoeboxer_2017",
-                    info="Building floor area to facade (walls only) ratio (unitless)",
+                    name="perim_depth",  # PERIM DEPTH, CORE DEPTH, GROUND DEPTH, ROOF DEPTH
+                    min=1.25,
+                    max=12,
+                    mean=5,
+                    std=0.25,
+                    source="new",
+                    info="Peimeter depth [m]",
                 ),
                 ShoeboxGeometryParameter(
-                    name="core_2_perim",
-                    min=0.05,
-                    max=1.9,
-                    mean=0.5,
+                    name="core_depth",
+                    min=1.25,
+                    max=60,
+                    mean=5,
                     std=0.25,
-                    source="dogan_shoeboxer_2017",
+                    source="new",
                     info="Core to Perimeter ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
                     name="roof_2_footprint",
-                    min=0.05,
-                    max=0.95,
+                    min=0.0,
+                    max=1.00,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
@@ -749,34 +411,33 @@ class Schema:
                 ),
                 ShoeboxGeometryParameter(
                     name="ground_2_footprint",
-                    min=0.05,
-                    max=0.95,
+                    min=0.00,
+                    max=1.0,
                     mean=0.5,
                     std=0.25,
                     source="dogan_shoeboxer_2017",
                     info="Ground to footprint ratio (unitless)",
                 ),
                 ShoeboxGeometryParameter(
+                    name="orientation",
+                    min=0.0,
+                    max=2 * np.pi,
+                    mean=np.pi,
+                    std=0.25,
+                    info="Orientation",
+                ),
+                ShoeboxGeometryParameter(
                     name="wwr",
-                    min=0.05,
+                    min=0.0,
                     max=0.9,
                     mean=0.3,
                     std=0.25,
                     info="Window-to-wall Ratio (unitless)",
                 ),
-                ShoeboxOrientationParameter(
-                    name="orientation",
-                    info="Shoebox Orientation",
-                ),
-                NumericParameter(
-                    name="shading_seed",
-                    info="Seed to generate random shading angles, turns into sched.",
-                    min=0,
-                    max=90,
-                    mean=20,
-                    std=10,
-                    shape_ml=(0,),
-                ),
+                # ShoeboxOrientationParameter(
+                #     name="orientation",
+                #     info="Shoebox Orientation",
+                # ),
                 BuildingTemplateParameter(
                     name="HeatingSetpoint",
                     path="Conditioning.HeatingSetpoint",
@@ -819,7 +480,7 @@ class Schema:
                     name="LightingPowerDensity",
                     path="Loads.LightingPowerDensity",
                     min=0,
-                    max=20,
+                    max=30,
                     mean=10,
                     std=6,
                     source="ComStock",
@@ -828,8 +489,8 @@ class Schema:
                 BuildingTemplateParameter(
                     name="EquipmentPowerDensity",
                     path="Loads.EquipmentPowerDensity",
-                    min=0.1,
-                    max=30,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
+                    min=0,
+                    max=60,  # TODO this is foor super high density spaces (like mech rooms). Alternative is 500
                     mean=10,
                     std=6,
                     source="ComStock",
