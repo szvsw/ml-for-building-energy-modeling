@@ -260,7 +260,7 @@ class ShoeBox:
 
     def update_epjson(self, template_dict, change_summary=True):
         # Rotate North
-        # new_north_deg =  self.shoebox_config.orientation * 90
+        # new_north_deg =  self.shoebox_config.orientation * np.pi/2
         self.rotate_relative_north(self.shoebox_config.orientation)
 
         # Update characteristics based on archetypal template
@@ -290,9 +290,15 @@ class ShoeBox:
         return self.epjson
 
     def rotate_relative_north(self, orient):
-        self.epjson["Building"]["Building"]["north_axis"] = int(orient)
+        """
+        Args:
+            orient (float, radians): Orientation of the building in radians
+        """
+        # convert orientation to degrees
+        orient_deg = orient * 180.0 / np.pi
+        self.epjson["Building"]["Building"]["north_axis"] = int(orient_deg)
         logger.debug(
-            f"Changed orientation of relative north to {self.epjson['Building']['Building']['north_axis']}"
+            f"Changed orientation of relative north to {self.epjson['Building']['Building']['north_axis']} degrees ({orient} radians)."
         )
 
     def handle_template(self, template_dict):
