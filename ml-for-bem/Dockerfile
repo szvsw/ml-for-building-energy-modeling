@@ -36,7 +36,7 @@ COPY data/*.json data/
 COPY data/epws/global_epws_indexed/*.epw data/epws/global_epws_indexed/ 
 COPY data/*.csv data/
 COPY data/epws/*.csv data/epws/
-COPY data/epws/*.npy data/epws/
+# COPY data/epws/*.npy data/epws/
 COPY data/schedules.npy data/schedules.npy
 COPY data/residential_schedules.npy data/residential_schedules.npy
 COPY *.py .
