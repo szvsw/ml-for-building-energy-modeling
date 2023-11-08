@@ -8,8 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import wandb
-from ml.data import (MinMaxTransform, StdNormalTransform,
-                     WeatherStdNormalTransform)
+from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform
 from ml.networks import Conv1DStageConfig, ConvNet, EnergyCNN2
 
 
@@ -339,25 +338,22 @@ if __name__ == "__main__":
         True if os.environ.get("LIGHTNING_ORG", None) is not None else False
     )
     bucket = "ml-for-bem"
-    remote_experiment = "full_climate_zone/v5"
+    remote_experiment = "full_climate_zone/v7"
+    climate_experiment = "weather/v1"
+
     local_data_dir = (
         "/teamspace/s3_connections/ml-for-bem"
         if in_lightning_studio
         else "data/lightning"
     )
-    climate_array_path = (
-        f"{local_data_dir}/weather/temp/global_climate_array.npy"
-        if in_lightning_studio
-        else "data/epws/global_climate_array.npy"
-    )
-    remote_data_dir = "full_climate_zone/v5/lightning"
+    remote_data_dir = "full_climate_zone/v7/lightning"
     remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
     dm = BuildingDataModule(
         bucket=bucket,
         remote_experiment=remote_experiment,
         data_dir=local_data_dir,
-        climate_array_path=climate_array_path,
+        climate_experiment=climate_experiment,
         batch_size=128,
         val_batch_mult=8,
     )
@@ -372,10 +368,10 @@ if __name__ == "__main__":
     space_config = dm.space_config
 
     # TODO: these should be inferred automatically from the datasets
-    n_climate_timeseries = 7
+    n_climate_timeseries = len(weather_transform.timeseries_names)
     n_building_timeseries = 3
     timeseries_channels_per_input = n_climate_timeseries + n_building_timeseries
-    static_features_per_input = 52
+    static_features_per_input = 49
     timeseries_channels_per_output = 4
     timeseries_steps_per_output = 12
 
