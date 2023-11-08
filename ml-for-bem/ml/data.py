@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Union, List
 
 import boto3
 import lightning.pytorch as pl
@@ -279,13 +279,14 @@ class WeatherStdNormalTransform(nn.Module):
     Transforms a tensor of weather data to the standard normal distribution by subtracting the mean and dividing by the standard deviation
     """
 
-    def __init__(self, climate_array: np.ndarray):
+    def __init__(self, climate_array: np.ndarray, channel_names: List[str]):
         """
         Create a WeatherStdNormalTransform which can be used to transform tensors of weather data to the standard normal distribution
         Each weather channel is transformed independently
 
         Args:
             climate_array (np.ndarray): an array of climate data.  Assumed shape is (n_epws, n_weather_channels, n_timesteps)
+            channel_names (List[str]): a list of channel names.  Should be the same length as the number of weather channels
 
         Returns:
             WeatherStdNormalTransform: a transform which can be used to transform tensors of weather data to the standard normal distribution
@@ -295,6 +296,7 @@ class WeatherStdNormalTransform(nn.Module):
         # Compute the mean and standard deviation of each weather channel
         # To do so, we take the mean and standard deviation over the epws and timesteps
 
+        self.channel_names = channel_names
         self.means = nn.parameter.Parameter(
             torch.tensor(
                 climate_array,
@@ -589,7 +591,7 @@ class BuildingDataModule(pl.LightningDataModule):
         bucket: str = "ml-for-bem",
         remote_experiment: str = "full_climate_zone/v3",
         data_dir: str = "path/to/dir",
-        climate_array_path: str = "path/to/climate_array.npy",
+        climate_experiment: str = "weather/v1",
         batch_size: int = 32,
         val_batch_mult: int = 16,
     ):
@@ -601,7 +603,7 @@ class BuildingDataModule(pl.LightningDataModule):
             bucket: the name of the s3 bucket where the data is stored
             remote_experiment: the name of the experiment on s3
             data_dir: the local directory where the data should be stored
-            climate_array_path: the path to the climate array on the local filesystem
+            climate_experiment: the name of the experiment on s3 where the climate data is stored
             batch_size (int): the batch size to use for training
             val_batch_mult (int): the multiplier to use on the training batch size to determine validation/testing batch size
 
@@ -617,6 +619,7 @@ class BuildingDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.val_batch_mult = val_batch_mult
         self.remote_experiment = remote_experiment
+        self.climate_experiment = climate_experiment
 
         # Make the paths
         self.experiment_root = Path(data_dir) / remote_experiment
@@ -625,11 +628,15 @@ class BuildingDataModule(pl.LightningDataModule):
         self.space_config_path = (
             Path(self.experiment_root) / "train" / "space_definition.json"
         )
-        self.climate_array_path = climate_array_path
+        self.climate_experiment_root = Path(data_dir) / climate_experiment
+        self.climate_array_path = (
+            self.climate_experiment_root / "global_climate_array.npy"
+        )
+        self.climate_timeseries_names_path = (
+            self.climate_experiment_root / "timeseries.json"
+        )
 
     def prepare_data(self):
-        # TODO: download global_climate_array.npy
-
         # Download the data from s3 if it doesn't exist locally
         s3 = boto3.client("s3")
         if not os.path.exists(self.train_data_path):
@@ -654,6 +661,22 @@ class BuildingDataModule(pl.LightningDataModule):
                 self.space_config_path,
             )
 
+        if not os.path.exists(self.climate_array_path):
+            os.makedirs(self.climate_array_path.parent, exist_ok=True)
+            s3.download_file(
+                self.bucket,
+                f"{self.climate_experiment}/global_climate_array.npy",
+                self.climate_array_path,
+            )
+
+        if not os.path.exists(self.climate_timeseries_names_path):
+            os.makedirs(self.climate_timeseries_names_path.parent, exist_ok=True)
+            s3.download_file(
+                self.bucket,
+                f"{self.climate_experiment}/timeseries.json",
+                self.climate_timeseries_names_path,
+            )
+
     def setup(self, stage: str):
         # Load the data, apply transforms, make datasets
 
@@ -661,6 +684,10 @@ class BuildingDataModule(pl.LightningDataModule):
         with open(self.space_config_path, "r") as f:
             space_config = json.load(f)
         self.space_config = space_config
+
+        with open(self.climate_timeseries_names_path, "r") as f:
+            climate_timeseries_names = json.load(f)
+        self.climate_timeseries_names = climate_timeseries_names
 
         # Load the climate array and apply weather transform
         climate_array = np.load(self.climate_array_path)
