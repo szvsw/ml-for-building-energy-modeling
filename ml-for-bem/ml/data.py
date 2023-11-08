@@ -691,7 +691,7 @@ class BuildingDataModule(pl.LightningDataModule):
 
         # Load the climate array and apply weather transform
         climate_array = np.load(self.climate_array_path)
-        weather_transform = WeatherStdNormalTransform(climate_array)
+        weather_transform = WeatherStdNormalTransform(climate_array, channel_names=self.climate_timeseries_names)
         self.climate_array = (
             weather_transform(
                 torch.tensor(

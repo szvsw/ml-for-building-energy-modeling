@@ -368,7 +368,7 @@ if __name__ == "__main__":
     space_config = dm.space_config
 
     # TODO: these should be inferred automatically from the datasets
-    n_climate_timeseries = len(weather_transform.timeseries_names)
+    n_climate_timeseries = len(weather_transform.channel_names)
     n_building_timeseries = 3
     timeseries_channels_per_input = n_climate_timeseries + n_building_timeseries
     static_features_per_input = 49
@@ -408,7 +408,7 @@ if __name__ == "__main__":
     """
     wandb_logger = WandbLogger(
         project="ml-for-bem",
-        name="Surrogate-MultiGPU-Test",
+        name="Surrogate-With-Solar-Position",
         save_dir="wandb",
         log_model="all",
         job_type="train",
