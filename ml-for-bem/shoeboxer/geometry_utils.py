@@ -485,23 +485,24 @@ def replace_window_coords(window, coords):
 
 
 def update_wwr(epjson, wwr_frac):
-    if wwr_frac < 0.01:
-        # Remove all windows
-        epjson["FenestrationSurface:Detailed"] = {}
-    else:
-        for name, window in epjson["FenestrationSurface:Detailed"].items():
-            coords_all = get_window_coords(window)
-            # Check current wwr
-            max_h = max(coords_all[:, 2])
-            min_h = min(coords_all[:, 2])
-            curr_window_h = max_h - min_h
-            all_coords = get_all_coords(epjson["BuildingSurface:Detailed"])
-            curr_h = max(all_coords[:, :, 2].flatten())
-            logger.debug(
-                f"Current window to wall ratio is {curr_window_h/curr_h} with height {curr_window_h}"
-            )
-            # Scale window to needed height - assuming window spans entire width of wall
-            new_window_h = wwr_frac * curr_h
+    for name, window in epjson["FenestrationSurface:Detailed"].items():
+        coords_all = get_window_coords(window)
+        # Check current wwr
+        max_h = max(coords_all[:, 2])
+        min_h = min(coords_all[:, 2])
+        curr_window_h = max_h - min_h
+        all_coords = get_all_coords(epjson["BuildingSurface:Detailed"])
+        curr_h = max(all_coords[:, :, 2].flatten())
+        logger.debug(
+            f"Current window to wall ratio is {curr_window_h/curr_h} with height {curr_window_h}"
+        )
+        # Scale window to needed height - assuming window spans entire width of wall
+        new_window_h = wwr_frac * curr_h
+        if new_window_h < SURF_DEPTH_LIMIT:
+            # Remove all windows
+            logger.warning(f"Window height too small. Removing.")
+            epjson["FenestrationSurface:Detailed"] = {}
+        else:
             logger.debug(f"New window height will be {new_window_h}")
             change = (
                 new_window_h - curr_window_h
