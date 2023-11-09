@@ -210,6 +210,12 @@ def sample_and_simulate(
                 param_data["option_count"] = param.count
                 param_data["mode"] = "Onehot"
         space_config[param_data["name"]] = param_data
+    if schedules_mode == "from_idx":
+        space_config["schedules_seed"] = {
+            "option_count": default_schedules.shape[0],
+            "mode": "Onehot",
+            "name": "schedules_seed"
+        }
 
     """
     Setup Simulation
