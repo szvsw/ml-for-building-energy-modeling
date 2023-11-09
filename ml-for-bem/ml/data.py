@@ -416,7 +416,9 @@ class BuildingDataset(Dataset):
         target_thresh: int = 100,
     ):
         """
-        Create a BuildingDataset
+        Create a BuildingDataset.  If no climate data is provided, then only features and schedules will be delivered.
+        If "schedules_seed" is found in the space_config, then the schedules will be considered categorical and included in
+        the features matrix, otherwise it will be full timeseries generated from the seed.
 
         Args:
             space_config (dict): a dictionary defining the space of the features.  Should be formatted as:
@@ -428,11 +430,10 @@ class BuildingDataset(Dataset):
                         "option_count": int (only for Onehot features),
                     }
                 }
-            climate_array (np.ndarray): an array of climate data.  Assumed shape is (n_epws, n_weather_channels, n_timesteps)
+            climate_array (np.ndarray): an array of climate data.  Assumed shape is (n_epws, n_weather_channels, n_timesteps), if none, ignored.
             path (str, default None): the path to the hdf5 file containing the data
             key (str, default "batch_results"): the key in the hdf5 file containing the data
             target_thresh (int, default 100): the threshold for targets.  If any target is above this value, the sample is dropped
-
         Returns:
             BuildingDataset: a dataset of building features and targets
         """
@@ -465,15 +466,19 @@ class BuildingDataset(Dataset):
         # Store the epw indices
         self.epw_ixs = features["base_epw"].astype(int)
 
-        # Store the schedules seed
-        self.schedules_seed = features["schedules_seed"].astype(int)
 
         # Drop unnecessary columns, leaving only features
         features = features.drop("id", axis=1)
         features = features.drop("error", axis=1)
         features = features.drop("climate_zone", axis=1)
         features = features.drop("base_epw", axis=1)
-        features = features.drop("schedules_seed", axis=1)
+        # Store the schedules seed
+        if "schedules_seed" not in space_config.keys():
+            self.schedules_seed = features["schedules_seed"].astype(int)
+            features = features.drop("schedules_seed", axis=1)
+            self.schedules_from_seed = True
+        else:
+            self.schedules_from_seed = False
 
         # Store the original features
         self.features_untransformed = features
@@ -565,18 +570,31 @@ class BuildingDataset(Dataset):
         features = self.features.iloc[index].values
 
         # Get the schedule seed and make the schedule as f32 precision
-        schedule_seed = self.schedules_seed.iloc[index]
-        schedules = schedules_from_seed(schedule_seed).astype(np.float32)
-
-        # get the epw index and load the climate data
-        epw_ix = self.epw_ixs.iloc[index]
-        climate_data = self.climate_array[epw_ix]
-        # cz = self.climate_zones.iloc[index]
+        if self.schedules_from_seed:
+            schedule_seed = self.schedules_seed.iloc[index]
+            schedules = schedules_from_seed(schedule_seed).astype(np.float32)
+        else:
+            schedules = None
+        
+        if self.climate_array is not None:
+            # get the epw index and load the climate data
+            epw_ix = self.epw_ixs.iloc[index]
+            climate_data = self.climate_array[epw_ix]
+            # cz = self.climate_zones.iloc[index]
+        else:
+            climate_data = None
 
         # get the targets, which are already transformed
         targets = self.targets[index]
 
-        return features, schedules, climate_data, targets
+        if schedules is None and climate_data is None:
+            return features, targets
+        elif schedules is None:
+            return features, climate_data
+        elif climate_data is None:
+            return features, schedules
+        else:
+            return features, schedules, climate_data, targets
 
 
 # TODO: Shuffle the data?
@@ -628,13 +646,13 @@ class BuildingDataModule(pl.LightningDataModule):
         self.space_config_path = (
             Path(self.experiment_root) / "train" / "space_definition.json"
         )
-        self.climate_experiment_root = Path(data_dir) / climate_experiment
+        self.climate_experiment_root = Path(data_dir) / climate_experiment if self.climate_experiment is not None else None
         self.climate_array_path = (
             self.climate_experiment_root / "global_climate_array.npy"
-        )
+        ) if self.climate_experiment is not None else None
         self.climate_timeseries_names_path = (
             self.climate_experiment_root / "timeseries.json"
-        )
+        ) if self.climate_experiment is not None else None
 
     def prepare_data(self):
         # Download the data from s3 if it doesn't exist locally
@@ -660,22 +678,22 @@ class BuildingDataModule(pl.LightningDataModule):
                 f"{self.remote_experiment}/train/space_definition.json",
                 self.space_config_path,
             )
+        if self.climate_experiment is not None:
+            if not os.path.exists(self.climate_array_path):
+                os.makedirs(self.climate_array_path.parent, exist_ok=True)
+                s3.download_file(
+                    self.bucket,
+                    f"{self.climate_experiment}/global_climate_array.npy",
+                    self.climate_array_path,
+                )
 
-        if not os.path.exists(self.climate_array_path):
-            os.makedirs(self.climate_array_path.parent, exist_ok=True)
-            s3.download_file(
-                self.bucket,
-                f"{self.climate_experiment}/global_climate_array.npy",
-                self.climate_array_path,
-            )
-
-        if not os.path.exists(self.climate_timeseries_names_path):
-            os.makedirs(self.climate_timeseries_names_path.parent, exist_ok=True)
-            s3.download_file(
-                self.bucket,
-                f"{self.climate_experiment}/timeseries.json",
-                self.climate_timeseries_names_path,
-            )
+            if not os.path.exists(self.climate_timeseries_names_path):
+                os.makedirs(self.climate_timeseries_names_path.parent, exist_ok=True)
+                s3.download_file(
+                    self.bucket,
+                    f"{self.climate_experiment}/timeseries.json",
+                    self.climate_timeseries_names_path,
+                )
 
     def setup(self, stage: str):
         # Load the data, apply transforms, make datasets
@@ -685,66 +703,89 @@ class BuildingDataModule(pl.LightningDataModule):
             space_config = json.load(f)
         self.space_config = space_config
 
-        with open(self.climate_timeseries_names_path, "r") as f:
-            climate_timeseries_names = json.load(f)
-        self.climate_timeseries_names = climate_timeseries_names
+        if self.climate_experiment is not None:
+            with open(self.climate_timeseries_names_path, "r") as f:
+                climate_timeseries_names = json.load(f)
+            self.climate_timeseries_names = climate_timeseries_names
 
-        # Load the climate array and apply weather transform
-        climate_array = np.load(self.climate_array_path)
-        weather_transform = WeatherStdNormalTransform(climate_array, channel_names=self.climate_timeseries_names)
-        self.climate_array = (
-            weather_transform(
-                torch.tensor(
-                    climate_array,
-                    dtype=torch.float32,
-                    device=next(weather_transform.parameters()).device,
+            # Load the climate array and apply weather transform
+            climate_array = np.load(self.climate_array_path)
+            weather_transform = WeatherStdNormalTransform(climate_array, channel_names=self.climate_timeseries_names)
+            self.climate_array = (
+                weather_transform(
+                    torch.tensor(
+                        climate_array,
+                        dtype=torch.float32,
+                        device=next(weather_transform.parameters()).device,
+                    )
                 )
+                .detach()
+                .cpu()
+                .numpy()
             )
-            .detach()
-            .cpu()
-            .numpy()
-        )
-        self.climate_array = self.climate_array.astype(np.float32)
-        self.weather_transform = weather_transform
+            self.climate_array = self.climate_array.astype(np.float32)
+            self.weather_transform = weather_transform
 
-        # Make the dataset for seen weather data and fit a target transform
-        seen_epw_buiding_dataset = BuildingDataset(
-            space_config,
-            self.climate_array,
-            self.train_data_path,
-            key="batch_results",
-        )
-        target_transform = seen_epw_buiding_dataset.fit_target_transform()
-        self.target_transform = target_transform
+            # Make the dataset for seen weather data and fit a target transform
+            seen_epw_buiding_dataset = BuildingDataset(
+                space_config,
+                self.climate_array,
+                self.train_data_path,
+                key="batch_results",
+            )
+            target_transform = seen_epw_buiding_dataset.fit_target_transform()
+            self.target_transform = target_transform
 
-        # Split the dataset for seen weather data into training and validation
-        (
-            self.seen_epw_training_set,
-            self.seen_epw_validation_set,
-            self.seen_epw_testing_set,
-        ) = random_split(
-            seen_epw_buiding_dataset,
-            [0.9, 0.05, 0.05],
-            generator=torch.Generator().manual_seed(42),
-        )
+            # Split the dataset for seen weather data into training and validation
+            (
+                self.seen_epw_training_set,
+                self.seen_epw_validation_set,
+                self.seen_epw_testing_set,
+            ) = random_split(
+                seen_epw_buiding_dataset,
+                [0.9, 0.05, 0.05],
+                generator=torch.Generator().manual_seed(42),
+            )
 
-        # Make the dataset for unseen weather data and load the target transform
-        unseen_epw_validation_set = BuildingDataset(
-            space_config,
-            self.climate_array,
-            self.test_data_dir,
-            key="batch_results",
-        )
-        unseen_epw_validation_set.load_target_transform(target_transform)
-        self.unseen_epw_validation_set, self.unseen_epw_testing_set = random_split(
-            unseen_epw_validation_set,
-            [0.5, 0.5],
-            generator=torch.Generator().manual_seed(42),
-        )
+            # Make the dataset for unseen weather data and load the target transform
+            unseen_epw_validation_set = BuildingDataset(
+                space_config,
+                self.climate_array,
+                self.test_data_dir,
+                key="batch_results",
+            )
+            unseen_epw_validation_set.load_target_transform(target_transform)
+            self.unseen_epw_validation_set, self.unseen_epw_testing_set = random_split(
+                unseen_epw_validation_set,
+                [0.5, 0.5],
+                generator=torch.Generator().manual_seed(42),
+            )
+        else:
+            self.train_dataset = BuildingDataset(
+                space_config,
+                climate_array=None,
+                path=self.train_data_path,
+                key="batch_results",
+            )
+            target_transform = self.train_dataset.fit_target_transform()
+            unseen_dataset = BuildingDataset(
+                space_config,
+                climate_array=None,
+                path=self.train_data_path,
+                key="batch_results",
+            )
+            unseen_dataset.load_target_transform(target_transform)
+            self.target_transform = target_transform
+            self.val_dataset, self.test_dataset = random_split(
+                unseen_dataset,
+                [0.5, 0.5],
+                generator=torch.Generator().manual_seed(42),
+            )
+
 
     def train_dataloader(self):
         return DataLoader(
-            self.seen_epw_training_set, batch_size=self.batch_size, shuffle=True
+            self.seen_epw_training_set if self.climate_experiment is not None else self.train_dataset, batch_size=self.batch_size, shuffle=True
         )
 
     def val_dataloader(self):
@@ -757,7 +798,8 @@ class BuildingDataModule(pl.LightningDataModule):
                 self.unseen_epw_validation_set,
                 batch_size=self.batch_size * self.val_batch_mult,
             ),
-        ]
+        ] if self.climate_experiment is not None else DataLoader(self.val_dataset, batch_size=self.batch_size * self.val_batch_mult,
+        )
 
     def test_dataloader(self):
         return [
@@ -769,10 +811,9 @@ class BuildingDataModule(pl.LightningDataModule):
                 self.unseen_epw_testing_set,
                 batch_size=self.batch_size * self.val_batch_mult,
             ),
-        ]
+        ] if self.climate_experiment is not None else DataLoader(self.test_dataset, batch_size=self.batch_size * self.val_batch_mult,
+        )
 
-    # def predict_dataloader(self):
-    #     return DataLoader(self.mnist_predict, batch_size=self.batch_size)
 
 
 if __name__ == "__main__":

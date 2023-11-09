@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import wandb
-from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform
+from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform, BuildingDataModule
 from ml.networks import MLP
 
 
@@ -34,7 +34,7 @@ class LocalSurrogate(pl.LightningModule):
         block_count: int = 12,
         output_dim: int = 48,
         dropout: float = 0.3,
-        activation: Literal["SELU", "SiLU", "ReLU", "LeakyRELU", "GELU"] = "SiLU"
+        activation: Literal["SELU", "SiLU", "ReLU", "LeakyReLU", "GELU"] = "SiLU"
     ):
         """
         Create the Lighting Module for managing the local surrogate
@@ -71,10 +71,24 @@ class LocalSurrogate(pl.LightningModule):
         self.block_count = block_count
         self.output_dim = output_dim
         self.dropout=dropout
+        self.activation = activation
         
 
         # Save hyperparameters
         self.save_hyperparameters()
+        activation_mod = nn.ReLU
+        if activation == "ReLU":
+            activation_mod = nn.ReLU
+        elif activation == "SiLU":
+            activation_mod = nn.SiLU
+        elif activation == "SELU":
+            activation_mod = nn.SELU
+        elif activation == "LeakyRLU":
+            activation_mod = nn.LeakyReLU
+        elif activation == "GELU":
+            activation_mod = nn.GELU
+        else:
+            raise ValueError(f"Activation {activation} not supported!")
 
         # Create the net
         self.model = MLP(
@@ -83,7 +97,8 @@ class LocalSurrogate(pl.LightningModule):
             block_depth=self.block_depth,
             block_count = block_count,
             output_dim=self.output_dim,
-            dropout=self.dropout
+            dropout=self.dropout,
+            activation=activation_mod
         )
 
         # Store the target transform module
@@ -120,23 +135,23 @@ class LocalSurrogate(pl.LightningModule):
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
         # Create a dictionary for tracking different residuals/metrics
         error_dict = {}
-        seen_key = "SeenEPW" if dataloader_idx == 0 else "UnseenEPW"
 
-        building_features, schedules, climates, targets = batch
+        features, targets = batch
 
         # targets are shaped (batch_size, n_zones x n_end_uses x n_timesteps)
         # preds are shaped (batch_size, n_zones x n_end_uses, n_timesteps)
         # targets are typically (b, 48)
         # preds are typically (b, 4, 12)
         # so some reshaping is done when necessary
-        preds_hierarchical: torch.Tensor = self.model(
-            building_features, schedules, climates
+        preds: torch.Tensor = self.model(
+            features
         )
+        preds_hierarchical = preds.reshape(-1,4,12)
         targets_hierarchical: torch.Tensor = targets.reshape(preds_hierarchical.shape)
 
         loss = F.mse_loss(preds_hierarchical, targets_hierarchical)
 
-        error_dict[f"Loss/Val/{seen_key}"] = loss
+        error_dict[f"Loss/Val"] = loss
 
         # transform preds and targets to energy units
         preds_energy = self.target_transform.inverse_transform(
@@ -166,10 +181,10 @@ class LocalSurrogate(pl.LightningModule):
         monthly_mae = torch.abs(preds_energy - targets_energy).mean()
         monthly_rmse = torch.sqrt(monthly_mse)
         monthly_cvrmse = monthly_rmse / targets_energy.mean() * 100
-        error_dict[f"MonthlyMAE/Val/{seen_key}"] = monthly_mae
-        error_dict[f"MonthlyMSE/Val/{seen_key}"] = monthly_mse
-        error_dict[f"MonthlyRMSE/Val/{seen_key}"] = monthly_rmse
-        error_dict[f"MonthlyCVRMSE/Val/{seen_key}"] = monthly_cvrmse
+        error_dict[f"MonthlyMAE/Val"] = monthly_mae
+        error_dict[f"MonthlyMSE/Val"] = monthly_mse
+        error_dict[f"MonthlyRMSE/Val"] = monthly_rmse
+        error_dict[f"MonthlyCVRMSE/Val"] = monthly_cvrmse
 
         # Store error metrics
         for i in range(annual_mae.shape[0]):
@@ -182,14 +197,14 @@ class LocalSurrogate(pl.LightningModule):
                 slug = "Perimeter/Heating"
             elif i == 3:
                 slug = "Perimeter/Cooling"
-            error_dict[f"AnnualMAE/Val/{seen_key}/{slug}"] = annual_mae[i]
-            error_dict[f"AnnualMSE/Val/{seen_key}/{slug}"] = annual_mae[i]
-            error_dict[f"AnnualMAPE/Val/{seen_key}/{slug}"] = annual_mape[i]
-            error_dict[f"AnnualMAPESYM/Val/{seen_key}/{slug}"] = annual_symmetric_mape[
+            error_dict[f"AnnualMAE/Val/{slug}"] = annual_mae[i]
+            error_dict[f"AnnualMSE/Val/{slug}"] = annual_mae[i]
+            error_dict[f"AnnualMAPE/Val{slug}"] = annual_mape[i]
+            error_dict[f"AnnualMAPESYM/Val/{slug}"] = annual_symmetric_mape[
                 i
             ]
-            error_dict[f"AnnualRMSE/Val/{seen_key}/{slug}"] = annual_rmse[i]
-            error_dict[f"AnnualCVRMSE/Val/{seen_key}/{slug}"] = annual_cvrmse[i]
+            error_dict[f"AnnualRMSE/Val/{slug}"] = annual_rmse[i]
+            error_dict[f"AnnualCVRMSE/Val/{slug}"] = annual_cvrmse[i]
         self.log_dict(
             error_dict,
             on_step=False,
@@ -198,7 +213,7 @@ class LocalSurrogate(pl.LightningModule):
             add_dataloader_idx=False,
         )
         self.log(
-            f"Loss/Val/{seen_key}",
+            f"Loss/Val",
             loss,
             on_step=False,
             on_epoch=True,
@@ -208,9 +223,8 @@ class LocalSurrogate(pl.LightningModule):
         return loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        features, schedules, climates = batch
-        climates = self.weather_transform(climates)
-        preds = self.model(features, schedules, climates)
+        features = batch
+        preds = self.model(features)
         preds = preds.reshape(features.shape[0], -1)
         preds = self.target_transform.inverse_transform(preds)
         return preds
@@ -218,8 +232,8 @@ class LocalSurrogate(pl.LightningModule):
     @classmethod
     def load_from_registry(
         cls,
-        registry="ml-for-building-energy-modeling/model-registry",
-        model: str = "Global UBEM Shoebox Surrogate with Combined TS Embedder",
+        registry: str ="ml-for-building-energy-modeling/model-registry",
+        model: str = "New York Surrogate",
         tag: str = "latest",
         resource: str = "model.ckpt",
     ) -> "Surrogate":
@@ -250,7 +264,7 @@ if __name__ == "__main__":
 
     from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
-    from ml.data import BuildingDataModule
+    # from ml.data import BuildingDataModule
 
     # TODO: batch size should be in config
     # TODO: thresh should be in config
@@ -259,24 +273,23 @@ if __name__ == "__main__":
         True if os.environ.get("LIGHTNING_ORG", None) is not None else False
     )
     bucket = "ml-for-bem"
-    remote_experiment = "full_climate_zone/v7"
-    climate_experiment = "weather/v1"
+    remote_experiment = "single-climate-zone/toronto/v7"
 
     local_data_dir = (
         "/teamspace/s3_connections/ml-for-bem"
         if in_lightning_studio
         else "data/lightning"
     )
-    remote_data_dir = "full_climate_zone/v7/lightning"
+    remote_data_dir = "single-climate-zone/toronto/v7/lightning"
     remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
     dm = BuildingDataModule(
         bucket=bucket,
         remote_experiment=remote_experiment,
         data_dir=local_data_dir,
-        climate_experiment=climate_experiment,
-        batch_size=128,
-        val_batch_mult=4,
+        climate_experiment=None,
+        batch_size=256,
+        val_batch_mult=8,
     )
     # TODO: we should have a better workflow for first fitting the target transform
     # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
@@ -285,43 +298,34 @@ if __name__ == "__main__":
     dm.prepare_data()
     dm.setup(stage=None)
     target_transform = dm.target_transform
-    weather_transform = dm.weather_transform
     space_config = dm.space_config
 
     # TODO: these should be inferred automatically from the datasets
-    n_climate_timeseries = len(weather_transform.channel_names)
-    n_building_timeseries = 3
-    timeseries_channels_per_input = n_climate_timeseries + n_building_timeseries
-    static_features_per_input = 49
-    timeseries_channels_per_output = 4
-    timeseries_steps_per_output = 12
+    input_dim = dm.train_dataset.features.shape[-1]
+    output_dim = dm.train_dataset.targets.shape[-1]
 
     """
     Hyperparameters:
     """
-    lr = 1e-2  # TODO: larger learning rate for larger batch size on multi-gpu?
-    lr_gamma = 0.95
-    net_config = "Small"
-    latent_factor = 4
-    energy_cnn_feature_maps = 512
-    energy_cnn_n_layers = 3
-    energy_cnn_n_blocks = 12
+    lr = 1e-3  # TODO: larger learning rate for larger batch size on multi-gpu?
+    lr_gamma = 0.99
+    dropout=0.0
+    hidden_dim = 200
+    block_depth = 3
+    block_count = 12
+    activation = "SiLU"
 
-    surrogate = Surrogate(
+    surrogate = LocalSurrogate(
         lr=lr,
         lr_gamma=lr_gamma,
         target_transform=target_transform,
-        weather_transform=weather_transform,
         space_config=space_config,
-        net_config=net_config,
-        latent_factor=latent_factor,
-        energy_cnn_feature_maps=energy_cnn_feature_maps,
-        energy_cnn_n_layers=energy_cnn_n_layers,
-        energy_cnn_n_blocks=energy_cnn_n_blocks,
-        timeseries_channels_per_input=timeseries_channels_per_input,
-        static_features_per_input=static_features_per_input,
-        timeseries_channels_per_output=timeseries_channels_per_output,
-        timeseries_steps_per_output=timeseries_steps_per_output,
+        dropout=dropout,
+        input_dim=input_dim,
+        hidden_dim=hidden_dim,
+        block_depth=block_depth,
+        block_count = 12,
+        activation = "SiLU"
     )
     # surrogate = Surrogate.load_from_checkpoint("data/models/model.ckpt")
     
@@ -330,11 +334,11 @@ if __name__ == "__main__":
     """
     wandb_logger = WandbLogger(
         project="ml-for-bem",
-        name="Surrogate-With-Solar-Position",
+        name="Toronto-Surrogate",
         save_dir="wandb",
         log_model="all",
         job_type="train",
-        group="global-surrogate",
+        group="single-surrogate",
     )
 
     """
@@ -347,19 +351,19 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
-        # strategy="auto",
-        strategy="ddp_find_unused_parameters_true",
+        strategy="auto",
+        # strategy="ddp_find_unused_parameters_true",
         logger=wandb_logger,
         default_root_dir=remote_data_path,
         enable_progress_bar=True,
         enable_checkpointing=True,
         enable_model_summary=True,
-        val_check_interval=0.25,
-        # check_val_every_n_epoch=1,
+        # val_check_interval=0.25,
+        check_val_every_n_epoch=1,
         num_sanity_val_steps=3,
-        precision="bf16-mixed",
+        # precision="bf16-mixed",
         # gradient_clip_val=0.5,
-        sync_batchnorm=True,
+        # sync_batchnorm=True,
     )
 
     trainer.fit(

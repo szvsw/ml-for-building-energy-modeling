@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Type
 
 import torch
 import torch.nn as nn
@@ -356,8 +356,8 @@ class EnergyCNN2(nn.Module):
 class SkipBlock(nn.Module):
     def __init__(
         self,
-        dims: list[int] = [20, 30, 40],
-        act: type[nn.Module] = nn.SiLU,
+        dims: List[int] = [20, 30, 40],
+        act: Type[nn.Module] = nn.SiLU,
         dropout: float = 0.3,
     ):
         super().__init__()
@@ -396,10 +396,8 @@ class MLP(nn.Module):
         block_depth: int = 3,
         block_count: int = 4,
         output_dim=6,
-        activation: type[nn.Module] = nn.SiLU,
+        activation: Type[nn.Module] = nn.SiLU,
         dropout: float = 0.3,
-        *args,
-        **kwargs,
     ) -> None:
         """
         Args:
@@ -411,7 +409,7 @@ class MLP(nn.Module):
             activation (function (in: torch.Tensor) -> torch.Tensor): Activation function
         """
 
-        super(MLP, self).__init__(*args, **kwargs)
+        super().__init__()
         self.input_dim = input_dim
 
         self.input_layer = nn.Sequential(
@@ -419,7 +417,7 @@ class MLP(nn.Module):
             activation(),
         )
 
-        hidden_blocks: list[nn.Module] = []
+        hidden_blocks: List[nn.Module] = []
         for i in range(block_count):
             config = [hidden_dim]*block_depth
             if i < block_count - 2:
