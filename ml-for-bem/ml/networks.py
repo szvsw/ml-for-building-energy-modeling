@@ -350,3 +350,96 @@ class EnergyCNN2(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.blocks(x)
+
+
+
+class SkipBlock(nn.Module):
+    def __init__(
+        self,
+        dims: list[int] = [20, 30, 40],
+        act: type[nn.Module] = nn.SiLU,
+        dropout: float = 0.3,
+    ):
+        super().__init__()
+        self.dims = dims
+        self.dropout = dropout
+        layers = [nn.Dropout(dropout)]
+        for in_dim, out_dim in zip(self.dims[:-1], self.dims[1:]):
+            layers.append(
+                nn.Sequential(
+                    nn.Linear(in_dim, out_dim),
+                    act(),
+                )
+            )
+        self.layers = nn.Sequential(*layers)
+        self.skip = (
+            nn.Linear(self.dims[0], self.dims[-1])
+            if self.dims[0] != self.dims[-1]
+            else nn.Identity()
+        )
+
+    def forward(self, x) -> torch.Tensor:
+        return self.layers(x) + self.skip(x)
+
+
+class MLP(nn.Module):
+    """
+    A PyTorch Neural Network with a basic MLP Regressor Architecture.
+    It includes several fully connected layers, along with skip connections for odd layers.
+
+    """
+
+    def __init__(
+        self,
+        input_dim=50,
+        hidden_dim: int = 100,
+        block_depth: int = 3,
+        block_count: int = 4,
+        output_dim=6,
+        activation: type[nn.Module] = nn.SiLU,
+        dropout: float = 0.3,
+        *args,
+        **kwargs,
+    ) -> None:
+        """
+        Args:
+            input_dim (int): Number of input features
+            hidden_dim (int): Width of hidden layers within each skip block
+            block_depth (int): Number of hidden layers within each skip block
+            block_count (int): Number of skip blocks in network
+            output_dim (int): Width of output
+            activation (function (in: torch.Tensor) -> torch.Tensor): Activation function
+        """
+
+        super(MLP, self).__init__(*args, **kwargs)
+        self.input_dim = input_dim
+
+        self.input_layer = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            activation(),
+        )
+
+        hidden_blocks: list[nn.Module] = []
+        for i in range(block_count):
+            config = [hidden_dim]*block_depth
+            if i < block_count - 2:
+                config = config + [
+                   hidden_dim
+                ]  # append the output dimension of the next layer
+            hidden_blocks.append(
+                SkipBlock(
+                    dims=config,
+                    act=activation,
+                    dropout=dropout,
+                )
+            )
+        self.hidden_blocks = nn.Sequential(*hidden_blocks)
+        self.final_layer = nn.Sequential(
+            nn.Linear(in_features=hidden_dim, out_features=output_dim),
+        )
+
+    def forward(self, x) -> torch.Tensor:
+        x = self.input_layer(x)
+        x = self.hidden_blocks(x)
+        x = self.final_layer(x)
+        return x
