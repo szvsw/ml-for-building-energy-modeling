@@ -1,4 +1,5 @@
 import runpod
+import json
 import numpy as np
 import pandas as pd
 
@@ -13,6 +14,9 @@ trainer = Trainer(
     strategy="auto",
     devices="auto",
 )
+
+# to serve locally:
+# python ml/handler.py --rp_serve_api
 
 
 def handler(job):
@@ -30,7 +34,13 @@ def handler(job):
         batch_size=32,
     )
 
-    return sb_results.to_dict(orient="tight")
+    # convert column index level -1 to string
+    sb_results.columns = sb_results.columns.set_levels(
+        sb_results.columns.levels[-1].astype(str), level=-1
+    )
+    response = sb_results.to_dict(orient="tight")
+    # response = json.dumps(response)
+    return response
 
 
 runpod.serverless.start({"handler": handler})
