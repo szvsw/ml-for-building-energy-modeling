@@ -590,9 +590,9 @@ class BuildingDataset(Dataset):
         if schedules is None and climate_data is None:
             return features, targets
         elif schedules is None:
-            return features, climate_data
+            return features, climate_data, targets
         elif climate_data is None:
-            return features, schedules
+            return features, schedules, targets
         else:
             return features, schedules, climate_data, targets
 
@@ -646,7 +646,7 @@ class BuildingDataModule(pl.LightningDataModule):
         self.space_config_path = (
             Path(self.experiment_root) / "train" / "space_definition.json"
         )
-        self.climate_experiment_root = Path(data_dir) / climate_experiment if self.climate_experiment is not None else None
+        self.climate_experiment_root = (Path(data_dir) / climate_experiment) if self.climate_experiment is not None else None
         self.climate_array_path = (
             self.climate_experiment_root / "global_climate_array.npy"
         ) if self.climate_experiment is not None else None
