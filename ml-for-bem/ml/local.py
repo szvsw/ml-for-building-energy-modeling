@@ -308,7 +308,7 @@ if __name__ == "__main__":
     Hyperparameters:
     """
     lr = 1e-3  # TODO: larger learning rate for larger batch size on multi-gpu?
-    lr_gamma = 0.99
+    lr_gamma = 0.995
     dropout=0.0
     hidden_dim = 200
     block_depth = 3
@@ -359,7 +359,7 @@ if __name__ == "__main__":
         enable_checkpointing=True,
         enable_model_summary=True,
         # val_check_interval=0.25,
-        check_val_every_n_epoch=1,
+        check_val_every_n_epoch=4,
         num_sanity_val_steps=3,
         # precision="bf16-mixed",
         # gradient_clip_val=0.5,
