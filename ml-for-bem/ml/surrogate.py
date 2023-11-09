@@ -355,7 +355,7 @@ if __name__ == "__main__":
         data_dir=local_data_dir,
         climate_experiment=climate_experiment,
         batch_size=128,
-        val_batch_mult=8,
+        val_batch_mult=4,
     )
     # TODO: we should have a better workflow for first fitting the target transform
     # so that we can pass it into the modle.  I don't love that we have to manually call the hooks here
@@ -402,7 +402,8 @@ if __name__ == "__main__":
         timeseries_channels_per_output=timeseries_channels_per_output,
         timeseries_steps_per_output=timeseries_steps_per_output,
     )
-
+    # surrogate = Surrogate.load_from_checkpoint("data/models/model.ckpt")
+    
     """
     Loggers
     """
@@ -436,10 +437,12 @@ if __name__ == "__main__":
         # check_val_every_n_epoch=1,
         num_sanity_val_steps=3,
         precision="bf16-mixed",
+        # gradient_clip_val=0.5,
         sync_batchnorm=True,
     )
 
     trainer.fit(
         model=surrogate,
         datamodule=dm,
+        # ckpt_path="data/models/model.ckpt"
     )
