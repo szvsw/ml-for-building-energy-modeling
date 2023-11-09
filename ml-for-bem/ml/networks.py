@@ -189,6 +189,15 @@ class Conv1DStageConfig:
             cls(16, 32, [25, 16, 9]),
             cls(32, 64, [25, 16, 9]),
         ]
+    
+    @classmethod
+    def Mini(cls, in_channels):
+        return [
+            cls(in_channels, 16, [16, 9, 4]),
+            cls(16, 16, [16, 9, 4]),
+            cls(16, 32, [16, 9, 4]),
+        ]
+
 
 
 class ConvNet(nn.Module):
