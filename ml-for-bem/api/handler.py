@@ -38,8 +38,15 @@ def handler(job):
     sb_results.columns = sb_results.columns.set_levels(
         sb_results.columns.levels[-1].astype(str), level=-1
     )
-    response = sb_results.to_dict(orient="tight")
-    # response = json.dumps(response)
+    monthly_results.columns = monthly_results.columns.set_levels(
+        monthly_results.columns.levels[-1].astype(str), level=-1
+    )
+
+    response = {
+        "shoeboxes": sb_results.to_dict(orient="tight"),
+        "monthly": monthly_results.to_dict(orient="tight"),
+        "annual": annual_results.to_dict(orient="tight"),
+    }
     return response
 
 
