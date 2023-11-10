@@ -8,7 +8,7 @@ from lightning.pytorch import Trainer
 from ml.surrogate import Surrogate
 from ml.predict import predict_ubem
 
-surrogate = Surrogate.load_from_checkpoint("data/model-with-transform-configs.ckpt")
+surrogate = Surrogate.load_from_checkpoint("data/model.ckpt")
 trainer = Trainer(
     accelerator="auto",
     strategy="auto",

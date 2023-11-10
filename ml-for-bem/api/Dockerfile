@@ -6,7 +6,7 @@ COPY requirements/runpod-requirements.txt requirements.txt
 RUN pip install -r requirements.txt 
 
 # TODO: should have a better mechanism of selecting model to load
-COPY data/model-with-transform-configs.ckpt data/
+COPY data/models/latest/model.ckpt data/
 COPY data/schedules.npy data/
 COPY api/test_input.json .
 COPY api/*.py api/

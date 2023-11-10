@@ -63,8 +63,8 @@ def predict_ubem(
 
     # get the core/perim weight balance
     # TODO: this weight should be precomputed
-    perim_depth = features.height * features.floor_2_facade
-    core_depth = perim_depth * features.core_2_perim
+    perim_depth = features.perim_depth
+    core_depth = features.core_depth
     total_depth = perim_depth + core_depth
     core_weight = core_depth / total_depth
     perim_weight = perim_depth / total_depth
