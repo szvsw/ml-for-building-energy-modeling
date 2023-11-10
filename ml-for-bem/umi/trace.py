@@ -54,6 +54,8 @@ class Building:
     east_weight: float
     south_weight: float
     west_weight: float
+    qualified_perim_length: float  # total length of perimeter ignoring edges below a certain threshold
+    qualified_edge_weight_sum: float  # total weight of edges above a certain threshold
 
 
 @ti.dataclass
@@ -69,6 +71,8 @@ class Edge:
     az_start_angle: float  # represents the AZIMUTHAL angle of incidence of the first ray
     orientation: ti.int8  # this ought to be ti.int2
     height: float  # TODO: This could be rounded to save memory, or stored with a parent building, e.g. uint16, or a quantized datatype e.g. uint10
+    weight: float  # this represents the proportion of the total building perimeter which this edge represents
+    qualified_length: float  # this represents the length of the edge, where edges below a certain size are set to 0.
     n_floors: ti.int8
 
     sensor_start_ix: int  # TODO: should these be forced to 64 bit?
@@ -729,9 +733,14 @@ class Tracer:
             normal_theta = (edge.normal_theta + 2 * np.pi) % (2 * np.pi)
             edge_start = edge.start
             edge_end = edge.end
-            edge_length = ti.sqrt(
+            qualified_edge_length = ti.sqrt(
                 (edge_start.x - edge_end.x) ** 2 + (edge_start.y - edge_end.y) ** 2
             )
+            # edge must be > 2m to be considered
+            if qualified_edge_length < 2:
+                qualified_edge_length = 0.0
+            self.edges[edge_ix].qualified_length = qualified_edge_length
+
             # compute the weight in each orientation, where normal_theta = 0 corresponds to east
             north_weight = 0.0
             east_weight = 0.0
@@ -759,13 +768,42 @@ class Tracer:
                 assert False
 
             # store the weights
-            self.buildings[building_id].north_weight += north_weight * edge_length
-            self.buildings[building_id].east_weight += east_weight * edge_length
-            self.buildings[building_id].south_weight += south_weight * edge_length
-            self.buildings[building_id].west_weight += west_weight * edge_length
+            self.buildings[building_id].north_weight += (
+                north_weight * qualified_edge_length
+            )
+            self.buildings[building_id].east_weight += (
+                east_weight * qualified_edge_length
+            )
+            self.buildings[building_id].south_weight += (
+                south_weight * qualified_edge_length
+            )
+            self.buildings[building_id].west_weight += (
+                west_weight * qualified_edge_length
+            )
+            self.buildings[building_id].qualified_perim_length += qualified_edge_length
 
         ti.sync()
-        # normalize the weights
+        for edge_ix in self.edges:
+            edge = self.edges[edge_ix]
+            building = self.buildings[edge.building_id]
+            building_perim_length = building.qualified_perim_length
+            weight = edge.qualified_length / building_perim_length
+            # if an edge would be lss than 1.5% of the building perimeter, it is not considered
+            if weight < 0.015:
+                weight = 0.0
+            self.edges[edge_ix].weight = weight
+            self.buildings[edge.building_id].qualified_edge_weight_sum += weight
+
+        ti.sync()
+        # Renormalize edge weights after eliminating small ones
+        for edge_ix in self.edges:
+            edge = self.edges[edge_ix]
+            building = self.buildings[edge.building_id]
+            weight = edge.weight / building.qualified_edge_weight_sum
+            self.edges[edge_ix].weight = weight
+
+        ti.sync()
+        # normalize the cardinal weights
         for building_ix in self.buildings:
             building = self.buildings[building_ix]
             weight_sum = (
@@ -778,6 +816,7 @@ class Tracer:
             self.buildings[building_ix].east_weight /= weight_sum
             self.buildings[building_ix].south_weight /= weight_sum
             self.buildings[building_ix].west_weight /= weight_sum
+
         ti.sync()
 
     @ti.kernel

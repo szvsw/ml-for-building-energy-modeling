@@ -1,14 +1,12 @@
 import json
 import logging
 import math
-import os
-import sys
 import tempfile
 import time
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Tuple
-from zipfile import ZipFile, ZipInfo
+from typing import Tuple, List, Literal
+from zipfile import ZipFile
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -191,6 +189,12 @@ def init_template(datastore):
     return t
 
 
+# TODO: move to constants?
+floor_names = ["bottom", "middle", "top", "exclusive"]
+exposure_ratios_roof = [0.0, 0.0, 1.0, 1.0]
+exposure_ratios_ground = [1.0, 0.0, 0.0, 1.0]
+
+
 class UBEM:
     def __init__(
         self,
@@ -201,10 +205,15 @@ class UBEM:
         template_name_col: str,
         epw: EPW,
         template_lib: UmiTemplateLibrary,
-        shoebox_width=3,  # Can be list (for each bldg) or single value TODO
-        floor_to_floor_height=4,  # Can be list (for each bldg) or single value TODO,
+        shoebox_width=-1,  # -1 is dynamic based off of edge length TODO: support for list shoebox_width should come from a gdf column, similar to wwr
+        floor_to_floor_height=4,  # TODO: support for list floor_to_floor_height dynamic should come from a gdf column, similar to wwr
         perim_offset=PERIM_OFFSET,
-        shoebox_gen_type="unshaded",
+        shoebox_gen_type: Literal[
+            "cardinal_unshaded",
+            "edge_unshaded",
+            "area",
+            "raytrace",
+        ] = "edge_unshaded",
     ):
         # TODO:
         # WHY ARE THE NUMBER OF SBS DIFFERENT when opening an UMI vs from gdf only
@@ -212,7 +221,12 @@ class UBEM:
         assert len([t.Name for t in template_lib.BuildingTemplates]) == len(
             set([t.Name for t in template_lib.BuildingTemplates])
         ), "Duplicate names in template library!  Aborting."
-        sb_calculation_options = ["unshaded", "raytrace", "area"]
+        sb_calculation_options = [
+            "cardinal_unshaded",
+            "edge_unshaded",
+            "raytrace",
+            "area",
+        ]
         assert (
             shoebox_gen_type in sb_calculation_options
         ), f"Shoebox generation type must be one of {sb_calculation_options}"
@@ -248,8 +262,6 @@ class UBEM:
         self.epw_array = self.prepare_epw_features(self.epw)
         self.gis_features_df = self.prepare_gis_features()
         self.shoeboxes_df = self.prepare_shoeboxes(shoebox_gen_type)
-        # TODO: should these allow for lists?
-        self.shoeboxes_df["width"] = self.shoebox_width
 
         logger.info(f"Processed UMI in {time.time() - start_time:,.2f} seconds")
 
@@ -279,25 +291,67 @@ class UBEM:
         footprint_areas = self.building_gdf.geometry.area
         perimeter_length = self.building_gdf.geometry.length
         core_areas = self.building_gdf.cores.area
+        if core_areas.min() > 0:
+            logger.warning("Negative core areas found.  Setting to zero.")
+            core_areas = np.where(core_areas < 0, 0, core_areas)
 
+        assert (
+            core_areas.min() >= 0
+        ), "Core areas must be greater than zero; if not, they should ."
         perim_areas = footprint_areas - core_areas
-        core_2_perim = core_areas / perim_areas
-        # facade_area = self.shoebox_width * self.floor_to_floor_height
-        # floor_2_facade = perim_areas / facade_area
-        floor_2_facade = self.perim_offset / self.floor_to_floor_height
+        facade_area = self.floor_to_floor_height * perimeter_length
+        perim_area_to_facade_area = perim_areas / facade_area
+        core_area_to_perimeter_area = core_areas / perim_areas
         floor_count = round(heights / self.floor_to_floor_height)
         # TODO: reset floor_to_floor height so there is a whole number of floors?
 
         geometric_features_df = pd.DataFrame()
         geometric_features_df["building_id"] = ids
+        geometric_features_df["building_idx"] = range(len(geometric_features_df))
         geometric_features_df["wwr"] = wwrs
-        geometric_features_df["height"] = heights
-        geometric_features_df["footprint_area"] = footprint_areas
-        geometric_features_df["core_2_perim"] = core_2_perim
-        geometric_features_df["floor_2_facade"] = floor_2_facade
-        geometric_features_df["building_perimeter"] = floor_2_facade
+        geometric_features_df["bldg_height"] = heights
+        geometric_features_df["bldg_footprint_area"] = footprint_areas
+        geometric_features_df["bldg_core_area"] = core_areas
+        geometric_features_df["bldg_perim_area"] = perim_areas
+        geometric_features_df["bldg_facade_area"] = facade_area
+        geometric_features_df[
+            "bldg_core_area_to_perim_area"
+        ] = core_area_to_perimeter_area
+        geometric_features_df[
+            "bldg_perim_area_to_facade_area"
+        ] = perim_area_to_facade_area
         geometric_features_df["floor_count"] = floor_count
         geometric_features_df["template_name"] = template_names
+
+        # TODO: this could be a separate melted df
+        # which is then used for merging rather than pick_weights
+        # Compute the floor weight for each building
+        # If there is more than 1 floor, then we use the four shoeboxes from the bottom floor exactly once
+        # and the four shoeboxes from the top floor exactly once
+        # If there are more than 2 floors, then we use the four shoeboxes from the middle floors floor_count - 2 times
+        # Otherwise if there is exactly 1 floor, then we use the Exclusive shoeboxes for each direction exactly once
+        geometric_features_df["bottom_weight"] = (
+            geometric_features_df["floor_count"] > 1
+        ).astype(int)
+        geometric_features_df["top_weight"] = (
+            geometric_features_df["floor_count"] > 1
+        ).astype(int)
+        geometric_features_df["middle_weight"] = (
+            geometric_features_df["floor_count"] > 2
+        ).astype(int) * (geometric_features_df["floor_count"] - 2)
+
+        geometric_features_df["exclusive_weight"] = (
+            geometric_features_df["floor_count"] == 1
+        ).astype(int)
+        floor_counts = geometric_features_df["floor_count"].values.reshape(-1, 1)
+        for name in floor_names:
+            assert f"{name}_weight" in geometric_features_df.columns
+
+        # normalize floor_totals
+        floor_weight_names = [f"{floor_name}_weight" for floor_name in floor_names]
+        geometric_features_df[floor_weight_names] = (
+            geometric_features_df[floor_weight_names].values / floor_counts
+        ).clip(0, 1)
 
         return geometric_features_df
 
@@ -541,6 +595,10 @@ class UBEM:
             "wind_speed",
             "direct_normal_radiation",
             "diffuse_horizontal_radiation",
+            "solar_azimuth",
+            "solar_elevation",
+            "latitude",
+            "longitude",
         ],
     ) -> np.ndarray:
         """
@@ -563,25 +621,33 @@ class UBEM:
             logger.info("Running raytracer...")
             logger.warning("RAYTRACER NOT SETUP. SKIPPING.")
             shoeboxes_df = self.allocate_shaded_shoeboxes()  # TODO
-        elif shoebox_gen_type == "unshaded":
-            # Make
-            shoeboxes_df = self.allocate_unshaded_shoeboxes()
+        elif shoebox_gen_type == "cardinal_unshaded":
+            shoeboxes_df = self.allocate_unshaded_cardinal_shoeboxes()
+        elif shoebox_gen_type == "edge_unshaded":
+            shoeboxes_df = self.allocate_unshaded_edge_shoeboxes()
         elif shoebox_gen_type == "area":
             shoeboxes_df = self.allocate_area_methods_shoeboxess()
+        else:
+            raise ValueError(
+                f"Shoebox generation type {shoebox_gen_type} not supported."
+            )
 
-        # Calculate infiltration TODO: do we want this here? before the merge? Should this be calculated based on shoeboxes or total building?
-        logger.debug(
-            f"Input infiltration values range between {shoeboxes_df['Infiltration'].max()} and {shoeboxes_df['Infiltration'].min()} ach"
-        )
-        assert (
-            shoeboxes_df.isna().sum().any() <= 0
-        ), f"{shoeboxes_df.isna().sum().sum()} NaNs found in shoebox df"
-        shoeboxes_df = self.convert_ach_to_infiltration_per_exposed_area(shoeboxes_df)
+        # # Calculate infiltration TODO: do we want this here? before the merge? Should this be calculated based on shoeboxes or total building?
+        # logger.debug(
+        #     f"Input infiltration values range between {shoeboxes_df['Infiltration'].max()} and {shoeboxes_df['Infiltration'].min()} ach"
+        # )
+        # assert (
+        #     shoeboxes_df.isna().sum().any() <= 0
+        # ), f"{shoeboxes_df.isna().sum().sum()} NaNs found in shoebox df"
+        # shoeboxes_df = self.convert_ach_to_infiltration_per_exposed_area(shoeboxes_df)
         errors = shoeboxes_df.isna().sum()
+        any_errors = False
         for n, count in errors.items():
             if count > 0:
-                logger.warning(f"{count} NaNs found in shoebox column {n}.")
-                raise ValueError
+                logger.error(f"{count} NaNs found in shoebox column {n}.")
+                any_errors = True
+        if any_errors:
+            raise ValueError("NaNs found in shoebox df")
 
         return shoeboxes_df
 
@@ -592,6 +658,9 @@ class UBEM:
         = ACH * (A * h) / 3.6 / (A_facade + A_roof)
         = ACH * (A * h) / 3.6 / (2(w + l) * h + (A_perim_roof + A_core_roof))
         """
+        raise ValueError(
+            "This needs to be refactored to use the autozoned perimeter areas and core areas rather than shoebox areas"
+        )
         logger.info("Recalculating infiltration values for each shoebox.")
         ach = shoeboxes_df["Infiltration"]
         shoeboxes_df["ach"] = ach  # TODO remove this
@@ -617,22 +686,269 @@ class UBEM:
     def prepare_shading(self):
         pass
 
-    def calculate_weights(self):
-        """
-        Append to buildings_dataframe shoebox weight info based on polygon edge proportions and normals ["N_weight", "E_weight", "S_weight", "W_weight"]
-        """
-        # TODO: Using dummy weights for future integration with Tracer utils
-        # Calculate lengths and normals of all polygon edges
-        # Cluster to nearest cardinal direction
-        weights_df = pd.DataFrame()
-        weights_df["guid"] = self.building_gdf["guid"]
-        weights_df["North"] = 0.1
-        weights_df["East"] = 0.2
-        weights_df["West"] = 0.2
-        weights_df["South"] = 0.5
-        return weights_df
+    def combine_weights(
+        self,
+        shoeboxes_df: pd.DataFrame,
+        input_keys: List[str],
+        output_key: str = "weight",
+    ):
+        shoeboxes_df[output_key] = shoeboxes_df[input_keys].prod(axis=1)
+        return shoeboxes_df
 
-    def allocate_unshaded_shoeboxes(self) -> pd.DataFrame:
+    def pick_weights(
+        self,
+        shoeboxes_df: pd.DataFrame,
+        selector_key: str = "floor_name",
+        output_key: str = "floor_weight",
+        weight_suffix: str = "_weight",
+    ):
+        """
+        Downselects a weight for each shoebox from the parent building's config based on the selector_key and the weight_suffix
+        Assumes that the shoeboxes_df has a list of weights from a parent building, e.g. ["bottom_weight", "middle_weight"] etc
+        Which align with a categorical column in the shoeboxes_df, e.g. "floor_name":["bottom", "middle", "middle"] etc
+
+        TODO: this could be more elegant with a melted categorical weight table
+        along with a df join
+
+
+        Args:
+            shoeboxes_df (pd.DataFrame): df with shoebox features and weights
+            selector_key (str): column name in shoeboxes_df that contains the categorical selector
+            output_key (str): column name in shoeboxes_df that will contain the downselected weight
+            weight_suffix (str): suffix to append to the selector_key to get the weight column name, e.g. "bottom_weight"
+
+        Returns:
+            shoeboxes_df (pd.DataFrame): df with shoebox features and weights
+
+        """
+        # Initialize the computed weight to zero
+        shoeboxes_df[output_key] = 0.0
+
+        # Get the possible weight types
+        selector_values = shoeboxes_df[selector_key].unique()
+        # TODO: this could be done with masking rather than a for-loop sum,
+        # though the for loop is only over the number of weight categories, e.g. south/east/north/west
+        # so it's not too bad
+        for selector_value in selector_values:
+            # get a vector indicating whether the shoebox is in the correct category
+            is_selection = shoeboxes_df[selector_key] == selector_value
+            # get the name of the weight for this category
+            selector_weight_name = selector_value + weight_suffix
+            # multiply the weight by the is_selection mask to zero out the weight if it doesn't match
+            # e.g. the shoebox parent building's middle_weight might be 0.33 but if the shoebox is on the bottom floor
+            # the selector_weight will return 0.
+            selector_weight = shoeboxes_df[selector_weight_name] * is_selection.astype(
+                float
+            )
+            # update the computed weight vector
+            shoeboxes_df[output_key] = shoeboxes_df[output_key] + selector_weight
+        return shoeboxes_df
+
+    def dimension_shoeboxes(
+        self,
+        shoeboxes_df: pd.DataFrame,
+        perim_to_facade_ratio_method: Literal["building", "theoretical"],
+        shoebox_width: float = 3.0,
+    ) -> pd.DataFrame:
+        """
+        Calculates the shoebox dimensions based on the building geometry and the shoebox width
+        dynamic shoebox widths can be generated computed based off of edge lengths to make better
+        aspect ratio approximations by setting shoebox_width to -1
+
+        Args:
+            shoeboxes_df (pd.DataFrame): df with shoebox features and weights
+            perim_to_facade_ratio_source (Literal["building", "theoretical"]): whether to use the building's perim/facade ratio or a theoretical autozoner ratio of self.floor_to_floor_height / self.perim_offset
+            shoebox_width (float): width of the shoebox, if -1 then the shoebox width will be dynamically comptued from the edge length
+
+        Returns:
+            shoeboxes_df (pd.DataFrame): df with shoebox features and weights
+
+        """
+
+        if shoebox_width == -1:
+            assert "edge_length" in shoeboxes_df.columns
+        else:
+            assert shoebox_width > 2, "Shoebox width must be greater than 2 meters"
+
+        if perim_to_facade_ratio_method == "building":
+            assert (
+                "bldg_perim_area_to_facade_area" in shoeboxes_df.columns
+            ), "bldg_perim_area_to_facade_area must be in shoeboxes_df"
+        elif perim_to_facade_ratio_method == "theoretical":
+            pass
+        else:
+            raise ValueError(
+                f"perim_to_facade_ratio_source must be one of ['building', 'edge']"
+            )
+
+        assert type(self.floor_to_floor_height) in [
+            float,
+            int,
+        ], f"floor_to_floor_height must be float; {type(self.floor_to_floor_height)} support not yet implemented"
+        assert type(self.perim_offset) in [
+            float,
+            int,
+        ], f"perim_offset must be float; {type(self.perim_offset)} support not yet implemented"
+        assert type(shoebox_width) in [
+            float,
+            int,
+        ], f"shoebox_width must be float; {type(shoebox_width)} support not yet implemented"
+
+        shoeboxes_df["height"] = self.floor_to_floor_height
+
+        if perim_to_facade_ratio_method == "building":
+            shoeboxes_df[
+                "perim_area_to_facade_area"
+            ] = shoeboxes_df.bldg_perim_area_to_facade_area
+
+            shoeboxes_df = shoeboxes_df.drop(columns=["bldg_perim_area_to_facade_area"])
+        elif perim_to_facade_ratio_method == "theoretical":
+            shoeboxes_df["perim_area_to_facade_area"] = (
+                self.perim_offset / shoeboxes_df.height
+            )
+
+        if shoebox_width > 0:
+            shoeboxes_df["width"] = shoebox_width
+        else:
+            shoeboxes_df["width"] = self.sigmoid_clipping(
+                shoeboxes_df,
+                column_name="edge_length",
+                min_value=2,
+                max_value=7,
+                steepness=0.1,
+                midpoint=30,
+            )
+            # shoebox width is calculated using a non-linear map based off of edge length
+            # in order to get better aspect ratios
+
+        # pop out features for cleaner code
+        perim_area_to_facade_area = shoeboxes_df.perim_area_to_facade_area
+        bldg_core_area_to_perim_area = shoeboxes_df.bldg_core_area_to_perim_area
+        width = shoeboxes_df.width
+        height = shoeboxes_df.height
+
+        # compute dimensions
+        facade_area = width * height
+        perim_area = facade_area * perim_area_to_facade_area
+        perim_depth = perim_area / width
+        core_depth = perim_depth * bldg_core_area_to_perim_area
+        core_area = core_depth * width
+
+        # store dimensions
+        shoeboxes_df["facade_area"] = facade_area
+        shoeboxes_df["perim_area"] = perim_area
+        shoeboxes_df["perim_depth"] = perim_depth
+        shoeboxes_df["core_depth"] = core_depth
+        shoeboxes_df["core_area"] = core_area
+        return shoeboxes_df
+
+    def sigmoid(self, x):
+        """
+        Implement the sigmoid function using NumPy.
+        """
+        return 1 / (1 + np.exp(-x))
+
+    def sigmoid_clipping(
+        self, df, column_name, min_value=2, max_value=7, steepness=0.1, midpoint=30
+    ):
+        """
+        Scales the values in a specified column of a DataFrame using a sigmoid function
+        such that the values are clipped between `min_value` and `max_value`.
+        The inflection point of the sigmoid is set around `midpoint`.
+        """
+        # Adjusted sigmoid function for clipping with new range and midpoint
+        clipped_values = min_value + (max_value - min_value) * self.sigmoid(
+            steepness * (df[column_name] - midpoint)
+        )
+        return clipped_values
+
+    def allocate_unshaded_edge_shoeboxes(self) -> pd.DataFrame:
+        sky = Sky(
+            epw=self.epw,
+            mfactor=4,
+            n_azimuths=SHADING_DIV_SIZE * 2,
+            dome_radius=200,
+            run_conversion=False,
+        )
+        tracer = Tracer(
+            sky=sky,
+            gdf=self.building_gdf,
+            height_col=self.height_col,
+            id_col=self.id_col,
+            archetype_col=self.template_name_col,
+            node_width=1,
+            sensor_spacing=self.shoebox_width,
+            f2f_height=self.floor_to_floor_height,
+        )
+
+        tracer.compute_edge_orientation_weights()
+        building_idxs: np.ndarray = tracer.edges.building_id.to_numpy()
+        edge_qualified_lengths: np.ndarray = tracer.edges.qualified_length.to_numpy()
+        edge_weights: np.ndarray = tracer.edges.weight.to_numpy()
+        edge_orientations: np.ndarray = (
+            tracer.edges.normal_theta.to_numpy() + 2 * np.pi
+        ) % (
+            2 * np.pi
+        )  # wrap around
+
+        n_edges = len(edge_qualified_lengths)
+        n_floor_types = len(floor_names)
+        shoeboxes_df = pd.DataFrame(
+            {
+                "building_idx": building_idxs.repeat(n_floor_types),
+                "edge_length": edge_qualified_lengths.repeat(n_floor_types),
+                "edge_weight": edge_weights.repeat(n_floor_types),
+                "orientation": edge_orientations.repeat(n_floor_types),
+                "roof_2_footprint": exposure_ratios_roof * n_edges,
+                "ground_2_footprint": exposure_ratios_ground * n_edges,
+                "floor_name": floor_names * n_edges,
+            }
+        )
+
+        # TODO: Make sure merge is performed correctly! Building ids from gis_features_df are not the same as building_ids from tracer.edges.building_id
+        shoeboxes_df = shoeboxes_df.merge(
+            self.gis_features_df, left_on="building_idx", right_on="building_idx"
+        )
+        logger.debug(
+            f"Built sb df from gis features, {shoeboxes_df.isna().sum().sum()} NaNs"
+        )
+        shoeboxes_df = self.dimension_shoeboxes(
+            shoeboxes_df,
+            perim_to_facade_ratio_method="building",
+            shoebox_width=self.shoebox_width,
+        )
+        logger.debug(
+            f"Assigned sb dimensions in df from gis features, {shoeboxes_df.isna().sum().sum()} NaNs"
+        )
+
+        # bring in the template features like heating setpoint, etc
+        shoeboxes_df = shoeboxes_df.merge(
+            self.template_features_df,
+            left_on="template_name",
+            right_on=self.template_name_col,
+        )
+        logger.debug(f"Added template features, {shoeboxes_df.isna().sum().sum()} NaNs")
+
+        shoeboxes_df = self.pick_weights(
+            shoeboxes_df,
+            selector_key="floor_name",
+            output_key="floor_weight",
+        )
+        shoeboxes_df = self.combine_weights(
+            shoeboxes_df,
+            input_keys=["edge_weight", "floor_weight"],
+            output_key="weight",
+        )
+
+        logger.debug("Dropping unnecessary shoeboxes...")
+        shoeboxes_df = shoeboxes_df[(shoeboxes_df.weight - 0).abs() > 1e-6]
+
+        shading_cols = [f"shading_{x}" for x in range(SHADING_DIV_SIZE)]
+        shoeboxes_df[shading_cols] = 0.0
+        logger.debug(f"Shoeboxes built... {shoeboxes_df.isna().sum().sum()} NaNs")
+        return shoeboxes_df
+
+    def allocate_unshaded_cardinal_shoeboxes(self) -> pd.DataFrame:
         """
         Returns:
             shoebox_df (pd.DataFrame): df with sizing details, building_id, orientation, and template_name, template_idx, joined with template_df that has template_dict column names, etc
@@ -662,32 +978,6 @@ class UBEM:
         self.gis_features_df["south_weight"] = tracer.buildings.south_weight.to_numpy()
         self.gis_features_df["west_weight"] = tracer.buildings.west_weight.to_numpy()
 
-        # Compute the floor weight for each building
-        # If there is more than 1 floor, then we use the four shoeboxes from the bottom floor exactly once
-        # and the four shoeboxes from the top floor exactly once
-        # If there are more than 2 floors, then we use the four shoeboxes from the middle floors floor_count - 2 times
-        # Otherwise if there is exactly 1 floor, then we use the Exclusive shoeboxes for each direction exactly once
-        floor_names = ["bottom", "middle", "top", "exclusive"]
-        self.gis_features_df["bottom"] = (
-            self.gis_features_df["floor_count"] > 1
-        ).astype(int)
-        self.gis_features_df["top"] = (self.gis_features_df["floor_count"] > 1).astype(
-            int
-        )
-        self.gis_features_df["middle"] = (
-            self.gis_features_df["floor_count"] > 2
-        ).astype(int) * (self.gis_features_df["floor_count"] - 2)
-
-        self.gis_features_df["exclusive"] = (
-            self.gis_features_df["floor_count"] == 1
-        ).astype(int)
-        floor_counts = self.gis_features_df["floor_count"].values.reshape(-1, 1)
-
-        # normalize floor_totals
-        self.gis_features_df[floor_names] = (
-            self.gis_features_df[floor_names].values / floor_counts
-        ).clip(0, 1)
-
         n_buildings = len(self.gis_features_df)
 
         # TODO: check orientation # ordinal mapping
@@ -702,10 +992,13 @@ class UBEM:
             }
         )
         # Bring in the building's geometric features like core_2_perim and floor_2_facade, height, etc
-        gis_with_heights = self.gis_features_df
-        gis_with_heights["height"] = self.floor_to_floor_height
         shoeboxes_df = shoeboxes_df.merge(
-            gis_with_heights, left_on="building_id", right_on="building_id"
+            self.gis_features_df, left_on="building_id", right_on="building_id"
+        )
+        shoeboxes_df = self.dimension_shoeboxes(
+            shoeboxes_df,
+            perim_to_facade_ratio_method="building",
+            shoebox_width=self.shoebox_width,
         )
         logger.debug(
             f"Built sb df from gis features, {shoeboxes_df.isna().sum().sum()} NaNs"
@@ -718,38 +1011,18 @@ class UBEM:
         )
         logger.debug(f"Added template features, {shoeboxes_df.isna().sum().sum()} NaNs")
 
-        # calculate the shoebox weights
-        # the shoebox weights are the product of the orientation weight and the floor weight
-        shoeboxes_df["oriented_weight"] = 0
-        shoeboxes_df["floor_weight"] = 0
+        shoeboxes_df = self.pick_weights(
+            shoeboxes_df, selector_key="orientation", output_key="oriented_weight"
+        )
 
-        # select the weight for each shoeboxes correct orientation
-        # Iterate over the four orientations
-        for orientation in shoeboxes_df.orientation.unique():
-            # make a mask for all the shoeboxes that match this orientation
-            is_aligned = shoeboxes_df["orientation"] == orientation
-            weight_key = orientation.lower() + "_weight"
-            # multiply the orientation weight by the is_aligned mask to zero out the weight
-            # if it is not aligned with an orientation
-            orientation_weight = shoeboxes_df[weight_key] * is_aligned.astype(float)
-            # update the oriented_weight vector
-            shoeboxes_df["oriented_weight"] = (
-                shoeboxes_df["oriented_weight"] + orientation_weight
-            )
+        shoeboxes_df = self.pick_weights(
+            shoeboxes_df, selector_key="floor_name", output_key="floor_weight"
+        )
 
-        # do the same thing for the floors
-        for floor_name in floor_names:
-            is_on_floor = shoeboxes_df["floor_name"] == floor_name
-            floor_weight = shoeboxes_df[floor_name] * is_on_floor.astype(float)
-            shoeboxes_df["floor_weight"] = shoeboxes_df["floor_weight"] + floor_weight
-
-        # multiply the oriented_weight and floor_weight to get the final weight
-        # final weights for a building sum to 1
-        # the oriented weight determines how much a shoebox contributes to the prediction for a single floor
-        # of a building
-        # and the floor_weight determines how much all the shoeboxes on that floor contribute to the whole building
-        shoeboxes_df["weight"] = (
-            shoeboxes_df["oriented_weight"] * shoeboxes_df["floor_weight"]
+        shoeboxes_df = self.combine_weights(
+            shoeboxes_df,
+            input_keys=["oriented_weight", "floor_weight"],
+            output_key="weight",
         )
 
         logger.debug("Dropping unnecessary shoeboxes...")
@@ -827,9 +1100,6 @@ class UBEM:
     def prepare_for_surrogate(self):
         features = self.shoeboxes_df.copy(deep=True)
         # Convert orientations to numerical
-        features["orientation"] = [
-            OrientationNum[x].value for x in features["orientation"]
-        ]
         return features, self.schedules_array, self.epw_array
 
     @classmethod
@@ -933,7 +1203,7 @@ class UBEM:
         id_col="guid",
         template_name_col="TemplateName",
         wwr_col="WindowToWallRatioN",
-        shoebox_gen_type="unshaded",
+        shoebox_gen_type="edge_unshaded",
     ):
         """
         WARNING: THIS CURRENTLY ONLY WORKS WITH SIMULATED UMI FILES (shoebox weights and gdf are only created in sdl_common post simulation)
@@ -1034,6 +1304,10 @@ class UBEM:
                     logger.debug(
                         f"Floor-to-floor height: {f2f_height.min()} to {f2f_height.max()}"
                     )
+                    logger.warning(
+                        "Dynamic floor to floor height found, but resetting to 3."
+                    )
+                    f2f_height = 3
                 try:
                     perim_offset = gdf["PerimeterOffset"][0]
                 except:
@@ -1045,9 +1319,9 @@ class UBEM:
                     width = gdf["RoomWidth"][0]
                 except:
                     logger.warning(
-                        f"No shoebox width in gdf, defaulting to {PERIM_OFFSET}"
+                        f"No shoebox width in gdf, defaulting to -1 (dynamic width))"
                     )
-                    width = PERIM_OFFSET
+                    width = -1.0
                 umi_gdf = gdf[
                     ["geometry", height_col, id_col, template_name_col, wwr_col]
                 ]
