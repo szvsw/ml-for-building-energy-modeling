@@ -157,7 +157,7 @@ class Conv1DStage(nn.Module):
         x_out = self.layers(x)
         x_out = x_out + x_skip
 
-        return nn.functional.relu(x_out)
+        return nn.functional.leaky_relu(x_out)
 
 
 class Conv1DStageConfig:
@@ -196,6 +196,14 @@ class Conv1DStageConfig:
             cls(in_channels, 16, [16, 9, 4]),
             cls(16, 16, [16, 9, 4]),
             cls(16, 32, [16, 9, 4]),
+        ]
+    
+    @classmethod
+    def MiniFunnel(cls, in_channels):
+        return [
+            cls(in_channels, 128, [16, 9, 4]),
+            cls(16, 16, [16, 9, 4]),
+            cls(16, 128, [16, 9, 4]),
         ]
 
 
@@ -293,34 +301,35 @@ class ConvNet(nn.Module):
 
         # Step 1: learnable channel size change which is a depthwise weighted average
         # Step 2: learnable downsampling
-        self.final = nn.Sequential(
-            Permute([0, 2, 1]),
-            nn.Linear(
-                in_features=self.stage_configs[-1].out_channels,
-                out_features=latent_channels,
-            ),
-            Permute([0, 2, 1]),
-            Conv1DBlock(
-                in_channels=latent_channels,
-                out_channels=latent_channels,
-                kernel_size=int(8760 / latent_length),
-                stride=int(8760 / latent_length),
-                padding=0,
-            ),
-        )
+        # self.final = nn.Sequential(
+        #     Permute([0, 2, 1]),
+        #     nn.Linear(
+        #         in_features=self.stage_configs[-1].out_channels,
+        #         out_features=latent_channels,
+        #     ),
+        #     Permute([0, 2, 1]),
+        #     Conv1DBlock(
+        #         in_channels=latent_channels,
+        #         out_channels=latent_channels,
+        #         kernel_size=int(8760 / latent_length),
+        #         stride=int(8760 / latent_length),
+        #         padding=0,
+        #     ),
+        # )
 
         # Step 1: Adaptive pool to "days" length
+        # TODO: experiment with going to 12hrs rather than 24 hrs, i.e. AdaptiveAvgPool1D(720)
         # Step 2: learnable downsampling combined with channel size change
-        # self.final = nn.Sequential(
-        #     nn.AdaptiveAvgPool1d(360),
-        #     Conv1DBlock(
-        #         in_channels=self.stage_configs[-1].out_channels,
-        #         out_channels=latent_channels,
-        #         kernel_size=30,
-        #         stride=30,
-        #         padding=0,
-        #     )
-        # )
+        self.final = nn.Sequential(
+            nn.AdaptiveAvgPool1d(360),
+            Conv1DBlock(
+                in_channels=self.stage_configs[-1].out_channels,
+                out_channels=latent_channels,
+                kernel_size=30,
+                stride=30,
+                padding=0,
+            )
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         features = self.stages(x)

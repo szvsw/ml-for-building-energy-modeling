@@ -75,7 +75,7 @@ class Surrogate(pl.LightningModule):
         target_transform: Union[MinMaxTransform, StdNormalTransform],
         weather_transform: WeatherStdNormalTransform,
         space_config: dict,
-        net_config: Literal["Base", "Small"] = "Small",
+        net_config: Literal["Base", "Small", "Mini", "MiniFunnel"] = "Small",
         lr: float = 1e-3,
         lr_gamma: float = 0.5,
         latent_factor: int = 4,
@@ -94,7 +94,7 @@ class Surrogate(pl.LightningModule):
             target_transform (nn.Module): a transform to apply to targets.  Should implement the `inverse_transform` method.
             weather_transform (nn.Module): a transform to apply to weather data.  Only used in predict step; Training DataLoaders handle weather transforms.
             space_config (dict): the configuration of the design space
-            net_config (Literal["Base", "Small"], optional): the configuration of the timeseries net architecture.  Defaults to "Small".
+            net_config (Literal["Base", "Small", "Mini", "MiniFunnel"], optional): the configuration of the timeseries net architecture.  Defaults to "Small".
             lr (float, optional): the learning rate.  Defaults to 1e-3.
             lr_gamma (float, optional): the learning rate decay.  Defaults to 0.5. Called after each epoch completes.
             latent_factor (int, optional): The timeseries net will output a latent representation with `latent_factor * static_features_per_input` channels.  Defaults to 4.
@@ -133,11 +133,15 @@ class Surrogate(pl.LightningModule):
         self.energy_cnn_n_layers = energy_cnn_n_layers
 
         # Create the configuration for the timeseries net
-        conf = (
-            Conv1DStageConfig.Base(self.timeseries_channels_per_input)
-            if self.net_config == "Base"
-            else Conv1DStageConfig.Small(self.timeseries_channels_per_input)
-        )
+        conf = (Conv1DStageConfig.Small(self.timeseries_channels_per_input))
+        if self.net_config == "Base":
+            conf = Conv1DStageConfig.Base(self.timeseries_channels_per_input)
+        elif self.net_config == "Mini":
+            conf = Conv1DStageConfig.Mini(self.timeseries_channels_per_input)
+        elif self.net_config == "MiniFunnel":
+            conf = Conv1DStageConfig.MiniFunnel(self.timeseries_channels_per_input)
+        elif self.net_config != "Small":
+            raise ValueError(f"Unsupported network config {net_config} provided.")
         self.conf = conf
 
         # Save hyperparameters
@@ -380,7 +384,7 @@ if __name__ == "__main__":
     """
     lr = 1e-2  # TODO: larger learning rate for larger batch size on multi-gpu?
     lr_gamma = 0.95
-    net_config = "Small"
+    net_config = "Mini"
     latent_factor = 4
     energy_cnn_feature_maps = 512
     energy_cnn_n_layers = 3
@@ -409,7 +413,7 @@ if __name__ == "__main__":
     """
     wandb_logger = WandbLogger(
         project="ml-for-bem",
-        name="Surrogate-With-Solar-Position",
+        name="Surrogate-With-Solar-Position-Mini-Net",
         save_dir="wandb",
         log_model="all",
         job_type="train",
