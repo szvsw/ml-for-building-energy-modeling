@@ -205,7 +205,8 @@ class UBEM:
         template_name_col: str,
         epw: EPW,
         template_lib: UmiTemplateLibrary,
-        shoebox_width=-1,  # -1 is dynamic based off of edge length TODO: support for list shoebox_width should come from a gdf column, similar to wwr
+        sensor_spacing=3,  # sensor width is used in raytracing
+        shoebox_width=3,  # -1 is dynamic based off of edge length TODO: support for list shoebox_width should come from a gdf column, similar to wwr
         floor_to_floor_height=4,  # TODO: support for list floor_to_floor_height dynamic should come from a gdf column, similar to wwr
         perim_offset=PERIM_OFFSET,
         shoebox_gen_type: Literal[
@@ -244,6 +245,7 @@ class UBEM:
         self.template_lib = template_lib
 
         # set geometric variables
+        self.sensor_spacing = sensor_spacing
         self.shoebox_width = shoebox_width
         self.floor_to_floor_height = floor_to_floor_height
         self.perim_offset = perim_offset
@@ -877,7 +879,7 @@ class UBEM:
             id_col=self.id_col,
             archetype_col=self.template_name_col,
             node_width=1,
-            sensor_spacing=self.shoebox_width,
+            sensor_spacing=self.sensor_spacing,
             f2f_height=self.floor_to_floor_height,
         )
 
@@ -967,7 +969,7 @@ class UBEM:
             id_col=self.id_col,
             archetype_col=self.template_name_col,
             node_width=1,
-            sensor_spacing=self.shoebox_width,
+            sensor_spacing=self.sensor_spacing,
             f2f_height=self.floor_to_floor_height,
         )
 
@@ -1319,9 +1321,9 @@ class UBEM:
                     width = gdf["RoomWidth"][0]
                 except:
                     logger.warning(
-                        f"No shoebox width in gdf, defaulting to -1 (dynamic width))"
+                        f"No shoebox width in gdf, defaulting to 3 (dynamic width))"
                     )
-                    width = -1.0
+                    width = 3
                 umi_gdf = gdf[
                     ["geometry", height_col, id_col, template_name_col, wwr_col]
                 ]
