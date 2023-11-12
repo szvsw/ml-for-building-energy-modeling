@@ -1,10 +1,13 @@
 import streamlit as st
+import os
 import pandas as pd
 import geopandas as gpd
 from typing import Tuple
 import plotly.express as px
 import pyproj
 from ladybug.epw import EPW
+from archetypal import UmiTemplateLibrary
+
 from umi.ubem import UBEM
 
 from app.app_utils import (
@@ -68,11 +71,14 @@ def render_gis_upload():
                 "id_col": id_col,
                 "template_name_col": template_name_col,
                 "height_col": height_col,
-                "wwr": wwr_col,
+                "wwr_col": wwr_col,
             }
         with r:
             color_by_column = st.selectbox("Select column to color by", columns)
             render_map(gdf, color=color_by_column)
+        return gdf, col_names
+    else:
+        return None, None
 
 
 def render_map(gdf: gpd.GeoDataFrame, color: str):
@@ -98,8 +104,10 @@ def render_epw_upload():
     epw_file = st.file_uploader("Upload EPW file")
     if epw_file:
         epw, epw_df = load_epw_file(epw_file)
-
         render_epw_timeseries(epw_df)
+        return epw
+    else:
+        return None
 
 
 def render_epw_timeseries(epw: pd.DataFrame):
@@ -108,7 +116,7 @@ def render_epw_timeseries(epw: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_templates():
+def render_hdf_templates():
     templates, schedules = load_lib()
     l, r = st.columns(2, gap="medium")
     with l:
@@ -119,17 +127,63 @@ def render_templates():
     st.dataframe(templates)
 
 
+@st.cache_resource
+def load_utl(file) -> UmiTemplateLibrary:
+    os.makedirs("data/temp", exist_ok=True)
+    fname = f"data/temp/{file.name}.json"
+    with open(fname, "wb") as f:
+        f.write(file.read())
+    utl = UmiTemplateLibrary.open(fname)
+    return utl
+
+
+def render_template_upload():
+    template_file = st.file_uploader("Upload UBEM Template file")
+    if template_file:
+        utl = load_utl(template_file)
+        return utl
+    else:
+        return None
+
+
 def main():
     st.title("UBEM")
     st.divider()
     st.header("GIS")
-    render_gis_upload()
+    gdf, col_names = render_gis_upload()
     st.divider()
     st.header("EPW")
-    render_epw_upload()
+    epw = render_epw_upload()
     st.divider()
     st.header("Templates")
-    render_templates()
+    utl = render_template_upload()
+    resources = [gdf, epw, utl]
+    # if all([resource is not None for resource in resources]):
+    #     ubem = UBEM(
+    #         gdf=gdf,
+    #         **col_names,
+    #         epw=epw,
+    #         template_lib=utl,
+    #         sensor_spacing=3,
+    #         shoebox_width=3,
+    #         floor_to_floor_height=4,
+    #         perim_offset=4,
+    #         shoebox_gen_type="edge_unshaded",
+    #     )
+    #     st.write(ubem.gis_features_df)
+    # bytes_data = uploaded_file.getvalue()
+
+    #     # Sending the file to the FastAPI server
+    #     response = requests.post(
+    #         "http://localhost:8000/uploadfile/",
+    #         files={"file": (uploaded_file.name, bytes_data)}
+    #     )
+
+    #     if response.status_code == 200:
+    #         st.success("File uploaded successfully.")
+    #         st.json(response.json())
+    #     else:
+    #         st.error("Failed to upload file.")
 
 
 main()
