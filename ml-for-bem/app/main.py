@@ -9,7 +9,7 @@ import pyproj
 import requests
 import streamlit as st
 from archetypal import UmiTemplateLibrary
-from dotenv import get_key
+from dotenv import load_dotenv
 from ladybug.epw import EPW
 
 from app.app_utils import (
@@ -24,10 +24,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+load_dotenv()
+
 if "job" not in st.session_state:
     st.session_state.job = {}
 
-BACKEND_URL = get_key(".env", key_to_get="BACKEND_URL")
+BACKEND_URL = os.getenv("BACKEND_URL")
 
 
 @st.cache_resource
@@ -191,7 +193,6 @@ def main():
                 "epw_file": open(f"{tmp}/epw.epw", "rb"),
                 "utl_file": open(f"{tmp}/utl.json", "rb"),
             }
-            os.removedirs(tmp)
             query_params = col_names.copy()
             query_params["uuid"] = uuid
             response = requests.post(

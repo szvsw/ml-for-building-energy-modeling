@@ -7,7 +7,7 @@ import requests
 import taichi as ti
 from archetypal import UmiTemplateLibrary
 from dotenv import get_key, load_dotenv
-from fastapi import Depends, FastAPI, File, UploadFile
+from fastapi import Depends, FastAPI, File, UploadFile, APIRouter
 from fastapi.responses import JSONResponse
 from ladybug.epw import EPW
 from pydantic import BaseModel
@@ -16,7 +16,9 @@ from umi.ubem import UBEM
 
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(docs_url="/api/docs", redoc_url="/api/redoc")
+api = APIRouter(prefix="/api")
+
 # TODO: move this to a config file
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY")
 RUNPOD_UBEM_ENDPOINT = os.getenv("RUNPOD_UBEM_ENDPOINT")
@@ -25,7 +27,7 @@ RUNPOD_UBEM_ENDPOINT = os.getenv("RUNPOD_UBEM_ENDPOINT")
 # uvicorn api.main:app --reload --host 0.0.0.0 --port 8001
 
 
-@app.get("/")
+@api.get("/")
 def read_root():
     return {"message": "Hello World"}
 
@@ -37,7 +39,7 @@ class GISColumns(BaseModel):
     template_name_col: str = "template_name"
 
 
-@app.post("/ubem")
+@api.post("/ubem")
 def build_ubem(
     gis_file: UploadFile = File(...),
     epw_file: UploadFile = File(...),
@@ -94,7 +96,7 @@ def build_ubem(
     return response.json()
 
 
-@app.get("/ubem/status/{job_id}")
+@api.get("/ubem/status/{job_id}")
 def check_status(job_id: str):
     endpoint_url = RUNPOD_UBEM_ENDPOINT
     status_url = f"{endpoint_url}/status/{job_id}"
@@ -104,3 +106,6 @@ def check_status(job_id: str):
     data = response.json()
 
     return data
+
+
+app.include_router(api)
