@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Literal, Union, List
+from typing import List, Literal, Union
 
 import boto3
 import lightning.pytorch as pl

@@ -1,23 +1,22 @@
-import streamlit as st
-from uuid import uuid4
 import os
-import pandas as pd
-import geopandas as gpd
 from typing import Tuple
+from uuid import uuid4
+
+import geopandas as gpd
+import pandas as pd
 import plotly.express as px
 import pyproj
-from ladybug.epw import EPW
+import requests
+import streamlit as st
 from archetypal import UmiTemplateLibrary
 from dotenv import get_key
-import requests
-
-from umi.ubem import UBEM
+from ladybug.epw import EPW
 
 from app.app_utils import (
-    load_lib,
-    template_climate_zones,
-    template_categories,
     filter_templates,
+    load_lib,
+    template_categories,
+    template_climate_zones,
 )
 
 st.set_page_config(

@@ -1,17 +1,18 @@
-from fastapi import FastAPI, File, UploadFile, Depends
 import os
-from fastapi.responses import JSONResponse
-from dotenv import load_dotenv, get_key
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
-import requests
-import taichi as ti
 import geopandas as gpd
 import pandas as pd
-from ladybug.epw import EPW
+import requests
+import taichi as ti
 from archetypal import UmiTemplateLibrary
-from umi.ubem import UBEM
+from dotenv import get_key, load_dotenv
+from fastapi import Depends, FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
+from ladybug.epw import EPW
 from pydantic import BaseModel
+
+from umi.ubem import UBEM
 
 app = FastAPI()
 # TODO: move this to a config file

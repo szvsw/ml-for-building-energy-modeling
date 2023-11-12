@@ -8,10 +8,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import wandb
-from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform, BuildingDataModule
+from ml.data import (BuildingDataModule, MinMaxTransform, StdNormalTransform,
+                     WeatherStdNormalTransform)
 from ml.networks import MLP
-
-
 
 # TODO: Surrogate should have a `forward`` method
 
@@ -265,7 +264,6 @@ if __name__ == "__main__":
     from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
     # from ml.data import BuildingDataModule
-
     # TODO: batch size should be in config
     # TODO: thresh should be in config
     wandb.login()

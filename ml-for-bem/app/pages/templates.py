@@ -1,15 +1,12 @@
-import streamlit as st
+import json
+
 import numpy as np
 import pandas as pd
-import json
 import plotly as px
+import streamlit as st
 
-from app.app_utils import (
-    load_lib,
-    template_climate_zones,
-    template_categories,
-    filter_templates,
-)
+from app.app_utils import (filter_templates, load_lib, template_categories,
+                           template_climate_zones)
 
 st.set_page_config(
     "UBEM.io",

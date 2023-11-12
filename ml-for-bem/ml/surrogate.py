@@ -8,7 +8,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import wandb
-from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform
+from ml.data import (MinMaxTransform, StdNormalTransform,
+                     WeatherStdNormalTransform)
 from ml.networks import Conv1DStageConfig, ConvNet, EnergyCNN2
 
 

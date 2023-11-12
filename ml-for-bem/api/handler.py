@@ -1,12 +1,12 @@
-import runpod
 import json
+
 import numpy as np
 import pandas as pd
-
+import runpod
 from lightning.pytorch import Trainer
 
-from ml.surrogate import Surrogate
 from ml.predict import predict_ubem
+from ml.surrogate import Surrogate
 
 surrogate = Surrogate.load_from_checkpoint("data/model.ckpt")
 trainer = Trainer(

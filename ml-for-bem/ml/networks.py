@@ -1,9 +1,10 @@
-from typing import List, Optional, Union, Type
+from typing import List, Optional, Type, Union
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
+
 
 class Permute(nn.Module):
     """This module returns a view of the tensor input with its dimensions permuted.

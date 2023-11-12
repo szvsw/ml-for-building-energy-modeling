@@ -1,13 +1,14 @@
 from __future__ import annotations
+
 from typing import Any
+
 import numpy as np
 import pandas as pd
-
 from bentoml.io import Multipart, NumpyNdarray, PandasDataFrame
-
 from lightning.pytorch import Trainer
-from ml.surrogate import Surrogate
+
 from ml.predict import predict_ubem
+from ml.surrogate import Surrogate
 
 ubem_runner = bentoml.pytorch_lightning.get("ubem:latest").to_runner()
 
