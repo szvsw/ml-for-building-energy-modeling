@@ -89,7 +89,8 @@ def build_ubem(
         run_url, json=job, headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"}
     )
 
-    os.removedirs(tmp)
+    for file in os.listdir(tmp):
+        os.remove(f"{tmp}/{file}")
     return response.json()
 
 

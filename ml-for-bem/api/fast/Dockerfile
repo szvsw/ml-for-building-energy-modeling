@@ -2,11 +2,6 @@ FROM python:3.9
 
 WORKDIR /usr/src
 
-# RUN apt-get update \
-#     && apt-get install -y --no-install-recommends libX11 \
-#     && apt-get clean \
-#     && rm -rf /var/lib/apt/lists/*
-
 COPY requirements/ubem-requirements.txt ubem-requirements.txt
 COPY requirements/api-requirements.txt api-requirements.txt
 
