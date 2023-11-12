@@ -1,4 +1,5 @@
 import streamlit as st
+from uuid import uuid4
 import os
 import pandas as pd
 import geopandas as gpd
@@ -7,6 +8,8 @@ import plotly.express as px
 import pyproj
 from ladybug.epw import EPW
 from archetypal import UmiTemplateLibrary
+from dotenv import get_key
+import requests
 
 from umi.ubem import UBEM
 
@@ -22,12 +25,16 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+if "job" not in st.session_state:
+    st.session_state.job = {}
+
+BACKEND_URL = get_key(".env", key_to_get="BACKEND_URL")
 
 
 @st.cache_resource
 def load_gis_file(file) -> Tuple[gpd.GeoDataFrame, list[str]]:
     gdf: gpd.GeoDataFrame = gpd.read_file(file)
-    gdf.to_crs(pyproj.CRS.from_epsg(4326), inplace=True)
+    # gdf.to_crs(pyproj.CRS.from_epsg(4326), inplace=True)
     columns = gdf.columns.tolist()
     return gdf, columns
 
@@ -82,6 +89,7 @@ def render_gis_upload():
 
 
 def render_map(gdf: gpd.GeoDataFrame, color: str):
+    gdf = gdf.to_crs(pyproj.CRS.from_epsg(4326))
     fig = px.choropleth(
         gdf,
         geojson=gdf.geometry,
@@ -100,7 +108,7 @@ def render_map(gdf: gpd.GeoDataFrame, color: str):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_epw_upload():
+def render_epw_upload() -> EPW:
     epw_file = st.file_uploader("Upload EPW file")
     if epw_file:
         epw, epw_df = load_epw_file(epw_file)
@@ -148,42 +156,85 @@ def render_template_upload():
 
 def main():
     st.title("UBEM")
+
     st.divider()
     st.header("GIS")
     gdf, col_names = render_gis_upload()
+
     st.divider()
     st.header("EPW")
     epw = render_epw_upload()
+
     st.divider()
     st.header("Templates")
     utl = render_template_upload()
+
+    st.divider()
+    st.header("Submit UBEM")
     resources = [gdf, epw, utl]
-    # if all([resource is not None for resource in resources]):
-    #     ubem = UBEM(
-    #         gdf=gdf,
-    #         **col_names,
-    #         epw=epw,
-    #         template_lib=utl,
-    #         sensor_spacing=3,
-    #         shoebox_width=3,
-    #         floor_to_floor_height=4,
-    #         perim_offset=4,
-    #         shoebox_gen_type="edge_unshaded",
-    #     )
-    #     st.write(ubem.gis_features_df)
-    # bytes_data = uploaded_file.getvalue()
+    if all([resource is not None for resource in resources]):
+        should_submit = st.button(
+            "Submit UBEM", type="primary", use_container_width=True
+        )
+        if should_submit:
+            uuid = uuid4()
+            st.session_state.job = {
+                "uuid": str(uuid),
+            }
+            tmp = f"data/temp/frontend/{uuid}"
+            os.makedirs(tmp, exist_ok=True)
+            gdf.to_file(f"{tmp}/gis.geojson", driver="GeoJSON")
+            epw.save(f"{tmp}/epw.epw")
+            utl.save(f"{tmp}/utl.json")
+            # send the files to the backend
+            files = {
+                "gis_file": open(f"{tmp}/gis.geojson", "rb"),
+                "epw_file": open(f"{tmp}/epw.epw", "rb"),
+                "utl_file": open(f"{tmp}/utl.json", "rb"),
+            }
+            os.removedirs(tmp)
+            query_params = col_names.copy()
+            query_params["uuid"] = uuid
+            response = requests.post(
+                f"{BACKEND_URL}/ubem", files=files, params=query_params
+            )
+            if response.status_code != 200:
+                st.error(f"Error {response.status_code}")
+            else:
+                data = response.json()
+                job_id = data["id"]
+                st.session_state.job["runpod_id"] = job_id
+                st.toast(f"UBEM job submitted!")
 
-    #     # Sending the file to the FastAPI server
-    #     response = requests.post(
-    #         "http://localhost:8000/uploadfile/",
-    #         files={"file": (uploaded_file.name, bytes_data)}
-    #     )
-
-    #     if response.status_code == 200:
-    #         st.success("File uploaded successfully.")
-    #         st.json(response.json())
-    #     else:
-    #         st.error("Failed to upload file.")
+        st.divider()
+        st.header("Results")
+        if "runpod_id" in st.session_state.job and "annual" not in st.session_state.job:
+            should_check_job_status = st.button(
+                "Check job status", type="primary", use_container_width=True
+            )
+            if should_check_job_status:
+                job_id = st.session_state.job["runpod_id"]
+                response = requests.get(f"{BACKEND_URL}/ubem/status/{job_id}")
+                if response.status_code != 200:
+                    st.error(f"Error {response.status_code}")
+                else:
+                    data = response.json()
+                    if data["status"] == "COMPLETED":
+                        st.write(data["output"].keys())
+                        for key, value in data["output"].items():
+                            df = pd.DataFrame.from_dict(value, orient="tight")
+                            st.session_state.job[key] = df
+                    else:
+                        st.toast(f"Job status: {data['status']}")
+        if "annual" in st.session_state.job:
+            annual = st.session_state.job["annual"]
+            gdf_with_results = gdf.merge(
+                annual, left_index=True, right_on="building_id"
+            )
+            color_by_column = st.selectbox(
+                "Select column to color by", ["Heating", "Cooling"]
+            )
+            render_map(gdf_with_results, color=color_by_column)
 
 
 main()

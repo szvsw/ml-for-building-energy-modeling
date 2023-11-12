@@ -1,6 +1,8 @@
 from fastapi import FastAPI, File, UploadFile, Depends
+import os
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv, get_key
+from uuid import uuid4, UUID
 
 import requests
 import taichi as ti
@@ -26,10 +28,10 @@ def read_root():
 
 
 class GISColumns(BaseModel):
-    id: str = "OBJECTID"
-    height: str = "HEIGHT"
-    wwr: str = "wwr"
-    template_name: str = "template_name"
+    id_col: str = "OBJECTID"
+    height_col: str = "HEIGHT"
+    wwr_col: str = "wwr"
+    template_name_col: str = "template_name"
 
 
 @app.post("/ubem")
@@ -38,20 +40,21 @@ def build_ubem(
     epw_file: UploadFile = File(...),
     utl_file: UploadFile = File(...),
     gis_columns: GISColumns = Depends(),
+    uuid: str = str,
 ):
     ti.init(arch=ti.cpu)
     gdf = gpd.read_file(gis_file.file)
-    # convert epw file to bytes
-    with open("data/temp/uploaded_epw.epw", "wb") as f:
+    tmp = f"data/backend/temp/{uuid}"
+    os.makedirs(tmp, exist_ok=True)
+    with open(f"{tmp}/epw.epw", "wb") as f:
         f.write(epw_file.file.read())
-
-    epw = EPW("data/temp/uploaded_epw.epw")
+    epw = EPW(f"{tmp}/epw.epw")
     utl = UmiTemplateLibrary.loads(utl_file.file.read(), name="UBEMLib")
     # TODO: UBEM should accept pydantic config inputs
     ubem = UBEM(
         gdf=gdf,
         epw=epw,
-        **{f"{col}_col": name for col, name in gis_columns.model_dump().items()},
+        **gis_columns.model_dump(),
         template_lib=utl,
         sensor_spacing=3,
         shoebox_width=3,
@@ -60,6 +63,9 @@ def build_ubem(
         shoebox_gen_type="edge_unshaded",
     )
     features, schedules, climate = ubem.prepare_for_surrogate()
+    features["Infiltration"] = 0.00005
+    features["WindowShgc"] = 0.5
+    features["VentilationMode"] = 1
     features_data_dict = features.to_dict(orient="tight")
     schedules_data_list = schedules.tolist()
     climate_data_list = climate.tolist()
@@ -80,10 +86,11 @@ def build_ubem(
         run_url, json=job, headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"}
     )
 
+    os.removedirs(tmp)
     return response.json()
 
 
-@app.post("/ubem/status/{job_id}")
+@app.get("/ubem/status/{job_id}")
 def check_status(job_id: str):
     endpoint_url = RUNPOD_UBEM_ENDPOINT
     status_url = f"{endpoint_url}/status/{job_id}"
@@ -91,7 +98,5 @@ def check_status(job_id: str):
         status_url, headers={"Authorization": f"Bearer {RUNPOD_API_KEY}"}
     )
     data = response.json()
-    if data["status"] == "COMPLETED":
-        output = data["output"]
 
-    return {"status": data["status"]}
+    return data
