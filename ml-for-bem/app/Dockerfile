@@ -12,6 +12,8 @@ COPY umi/*.py umi/
 COPY weather/*.py weather/
 COPY app/*.py app/
 COPY app/.streamlit/ .streamlit/
+# TODO: should have a better mechanism for loading space definition on fe
+COPY app/space_definition.json app/space_definition.json
 COPY shoeboxer/*.py shoeboxer/
 COPY utils/*.py utils/
 COPY *.py ./

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import streamlit as st
+import json
 
 
 @st.cache_data
@@ -30,3 +31,14 @@ def filter_templates(
     if len(cats) > 0:
         template_df = template_df[template_df.Category.isin(cats)]
     return template_df
+
+
+@st.cache_data
+def load_space(path=None):
+    if path is None:
+        path = "app/space_definition.json"
+
+    with open(path, "r") as f:
+        space_config = json.load(f)
+
+    return space_config

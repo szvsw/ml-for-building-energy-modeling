@@ -5,25 +5,19 @@ import pandas as pd
 import plotly as px
 import streamlit as st
 
-from app.app_utils import (filter_templates, load_lib, template_categories,
-                           template_climate_zones)
+from app.app_utils import (
+    filter_templates,
+    load_lib,
+    template_categories,
+    load_space,
+    template_climate_zones,
+)
 
 st.set_page_config(
     "UBEM.io",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
-
-@st.cache_data
-def load_space(path=None):
-    if path is None:
-        path = "data/lightning/full_climate_zone/v7/train/space_definition.json"
-
-    with open(path, "r") as f:
-        space_config = json.load(f)
-
-    return space_config
 
 
 st.title("UBEM.io (v2)")

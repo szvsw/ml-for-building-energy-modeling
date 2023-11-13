@@ -5,7 +5,7 @@ import tempfile
 import time
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Tuple, List, Literal
+from typing import Tuple, List, Literal, Union
 from zipfile import ZipFile
 
 import geopandas as gpd
@@ -204,7 +204,7 @@ class UBEM:
         id_col: str,
         template_name_col: str,
         epw: EPW,
-        template_lib: UmiTemplateLibrary,
+        template_lib: Union[Tuple[pd.DataFrame, np.ndarray], UmiTemplateLibrary],
         sensor_spacing=3,  # sensor width is used in raytracing
         shoebox_width=3,  # -1 is dynamic based off of edge length TODO: support for list shoebox_width should come from a gdf column, similar to wwr
         floor_to_floor_height=4,  # TODO: support for list floor_to_floor_height dynamic should come from a gdf column, similar to wwr
@@ -219,9 +219,6 @@ class UBEM:
         # TODO:
         # WHY ARE THE NUMBER OF SBS DIFFERENT when opening an UMI vs from gdf only
 
-        assert len([t.Name for t in template_lib.BuildingTemplates]) == len(
-            set([t.Name for t in template_lib.BuildingTemplates])
-        ), "Duplicate names in template library!  Aborting."
         sb_calculation_options = [
             "cardinal_unshaded",
             "edge_unshaded",
@@ -242,7 +239,6 @@ class UBEM:
         # store objects
         self.building_gdf = gdf
         self.epw = epw
-        self.template_lib = template_lib
 
         # set geometric variables
         self.sensor_spacing = sensor_spacing
@@ -251,10 +247,33 @@ class UBEM:
         self.perim_offset = perim_offset
 
         start_time = time.time()
-        (
-            self.template_features_df,
-            self.schedules_array,
-        ) = self.prepare_archetypal_features(self.template_lib)
+        if isinstance(template_lib, UmiTemplateLibrary):
+            assert len([t.Name for t in template_lib.BuildingTemplates]) == len(
+                set([t.Name for t in template_lib.BuildingTemplates])
+            ), "Duplicate names in template library!  Aborting."
+            (
+                self.template_features_df,
+                self.schedules_array,
+            ) = self.prepare_archetypal_features(template_lib)
+        else:
+            assert isinstance(
+                template_lib, tuple
+            ), f"template_lib must be a tuple of (features:pd.DataFrame, schedules:np.ndarray), but is {type(template_lib)}"
+            assert (
+                len(template_lib) == 2
+            ), f"template_lib must be a tuple of (features:pd.DataFrame, schedules:np.ndarray), but is {len(template_lib)} items long instead of 2."
+            assert isinstance(
+                template_lib[0], pd.DataFrame
+            ), f"template_lib must be a tuple of (features: pd.DataFrame, schedules:np.ndarray), but the features are {type(template_lib[0])}"
+            assert isinstance(
+                template_lib[1], pd.DataFrame
+            ), f"template_lib must be a tuple of (features:pd.DataFrame, schedules:np.ndarray), but the schedules are {type(template_lib[1])}"
+            features, schedules = template_lib[0], template_lib[1]
+            if self.template_idx_col not in features.columns:
+                features[self.template_idx_col] = range(len(features))
+            self.template_features_df = features
+            self.schedules_array = schedules
+
         # Add in template_idx for feature array
         self.building_gdf[self.template_idx_col] = list(
             self.template_features_df.loc[self.building_gdf[self.template_name_col]][
