@@ -11,6 +11,7 @@ RUN pip install -r ubem-requirements.txt -r app-requirements.txt -r plot-require
 COPY umi/*.py umi/
 COPY weather/*.py weather/
 COPY app/*.py app/
+COPY app/.streamlit/ .streamlit/
 COPY shoeboxer/*.py shoeboxer/
 COPY utils/*.py utils/
 COPY *.py ./

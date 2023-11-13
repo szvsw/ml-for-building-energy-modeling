@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/fast/Dockerfile
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/ml-for-bem-server:${SERVER_TAG}
+    ports:
+      - "8002:80"
+    env_file:
+      - .env
+  client:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/ml-for-bem-client:${CLIENT_TAG} 
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env

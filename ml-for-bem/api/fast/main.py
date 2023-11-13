@@ -29,7 +29,7 @@ RUNPOD_UBEM_ENDPOINT = os.getenv("RUNPOD_UBEM_ENDPOINT")
 
 @api.get("/")
 def read_root():
-    return {"message": "Hello World"}
+    return {"message": "healthy"}
 
 
 class GISColumns(BaseModel):

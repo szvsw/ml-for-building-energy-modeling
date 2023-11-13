@@ -1,0 +1,18 @@
+version: '3'
+services:
+  api:
+    command: ["--reload"]
+    volumes:
+      - ./api/fast:/usr/src/api/fast
+      - ./umi:/usr/src/umi
+      - ./utils:/usr/src/utils
+      - ./shoeboxer:/usr/src/shoeboxer
+      - ./weather:/usr/src/weather
+    restart: always
+  client:
+    volumes:
+      - ./umi:/usr/src/umi
+      - ./weather:/usr/src/weather
+      - ./app:/usr/src/app
+      - ./shoeboxer:/usr/src/shoeboxer
+      - ./utils:/usr/src/utils

@@ -17,4 +17,4 @@ COPY *.py ./
 ENV PYTHONPATH=/usr/src:$PYTHONPATH
 EXPOSE 80
 
-CMD ["uvicorn", "api.fast.main:app", "--host", "0.0.0.0", "--port", "80"]
+ENTRYPOINT ["uvicorn", "api.fast.main:app", "--host", "0.0.0.0", "--port", "80"]
