@@ -266,11 +266,13 @@ class UBEM:
                 template_lib[0], pd.DataFrame
             ), f"template_lib must be a tuple of (features: pd.DataFrame, schedules:np.ndarray), but the features are {type(template_lib[0])}"
             assert isinstance(
-                template_lib[1], pd.DataFrame
+                template_lib[1], np.ndarray
             ), f"template_lib must be a tuple of (features:pd.DataFrame, schedules:np.ndarray), but the schedules are {type(template_lib[1])}"
             features, schedules = template_lib[0], template_lib[1]
             if self.template_idx_col not in features.columns:
                 features[self.template_idx_col] = range(len(features))
+            if self.template_name_col not in features.columns:
+                features[self.template_name_col] = features.index
             self.template_features_df = features
             self.schedules_array = schedules
 

@@ -5,6 +5,12 @@ import json
 
 
 @st.cache_data
+def load_schedule(ix: int) -> np.ndarray:
+    schedules = np.load("data/schedules.npy")
+    return schedules[ix]
+
+
+@st.cache_data
 def load_lib() -> tuple[pd.DataFrame, np.ndarray]:
     templates = pd.read_hdf("app/ref_templates.hdf", key="features")
     schedules = np.load("app/ref_templates_schedules.npy")

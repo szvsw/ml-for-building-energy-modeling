@@ -8,6 +8,7 @@ COPY requirements/plot-requirements.txt plot-requirements.txt
 
 RUN pip install -r ubem-requirements.txt -r app-requirements.txt -r plot-requirements.txt
 
+COPY data/schedules.npy data/schedules.npy
 COPY umi/*.py umi/
 COPY weather/*.py weather/
 COPY app/*.py app/

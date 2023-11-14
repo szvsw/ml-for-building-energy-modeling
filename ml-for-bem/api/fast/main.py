@@ -1,9 +1,12 @@
+import json
 import os
+from typing import Literal
 from uuid import UUID, uuid4
 
 import geopandas as gpd
 import pandas as pd
 import requests
+import numpy as np
 import taichi as ti
 from archetypal import UmiTemplateLibrary
 from dotenv import get_key, load_dotenv
@@ -39,13 +42,19 @@ class GISColumns(BaseModel):
     template_name_col: str = "template_name"
 
 
+class Library(BaseModel):
+    templates: dict = {}
+    schedules: list[list[list[float]]] = [[[]]]
+
+
 @api.post("/ubem")
 def build_ubem(
     gis_file: UploadFile = File(...),
     epw_file: UploadFile = File(...),
     utl_file: UploadFile = File(...),
     gis_columns: GISColumns = Depends(),
-    uuid: str = str,
+    uuid: str = "",
+    lib_mode: Literal["utl", "ml"] = "utl",
 ):
     ti.init(arch=ti.cpu)
     gdf = gpd.read_file(gis_file.file)
@@ -54,7 +63,17 @@ def build_ubem(
     with open(f"{tmp}/epw.epw", "wb") as f:
         f.write(epw_file.file.read())
     epw = EPW(f"{tmp}/epw.epw")
-    utl = UmiTemplateLibrary.loads(utl_file.file.read(), name="UBEMLib")
+    lib_data = utl_file.file.read()
+    if lib_mode == "utl":
+        utl = UmiTemplateLibrary.loads(utl_file.file.read(), name="UBEMLib")
+    elif lib_mode == "ml":
+        lib = json.loads(lib_data)
+        lib = Library(**lib)
+        template_features = pd.DataFrame.from_dict(lib.templates, orient="tight")
+        template_schedules = np.array(lib.schedules, dtype=np.float32)
+        utl = (template_features, template_schedules)
+    else:
+        raise ValueError(f"lib_mode must be one of 'utl' or 'ml', not {lib_mode}")
     # TODO: UBEM should accept pydantic config inputs
     ubem = UBEM(
         gdf=gdf,
@@ -67,11 +86,13 @@ def build_ubem(
         perim_offset=4,
         shoebox_gen_type="edge_unshaded",
     )
-    features, schedules, climate = ubem.prepare_for_surrogate()
-    features["Infiltration"] = 0.00005
-    features["WindowShgc"] = 0.5
-    features["VentilationMode"] = 1
-    features_data_dict = features.to_dict(orient="tight")
+    template_features, schedules, climate = ubem.prepare_for_surrogate()
+    if lib_mode == "utl":
+        # overwrite these because they are not computed correctly
+        template_features["Infiltration"] = 0.00005
+        template_features["WindowShgc"] = 0.5
+        template_features["VentilationMode"] = 1
+    features_data_dict = template_features.to_dict(orient="tight")
     schedules_data_list = schedules.tolist()
     climate_data_list = climate.tolist()
     job_input = {

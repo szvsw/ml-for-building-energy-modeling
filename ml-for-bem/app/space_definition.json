@@ -1,225 +1,237 @@
 {
-    "width": {
-        "name": "width",
-        "min": 2,
-        "max": 8,
-        "mode": "Continuous"
-    },
-    "height": {
-        "name": "height",
-        "min": 2.5,
-        "max": 6,
-        "mode": "Continuous"
-    },
-    "perim_depth": {
-        "name": "perim_depth",
-        "min": 1.25,
-        "max": 12,
-        "mode": "Continuous"
-    },
-    "core_depth": {
-        "name": "core_depth",
-        "min": 1.25,
-        "max": 60,
-        "mode": "Continuous"
-    },
-    "roof_2_footprint": {
-        "name": "roof_2_footprint",
-        "min": 0.0,
-        "max": 1.0,
-        "mode": "Continuous"
-    },
-    "ground_2_footprint": {
-        "name": "ground_2_footprint",
-        "min": 0.0,
-        "max": 1.0,
-        "mode": "Continuous"
-    },
-    "orientation": {
-        "name": "orientation",
-        "min": 0.0,
-        "max": 6.283185307179586,
-        "mode": "Continuous"
-    },
-    "wwr": {
-        "name": "wwr",
-        "min": 0.0,
-        "max": 0.9,
-        "mode": "Continuous"
-    },
-    "HeatingSetpoint": {
-        "name": "HeatingSetpoint",
-        "min": 14,
-        "max": 24,
-        "mode": "Continuous"
-    },
-    "CoolingSetpoint": {
-        "name": "CoolingSetpoint",
-        "min": 22,
-        "max": 30,
-        "mode": "Continuous"
-    },
-    "LightingPowerDensity": {
-        "name": "LightingPowerDensity",
-        "min": 0,
-        "max": 30,
-        "mode": "Continuous"
-    },
-    "EquipmentPowerDensity": {
-        "name": "EquipmentPowerDensity",
-        "min": 0,
-        "max": 60,
-        "mode": "Continuous"
-    },
-    "PeopleDensity": {
-        "name": "PeopleDensity",
-        "min": 0,
-        "max": 0.5,
-        "mode": "Continuous"
-    },
-    "Infiltration": {
-        "name": "Infiltration",
-        "min": 0.0,
-        "max": 0.001,
-        "mode": "Continuous"
-    },
-    "VentilationPerArea": {
-        "name": "VentilationPerArea",
-        "min": 0.0,
-        "max": 0.005,
-        "mode": "Continuous"
-    },
-    "VentilationPerPerson": {
-        "name": "VentilationPerPerson",
-        "min": 0,
-        "max": 0.015,
-        "mode": "Continuous"
-    },
-    "VentilationMode": {
-        "name": "VentilationMode",
-        "option_count": 3,
-        "mode": "Onehot"
-    },
-    "FacadeMass": {
-        "name": "FacadeMass",
-        "option_count": 4,
-        "mode": "Onehot"
-    },
-    "RoofMass": {
-        "name": "RoofMass",
-        "option_count": 4,
-        "mode": "Onehot"
-    },
-    "FacadeRValue": {
-        "name": "FacadeRValue",
-        "min": 0.3,
-        "max": 15,
-        "mode": "Continuous"
-    },
-    "RoofRValue": {
-        "name": "RoofRValue",
-        "min": 0.3,
-        "max": 18,
-        "mode": "Continuous"
-    },
-    "SlabRValue": {
-        "name": "SlabRValue",
-        "min": 0.3,
-        "max": 15,
-        "mode": "Continuous"
-    },
-    "WindowUValue": {
-        "name": "WindowUValue",
-        "min": 0.3,
-        "max": 7.0,
-        "mode": "Continuous"
-    },
-    "WindowShgc": {
-        "name": "WindowShgc",
-        "min": 0.05,
-        "max": 0.99,
-        "mode": "Continuous"
-    },
-    "EconomizerSettings": {
-        "name": "EconomizerSettings",
-        "option_count": 2,
-        "mode": "Onehot"
-    },
-    "RecoverySettings": {
-        "name": "RecoverySettings",
-        "option_count": 3,
-        "mode": "Onehot"
-    },
-    "shading_0": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_0"
-    },
-    "shading_1": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_1"
-    },
-    "shading_2": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_2"
-    },
-    "shading_3": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_3"
-    },
-    "shading_4": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_4"
-    },
-    "shading_5": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_5"
-    },
-    "shading_6": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_6"
-    },
-    "shading_7": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_7"
-    },
-    "shading_8": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_8"
-    },
-    "shading_9": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_9"
-    },
-    "shading_10": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_10"
-    },
-    "shading_11": {
-        "min": 0,
-        "max": 1.5707963267948966,
-        "mode": "Continuous",
-        "name": "shading_11"
-    }
+  "width": {
+    "name": "width",
+    "min": 2,
+    "max": 8,
+    "mode": "Continuous"
+  },
+  "height": {
+    "name": "height",
+    "min": 2.5,
+    "max": 6,
+    "mode": "Continuous"
+  },
+  "perim_depth": {
+    "name": "perim_depth",
+    "min": 1.25,
+    "max": 12,
+    "mode": "Continuous"
+  },
+  "core_depth": {
+    "name": "core_depth",
+    "min": 1.25,
+    "max": 60,
+    "mode": "Continuous"
+  },
+  "roof_2_footprint": {
+    "name": "roof_2_footprint",
+    "min": 0.0,
+    "max": 1.0,
+    "mode": "Continuous"
+  },
+  "ground_2_footprint": {
+    "name": "ground_2_footprint",
+    "min": 0.0,
+    "max": 1.0,
+    "mode": "Continuous"
+  },
+  "orientation": {
+    "name": "orientation",
+    "min": 0.0,
+    "max": 6.283185307179586,
+    "mode": "Continuous"
+  },
+  "wwr": {
+    "name": "wwr",
+    "min": 0.0,
+    "max": 0.9,
+    "mode": "Continuous"
+  },
+  "cop_cooling": {
+    "name": "cop_cooling",
+    "min": 2,
+    "max": 6,
+    "mode": "Continuous"
+  },
+  "cop_heating": {
+    "name": "cop_heating",
+    "min": 0.5,
+    "max": 6,
+    "mode": "Continuous"
+  },
+  "HeatingSetpoint": {
+    "name": "HeatingSetpoint",
+    "min": 14,
+    "max": 24,
+    "mode": "Continuous"
+  },
+  "CoolingSetpoint": {
+    "name": "CoolingSetpoint",
+    "min": 22,
+    "max": 30,
+    "mode": "Continuous"
+  },
+  "LightingPowerDensity": {
+    "name": "LightingPowerDensity",
+    "min": 0,
+    "max": 30,
+    "mode": "Continuous"
+  },
+  "EquipmentPowerDensity": {
+    "name": "EquipmentPowerDensity",
+    "min": 0,
+    "max": 60,
+    "mode": "Continuous"
+  },
+  "PeopleDensity": {
+    "name": "PeopleDensity",
+    "min": 0,
+    "max": 0.5,
+    "mode": "Continuous"
+  },
+  "Infiltration": {
+    "name": "Infiltration",
+    "min": 0.0,
+    "max": 0.001,
+    "mode": "Continuous"
+  },
+  "VentilationPerArea": {
+    "name": "VentilationPerArea",
+    "min": 0.0,
+    "max": 0.005,
+    "mode": "Continuous"
+  },
+  "VentilationPerPerson": {
+    "name": "VentilationPerPerson",
+    "min": 0,
+    "max": 0.015,
+    "mode": "Continuous"
+  },
+  "VentilationMode": {
+    "name": "VentilationMode",
+    "option_count": 3,
+    "mode": "Onehot"
+  },
+  "FacadeMass": {
+    "name": "FacadeMass",
+    "option_count": 4,
+    "mode": "Onehot"
+  },
+  "RoofMass": {
+    "name": "RoofMass",
+    "option_count": 4,
+    "mode": "Onehot"
+  },
+  "FacadeRValue": {
+    "name": "FacadeRValue",
+    "min": 0.3,
+    "max": 15,
+    "mode": "Continuous"
+  },
+  "RoofRValue": {
+    "name": "RoofRValue",
+    "min": 0.3,
+    "max": 18,
+    "mode": "Continuous"
+  },
+  "SlabRValue": {
+    "name": "SlabRValue",
+    "min": 0.3,
+    "max": 15,
+    "mode": "Continuous"
+  },
+  "WindowUValue": {
+    "name": "WindowUValue",
+    "min": 0.3,
+    "max": 7.0,
+    "mode": "Continuous"
+  },
+  "WindowShgc": {
+    "name": "WindowShgc",
+    "min": 0.05,
+    "max": 0.99,
+    "mode": "Continuous"
+  },
+  "EconomizerSettings": {
+    "name": "EconomizerSettings",
+    "option_count": 2,
+    "mode": "Onehot"
+  },
+  "RecoverySettings": {
+    "name": "RecoverySettings",
+    "option_count": 3,
+    "mode": "Onehot"
+  },
+  "shading_0": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_0"
+  },
+  "shading_1": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_1"
+  },
+  "shading_2": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_2"
+  },
+  "shading_3": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_3"
+  },
+  "shading_4": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_4"
+  },
+  "shading_5": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_5"
+  },
+  "shading_6": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_6"
+  },
+  "shading_7": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_7"
+  },
+  "shading_8": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_8"
+  },
+  "shading_9": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_9"
+  },
+  "shading_10": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_10"
+  },
+  "shading_11": {
+    "min": 0,
+    "max": 1.5707963267948966,
+    "mode": "Continuous",
+    "name": "shading_11"
+  }
 }

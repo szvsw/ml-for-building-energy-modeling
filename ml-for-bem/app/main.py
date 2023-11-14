@@ -1,10 +1,12 @@
+import json
 import os
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Literal, Union
 from uuid import uuid4
 
 import geopandas as gpd
 import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
 import pyproj
 import requests
@@ -19,7 +21,9 @@ from app.app_utils import (
     template_categories,
     template_climate_zones,
     load_space,
+    load_schedule,
 )
+from utils.constants import SCHEDULE_PATHS
 
 st.set_page_config(
     page_title="UBEM",
@@ -215,12 +219,15 @@ def render_template_upload(template_names: list[str] = None):
         # st.write(space_config)
         if template_names is None:
             st.info("You must upload a GIS file first in Manual Mode.")
+            return None, None
         else:
             template_defs = []
+            template_schedules = []
             errors = False
             for template_name in template_names:
                 template_config = {}
                 with st.expander(template_name):
+                    st.markdown("#### Building Parameters")
                     cols = st.columns(len(columns))
                     for i, col_group in enumerate(columns):
                         with cols[i]:
@@ -230,6 +237,8 @@ def render_template_upload(template_names: list[str] = None):
                                         param,
                                         float(param_def["min"]),
                                         float(param_def["max"]),
+                                        step=0.00001,
+                                        format="%.5f",
                                         key=f"template_{template_name}_param_{param}",
                                     )
                                 elif param_def["mode"] == "Onehot":
@@ -275,6 +284,32 @@ def render_template_upload(template_names: list[str] = None):
                                         format_func=lambda x: labels[x],
                                         key=f"template_{template_name}_param_{param}",
                                     )
+                    st.divider()
+                    st.markdown("#### Schedules")
+                    ix = st.selectbox(
+                        "Select schedule index",
+                        list(range(16)),
+                        key=f"template_{template_name}_schedule_ix",
+                    )
+                    scheds = load_schedule(ix)
+                    template_schedules.append(scheds)
+                    fig = go.Figure()
+                    # add a trace for each schedule, which are along the first axis
+                    for i in range(scheds.shape[0]):
+                        plot_range = 24 * 14
+                        fig.add_trace(
+                            go.Scatter(
+                                x=np.arange(plot_range),
+                                y=scheds[i, :plot_range],
+                                name=SCHEDULE_PATHS[i][-1].split("A")[0].split("S")[0],
+                            )
+                        )
+                    fig.update_layout(
+                        title="Schedules",
+                        xaxis_title="Hour of Year",
+                        yaxis_title="Schedule Value [0-1]",
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
                 if (
                     template_config["HeatingSetpoint"]
                     > template_config["CoolingSetpoint"]
@@ -295,24 +330,32 @@ def render_template_upload(template_names: list[str] = None):
                     if col in template_features_df.columns
                 ]
             ]
+            template_schedules = np.array(template_schedules, dtype=np.float32)
             st.dataframe(template_features_df)
-        return None
+            return "ml", (template_features_df, template_schedules)
     else:
         template_file = st.file_uploader("Upload UBEM Template file")
         if template_file:
             utl = load_utl(template_file)
-            return utl
+            return "utl", utl
         else:
-            return None
+            return None, None
 
 
-def render_submission(gdf, epw, utl, col_names):
-    resources = [gdf, epw, utl]
+def render_submission(
+    gdf: gpd.GeoDataFrame,
+    epw: EPW,
+    lib: Union[UmiTemplateLibrary, Tuple[pd.DataFrame, np.ndarray]],
+    lib_mode: Literal["utl", "ml"],
+    col_names: dict[str, str],
+):
+    resources = [gdf, epw, lib]
     if all([resource is not None for resource in resources]):
         should_submit = st.button(
             "Submit UBEM", type="primary", use_container_width=True
         )
         if should_submit:
+            url = f"{BACKEND_URL}/ubem"
             uuid = uuid4()
             st.session_state.job = {
                 "uuid": str(uuid),
@@ -321,8 +364,18 @@ def render_submission(gdf, epw, utl, col_names):
             os.makedirs(tmp, exist_ok=True)
             gdf.to_file(f"{tmp}/gis.geojson", driver="GeoJSON")
             epw.save(f"{tmp}/epw.epw")
-            utl.save(f"{tmp}/utl.json")
             # send the files to the backend
+            if lib_mode == "utl":
+                lib.save(f"{tmp}/utl.json")
+            elif lib_mode == "ml":
+                utl = {
+                    "templates": lib[0].to_dict(orient="tight"),
+                    "schedules": lib[1].tolist(),
+                }
+                with open(f"{tmp}/utl.json", "w") as f:
+                    json.dump(utl, f)
+            else:
+                raise ValueError(f"Unknown lib mode: {lib_mode}")
             files = {
                 "gis_file": open(f"{tmp}/gis.geojson", "rb"),
                 "epw_file": open(f"{tmp}/epw.epw", "rb"),
@@ -330,8 +383,12 @@ def render_submission(gdf, epw, utl, col_names):
             }
             query_params = col_names.copy()
             query_params["uuid"] = uuid
+            query_params["lib_mode"] = lib_mode
+
             response = requests.post(
-                f"{BACKEND_URL}/ubem", files=files, params=query_params
+                url,
+                files=files,
+                params=query_params,
             )
             if response.status_code != 200:
                 st.error(f"Error {response.status_code}")
@@ -357,7 +414,7 @@ def main():
 
     st.divider()
     st.header("Templates")
-    utl = render_template_upload(
+    lib_mode, lib = render_template_upload(
         template_names=(
             None if gdf is None else gdf[col_names["template_name_col"]].unique()
         )
@@ -365,7 +422,7 @@ def main():
 
     st.divider()
     st.header("Submit UBEM")
-    render_submission(gdf, epw, utl, col_names)
+    render_submission(gdf=gdf, epw=epw, lib=lib, lib_mode=lib_mode, col_names=col_names)
     st.divider()
     st.header("Results")
 
