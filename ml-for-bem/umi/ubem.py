@@ -325,7 +325,8 @@ class UBEM:
         facade_area = self.floor_to_floor_height * perimeter_length
         perim_area_to_facade_area = perim_areas / facade_area
         core_area_to_perimeter_area = core_areas / perim_areas
-        floor_count = round(heights / self.floor_to_floor_height)
+
+        floor_count = np.ceil(heights / self.floor_to_floor_height).astype(int)
         # TODO: reset floor_to_floor height so there is a whole number of floors?
 
         geometric_features_df = pd.DataFrame()
