@@ -34,6 +34,8 @@ load_dotenv()
 
 if "job" not in st.session_state:
     st.session_state.job = {}
+if "results" not in st.session_state:
+    st.session_state.results = {}
 
 BACKEND_URL = os.getenv("BACKEND_URL")
 
@@ -218,7 +220,7 @@ def render_template_upload(template_names: list[str] = None):
             counter = (counter + 1) % len(columns)
         # st.write(space_config)
         if template_names is None:
-            st.info("You must upload a GIS file first in Manual Mode.")
+            st.warning("You must upload a GIS file first in Manual Mode.")
             return None, None
         else:
             template_defs = []
@@ -351,6 +353,7 @@ def render_submission(
 ):
     resources = [gdf, epw, lib]
     if all([resource is not None for resource in resources]):
+        run_name = st.text_input("Run Name", value="Baseline")
         should_submit = st.button(
             "Submit UBEM", type="primary", use_container_width=True
         )
@@ -396,9 +399,10 @@ def render_submission(
                 data = response.json()
                 job_id = data["id"]
                 st.session_state.job["runpod_id"] = job_id
+                st.session_state.job["run_name"] = run_name
                 st.toast(f"UBEM job submitted!")
     else:
-        st.info("You must upload all resources (GIS, EPW, Templates) first.")
+        st.warning("You must upload all resources (GIS, EPW, Templates) first.")
 
 
 def main():
@@ -426,7 +430,7 @@ def main():
     st.divider()
     st.header("Results")
 
-    if "runpod_id" in st.session_state.job and "annual" not in st.session_state.job:
+    if "runpod_id" in st.session_state.job:
         should_check_job_status = st.button(
             "Check job status", type="primary", use_container_width=True
         )
@@ -438,20 +442,90 @@ def main():
             else:
                 data = response.json()
                 if data["status"] == "COMPLETED":
+                    run_name = st.session_state.job["run_name"]
+                    st.session_state.job = {}
+                    st.session_state.results[run_name] = {}
                     for key, value in data["output"].items():
                         df = pd.DataFrame.from_dict(value, orient="tight")
-                        st.session_state.job[key] = df
+                        df["run_name"] = run_name
+                        st.session_state.results[run_name][key] = df
                 else:
                     st.toast(f"Job status: {data['status']}")
-    if "annual" in st.session_state.job:
-        annual = st.session_state.job["annual"]
+    if len(st.session_state.results) > 0:
+        end_uses = ["Heating", "Cooling"]
+        colors = ["#ff6961", "#779ecb"]
+        area = gdf.geometry.area
+        # TODO: bad floor count config
+        floors = np.ceil(gdf[col_names["height_col"]].values / 4)
+        gfa = area * floors
+        # TODO: make sure index alignment is correct
+        for i, result in enumerate(st.session_state.results.values()):
+            result["annual"]["gfa"] = gfa
+            result["annual"]["template"] = gdf[col_names["template_name_col"]]
+            result["annual"]["sort_ix"] = i
+        annual = pd.concat(
+            [results["annual"] for results in st.session_state.results.values()], axis=0
+        )
+        annual = annual.reset_index("building_id")
+        annual_melted = annual.melt(
+            id_vars=[col for col in annual if col not in end_uses],
+            var_name="End Use",
+            value_name="Energy Density (kWh/m2)",
+        )
+        annual_melted = annual_melted.sort_values("sort_ix")
+
+        annual_melted["Energy (kWh)"] = (
+            annual_melted["Energy Density (kWh/m2)"] * annual_melted["gfa"]
+        )
+        results_by_template = annual_melted.groupby(
+            ["sort_ix", "template", "run_name", "End Use"]
+        ).sum()
+        results_by_template["Energy Density (kWh/m2)"] = (
+            results_by_template["Energy (kWh)"] / results_by_template["gfa"]
+        )
+        results_by_template = results_by_template.reset_index()
+        results_by_template = results_by_template.sort_values("sort_ix")
+        scenarios_tab, templates_tab = st.tabs(["Scenarios", "Templates"])
+        with scenarios_tab:
+            fig = px.bar(
+                results_by_template,
+                x="run_name",
+                y="Energy (kWh)",
+                color="End Use",
+                color_discrete_map={
+                    end_use: color for end_use, color in zip(end_uses, colors)
+                },
+                hover_name="template",
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        with templates_tab:
+            l, r = st.columns(2)
+            with l:
+                normalize_plot = st.toggle("Normalize plot", value=True)
+            with r:
+                facet_by_template = st.toggle("Facet by template", value=True)
+            y_axis = "Energy Density (kWh/m2)" if normalize_plot else "Energy (kWh)"
+            fig = px.bar(
+                results_by_template,
+                x="run_name" if facet_by_template else "template",
+                y=y_axis,
+                color="End Use",
+                facet_col="template" if facet_by_template else "run_name",
+                facet_col_wrap=2,
+                labels={"template": "Template", "run_name": "Scenario"},
+                color_discrete_map={
+                    end_use: color for end_use, color in zip(end_uses, colors)
+                },
+                height=800,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        return
+
         gdf_with_results = gdf.merge(annual, left_index=True, right_on="building_id")
         # TODO: bad floor count config
         gdf_with_results["AREA"] = gdf_with_results.geometry.area
         gdf_with_results["FLOORS"] = np.ceil(gdf_with_results["HEIGHT"].values / 4)
         gdf_with_results["GFA"] = gdf_with_results["AREA"] * gdf_with_results["FLOORS"]
-        end_uses = ["Heating", "Cooling"]
-        colors = ["#ff6961", "#779ecb"]
         for end_use in end_uses:
             gdf_with_results[f"{end_use} Energy"] = (
                 gdf_with_results[end_use] * gdf_with_results["GFA"]
