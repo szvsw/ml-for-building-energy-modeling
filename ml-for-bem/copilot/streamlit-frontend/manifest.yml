@@ -16,7 +16,7 @@ http:
 
 # Configuration for your containers and service.
 image:
-  location: 437256682840.dkr.ecr.us-east-1.amazonaws.com/ml-for-bem-client:v0.1
+  location: 437256682840.dkr.ecr.us-east-1.amazonaws.com/ml-for-bem-client:v0.2
   # Port exposed through your container to route traffic to it.
   port: 8501
 
