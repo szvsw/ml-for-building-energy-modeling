@@ -13,6 +13,7 @@ COPY umi/*.py umi/
 COPY weather/*.py weather/
 COPY app/*.py app/
 COPY app/.streamlit/ .streamlit/
+COPY app/pages/ app/pages/
 # TODO: should have a better mechanism for loading space definition on fe
 COPY app/space_definition.json app/space_definition.json
 COPY app/template-defaults.json app/template-defaults.json
