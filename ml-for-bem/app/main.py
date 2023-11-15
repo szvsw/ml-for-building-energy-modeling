@@ -22,6 +22,10 @@ from app.app_utils import (
     template_climate_zones,
     load_space,
     load_schedule,
+    make_controls_columns,
+    render_controls,
+    render_epw_upload,
+    load_template_defaults,
 )
 from utils.constants import SCHEDULE_PATHS
 
@@ -37,6 +41,7 @@ if "job" not in st.session_state:
 if "results" not in st.session_state:
     st.session_state.results = {}
 
+# TODO: make pydantic settings
 BACKEND_URL = os.getenv("BACKEND_URL")
 
 
@@ -46,31 +51,6 @@ def load_gis_file(file) -> Tuple[gpd.GeoDataFrame, list[str]]:
     # gdf.to_crs(pyproj.CRS.from_epsg(4326), inplace=True)
     columns = gdf.columns.tolist()
     return gdf, columns
-
-
-@st.cache_resource
-def load_epw_file(file) -> EPW:
-    # # convert file to bytes
-    import os
-
-    os.makedirs("data/temp", exist_ok=True)
-    with open("data/temp/uploaded_epw.epw", "wb") as f:
-        f.write(file.getvalue())
-    # file = file.bytes()
-    epw = EPW("data/temp/uploaded_epw.epw")
-    df = pd.DataFrame(
-        {
-            "Dry Bulb Temperature": epw.dry_bulb_temperature.values,
-            "Dew Point Temperature": epw.dew_point_temperature.values,
-            "Relative Humidity": epw.relative_humidity.values,
-            "Wind Speed": epw.wind_speed.values,
-            "Wind Direction": epw.wind_direction.values,
-            "Global Horizontal Radiation": epw.global_horizontal_radiation.values,
-            "Direct Normal Radiation": epw.direct_normal_radiation.values,
-            "Diffuse Horizontal Radiation": epw.diffuse_horizontal_radiation.values,
-        }
-    )
-    return epw, df
 
 
 def render_gis_upload():
@@ -153,22 +133,6 @@ def render_map(gdf: gpd.GeoDataFrame, color: str):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_epw_upload() -> EPW:
-    epw_file = st.file_uploader("Upload EPW file")
-    if epw_file:
-        epw, epw_df = load_epw_file(epw_file)
-        render_epw_timeseries(epw_df)
-        return epw
-    else:
-        return None
-
-
-def render_epw_timeseries(epw: pd.DataFrame):
-    timeseries_to_plot = st.selectbox("Select timeseries to plot", epw.columns, index=0)
-    fig = px.line(epw, y=timeseries_to_plot)
-    st.plotly_chart(fig, use_container_width=True)
-
-
 def render_hdf_templates():
     templates, schedules = load_lib()
     l, r = st.columns(2, gap="medium")
@@ -196,28 +160,7 @@ def render_template_upload(template_names: list[str] = None):
     )
     if template_type == "Manual":
         space_config = load_space()
-        col_count = 3
-        columns = [[] for _ in range(col_count)]
-        counter = 0
-        for param, param_def in space_config.items():
-            if (
-                param
-                in [
-                    "width",
-                    "height",
-                    "perim_depth",
-                    "core_depth",
-                    "roof_2_footprint",
-                    "ground_2_footprint",
-                    "orientation",
-                    "wwr",
-                ]
-                or "shading" in param
-            ):
-                continue
-            columns[counter].append((param, param_def))
-
-            counter = (counter + 1) % len(columns)
+        columns = make_controls_columns(space_config=space_config)
         # st.write(space_config)
         if template_names is None:
             st.warning("You must upload a GIS file first in Manual Mode.")
@@ -225,67 +168,20 @@ def render_template_upload(template_names: list[str] = None):
         else:
             template_defs = []
             template_schedules = []
+            template_defaults = load_template_defaults()
             errors = False
             for template_name in template_names:
                 template_config = {}
                 with st.expander(template_name):
                     st.markdown("#### Building Parameters")
-                    cols = st.columns(len(columns))
-                    for i, col_group in enumerate(columns):
-                        with cols[i]:
-                            for param, param_def in col_group:
-                                if param_def["mode"] == "Continuous":
-                                    template_config[param] = st.number_input(
-                                        param,
-                                        float(param_def["min"]),
-                                        float(param_def["max"]),
-                                        step=0.00001,
-                                        format="%.5f",
-                                        key=f"template_{template_name}_param_{param}",
-                                    )
-                                elif param_def["mode"] == "Onehot":
-                                    mass_labels = [
-                                        "Steelframe",
-                                        "Woodframe",
-                                        "Brick",
-                                        "Concrete",
-                                    ]
-                                    econ_labels = [
-                                        "No Economizer",
-                                        "Differential Enthalpy",
-                                    ]
-                                    hrv_labels = [
-                                        "No HRV",
-                                        "Sensible Recovery",
-                                        "Sensible + Latent Recovery",
-                                    ]
-                                    ventilation_labels = [
-                                        "No Mechanical Ventilation",
-                                        "Always On Mechanical Ventilation",
-                                        "Demand Control Mechanical Ventilation",
-                                    ]
-                                    labels = mass_labels
-                                    if "econ" in param.lower():
-                                        labels = econ_labels
-                                    elif "recovery" in param.lower():
-                                        labels = hrv_labels
-                                    elif "ventilation" in param.lower():
-                                        labels = ventilation_labels
-                                    elif "mass" in param.lower():
-                                        labels = mass_labels
-                                    else:
-                                        raise ValueError(
-                                            f"Could not find labels for param: {param}"
-                                        )
-                                    assert (
-                                        len(labels) == param_def["option_count"]
-                                    ), f"Labels and option count do not match for param: {param}"
-                                    template_config[param] = st.selectbox(
-                                        param,
-                                        list(range(param_def["option_count"])),
-                                        format_func=lambda x: labels[x],
-                                        key=f"template_{template_name}_param_{param}",
-                                    )
+
+                    temp_key_formatter = lambda x: f"template_{template_name}_param_{x}"
+                    template_config = render_controls(
+                        columns,
+                        template_config,
+                        key_formatter=temp_key_formatter,
+                        defaults=template_defaults,
+                    )
                     st.divider()
                     st.markdown("#### Schedules")
                     ix = st.selectbox(
