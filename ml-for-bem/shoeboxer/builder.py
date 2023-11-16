@@ -746,6 +746,24 @@ class ShoeBox:
         )
         return ep_df_hourly, ep_df_monthly
 
+    def postprocess(self, results_df: pd.DataFrame):
+        df: pd.DataFrame = results_df["System"]
+        df = df.rename(
+            columns={
+                "PERIMETER IDEAL LOADS AIR": "Perimeter",
+                "CORE IDEAL LOADS AIR": "Core",
+                "Zone Ideal Loads Supply Air Total Cooling Energy": "Cooling",
+                "Zone Ideal Loads Supply Air Total Heating Energy": "Heating",
+            },
+        )
+        df = df.unstack()
+        df = df * JOULES_TO_KWH
+        perimeter_area = self.shoebox_config.width * self.shoebox_config.perim_depth
+        core_area = self.shoebox_config.width * self.shoebox_config.core_depth
+        df["Perimeter"] = df.loc["Perimeter"] / perimeter_area
+        df["Core"] = df.loc["Core"] / core_area
+        return df
+
     @classmethod
     def error_report(cls, idf):
         SEVERE = "** Severe  **"
