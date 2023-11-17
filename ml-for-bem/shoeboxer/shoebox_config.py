@@ -1,3 +1,7 @@
+import numpy as np
+from utils.constants import SHADING_DIV_SIZE
+
+
 class ShoeboxConfiguration:
     """
     Stateful class for shoebox object args
@@ -23,7 +27,7 @@ class ShoeboxConfiguration:
         Builder throws error if core is less than 2.
         Set adiabatic partition flag. Check that this works - adiabatic wall & various core depths.
         """
-        pass
+        self.shading_vect = np.zeros(SHADING_DIV_SIZE)
 
     @classmethod
     def from_umi(cls):
