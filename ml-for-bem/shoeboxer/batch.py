@@ -1,3 +1,4 @@
+from concurrent.futures import ProcessPoolExecutor
 import os
 from typing import Literal, List, Union
 import click
@@ -12,6 +13,7 @@ from utils.constants import (
 import json
 from pathlib import Path
 import numpy as np
+from tqdm.autonotebook import tqdm
 from ladybug.epw import EPW
 from shoeboxer.shoebox_config import ShoeboxConfiguration
 from shoeboxer.builder import ShoeBox, template_dict
@@ -110,13 +112,15 @@ def simulate(
     monthly_df = sb.postprocess(monthly_df)
 
     shutil.rmtree(output_dir)
-    return sb_name, monthly_df
+    return [sb_name, monthly_df]
 
 
 def batch_sim(
     features: pd.DataFrame,
     timeseries: np.ndarray,
     climate: Union[Path, str],
+    parallel: int = 0,
+    psort: str = None,
 ):
     """
     Run a batch simulation which consumes the dataframe
@@ -134,28 +138,69 @@ def batch_sim(
     results = pd.DataFrame()
 
     # iterate over the dataframe
-    for index, row in features.iterrows():
-        id, monthly_results = simulate(
-            features=row,
-            timeseries=timeseries,
-            climate=climate,
-        )
-
-        if len(results) == 0:
-            # set the result
-            results = pd.DataFrame(monthly_results)
-            results = results.T
-            # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
-            index = (id, *(v for v in row.values))
-            results.index = pd.MultiIndex.from_tuples(
-                [index],
-                names=["id"] + row.index.values.tolist(),
+    if parallel == 0:
+        for index, row in tqdm(features.iterrows()):
+            id, monthly_results = simulate(
+                features=row,
+                timeseries=timeseries,
+                climate=climate,
             )
-        else:
-            # make the multi-index of features
-            index = (id, *(v for v in row.values))
-            # set the result
-            results.loc[index] = monthly_results
+
+            if len(results) == 0:
+                # set the result
+                results = pd.DataFrame(monthly_results)
+                results = results.T
+                # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
+                index = (id, *(v for v in row.values))
+                results.index = pd.MultiIndex.from_tuples(
+                    [index],
+                    names=["id"] + row.index.values.tolist(),
+                )
+            else:
+                # make the multi-index of features
+                index = (id, *(v for v in row.values))
+                # set the result
+                results.loc[index] = monthly_results
+    else:
+        assert (
+            parallel > 0 and parallel < 32
+        ) or parallel == -1, f"parallel must be -1 or between 0 and 32, not {parallel}"
+        assert psort is not None, "psort must be specified in parallel mode"
+        run_dict = {}
+        for index, row in features.iterrows():
+            run_dict[index] = {
+                "features": row,
+                "timeseries": timeseries,
+                "climate": climate,
+            }
+        # make an executor using parallel cores
+
+        p_results = parallel_process(
+            run_dict,
+            simulate,
+            use_kwargs=True,
+            processors=parallel,
+            # executor=ProcessPoolExecutor,
+        )
+        for ix, (id, result) in p_results.items():
+            if len(results) == 0:
+                # set the result
+                row = features.loc[ix]
+                results = pd.DataFrame(result)
+                results = results.T
+                # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
+                index = (id, *(v for v in row.values))
+                results.index = pd.MultiIndex.from_tuples(
+                    [index],
+                    names=["id"] + row.index.values.tolist(),
+                )
+            else:
+                # make the multi-index of features
+                row = features.loc[ix]
+                index = (id, *(v for v in row.values))
+                # set the result
+                results.loc[index] = result
+        results = results.sort_index(level=psort)
 
     return results
 
