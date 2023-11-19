@@ -162,33 +162,52 @@ class Conv1DStage(nn.Module):
 
 
 class Conv1DStageConfig:
-    def __init__(self, in_channels: int, out_channels: int, kernel_sizes: List[int]):
+    def __init__(self, in_channels: int, out_channels: int, kernel_sizes: List[int], out_length: int = -1):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_sizes = kernel_sizes
+        self.out_length = out_length
 
     def __repr__(self) -> str:
         s = self.__class__.__name__ + "("
         s += "input_channels={in_channels}"
         s += ", out_channels={out_channels}"
         s += ", kernel_sizes={kernel_sizes}"
+        s += ", out_length={out_length}"
         s += ")"
         return s.format(**self.__dict__)
 
     @classmethod
+    def Large(cls, in_channels):
+        return [
+            cls(in_channels, 128, [49, 25, 9], 1024),
+            cls(128, 128, [49, 25, 9], 512),
+            cls(128, 128, [49, 25, 9], 128),
+            cls(128, 128, [49, 25, 9], 12),
+        ]
+    
+    @classmethod
     def Base(cls, in_channels):
         return [
-            cls(in_channels, 64, [49, 25, 9]),
-            cls(64, 128, [49, 25, 9]),
-            cls(128, 128, [49, 25, 9]),
+            cls(in_channels, 128, [25, 16, 9], 1024),
+            cls(128, 128, [25, 16, 9], 128),
+            cls(128, 128, [25, 16, 9], 12),
+        ]
+    
+    @classmethod
+    def Medium(cls, in_channels):
+        return [
+            cls(in_channels, 128, [25, 16, 9], 1024),
+            cls(128, 128, [9, 9, 9], 128),
+            cls(128, 128, [9, 9, 9], 12),
         ]
 
     @classmethod
     def Small(cls, in_channels):
         return [
-            cls(in_channels, 16, [25, 16, 9]),
-            cls(16, 32, [25, 16, 9]),
-            cls(32, 64, [25, 16, 9]),
+            cls(in_channels, 16, [25, 16, 9], 1024),
+            cls(16, 32, [25, 16, 9], 128),
+            cls(32, 64, [25, 16, 9], 12),
         ]
     
     @classmethod
@@ -207,7 +226,35 @@ class Conv1DStageConfig:
             cls(16, 128, [16, 9, 4]),
         ]
 
-
+class ConvNet2(nn.Module):
+    def __init__(
+        self,
+        stage_configs: List[Conv1DStageConfig],
+        latent_channels: int,
+        latent_length: int,
+    ):
+        super().__init__()
+        self.stage_configs = stage_configs
+        stages: List[nn.Module] = []
+        for stage_conf in self.stage_configs:
+            stages.append(
+                Conv1DStage(
+                    in_channels=stage_conf.in_channels,
+                    out_channels=stage_conf.out_channels,
+                    kernel_sizes=stage_conf.kernel_sizes,
+                )
+            )
+            stages.append(nn.AdaptiveAvgPool1d(stage_conf.out_length))
+        self.stages = nn.Sequential(*stages)
+        self.final = nn.Sequential(
+            Conv1DBlock(
+                in_channels=self.stage_configs[-1].out_channels,
+                out_channels=latent_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0,
+            )
+        )
 
 class ConvNet(nn.Module):
     def __init__(
