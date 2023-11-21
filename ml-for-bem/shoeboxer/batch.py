@@ -120,7 +120,7 @@ def batch_sim(
     timeseries: np.ndarray,
     climate: Union[Path, str],
     parallel: int = 0,
-    psort: str = None,
+    psort: str = "sim_idx",
 ):
     """
     Run a batch simulation which consumes the dataframe
@@ -129,6 +129,8 @@ def batch_sim(
         features (pd.DataFrame): dataframe of features which are tabular (e.g. geometry and hsp and csp)
         timeseries (np.ndarray): array of schedules data (e.g. people, lighting, equipment, etc.) for a single archetype (3,8760)
         climate (Union[Path, str]): path to epw file or string of climate zone name
+        parallel (int, optional): number of threads to use in parallel. Defaults to 0.
+        psort (str, optional): column name to sort the results by. Defaults to "sim_idx".
 
     Returns:
         results (pd.DataFrame): dataframe of results
@@ -139,6 +141,7 @@ def batch_sim(
 
     # iterate over the dataframe
     if parallel == 0:
+        i = 0
         for index, row in tqdm(features.iterrows()):
             id, monthly_results = simulate(
                 features=row,
@@ -151,16 +154,17 @@ def batch_sim(
                 results = pd.DataFrame(monthly_results)
                 results = results.T
                 # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
-                index = (id, *(v for v in row.values))
+                index = (id, i, *(v for v in row.values))
                 results.index = pd.MultiIndex.from_tuples(
                     [index],
-                    names=["id"] + row.index.values.tolist(),
+                    names=["id", "sim_idx"] + row.index.values.tolist(),
                 )
             else:
                 # make the multi-index of features
-                index = (id, *(v for v in row.values))
+                index = (id, i, *(v for v in row.values))
                 # set the result
                 results.loc[index] = monthly_results
+            i = i + 1
     else:
         assert (
             parallel > 0 and parallel < 32
@@ -189,15 +193,15 @@ def batch_sim(
                 results = pd.DataFrame(result)
                 results = results.T
                 # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
-                index = (id, *(v for v in row.values))
+                index = (id, ix, *(v for v in row.values))
                 results.index = pd.MultiIndex.from_tuples(
                     [index],
-                    names=["id"] + row.index.values.tolist(),
+                    names=["id", "sim_idx"] + row.index.values.tolist(),
                 )
             else:
                 # make the multi-index of features
                 row = features.loc[ix]
-                index = (id, *(v for v in row.values))
+                index = (id, ix, *(v for v in row.values))
                 # set the result
                 results.loc[index] = result
         results = results.sort_index(level=psort)
