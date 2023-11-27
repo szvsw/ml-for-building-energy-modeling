@@ -1,9 +1,12 @@
-<mxfile host="app.diagrams.net" modified="2023-11-27T18:32:22.463Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0" etag="ks8pboTKuoA3iVd5WHmt" version="22.1.4" type="github" pages="9">
+<mxfile host="app.diagrams.net" modified="2023-11-27T18:33:00.798Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0" etag="3KSR-Mx-NXfcyc5XHMxo" version="22.1.4" type="github" pages="9">
   <diagram name="scratchpad" id="byVWfkzwb0T3H2y0rSpV">
-    <mxGraphModel dx="2868" dy="1640" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+    <mxGraphModel dx="2049" dy="1171" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="C93A8t_isRB1prxncBy4-2" value="Placeholder document" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
