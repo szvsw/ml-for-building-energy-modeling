@@ -108,7 +108,7 @@ def simulate(
     """
     Run Simulation
     """
-    hourly_df, monthly_df = sb.simulate(idf)
+    hourly_df, monthly_df = sb.simulate(idf, output_dir=output_dir)
     monthly_df = sb.postprocess(monthly_df)
 
     shutil.rmtree(output_dir)
