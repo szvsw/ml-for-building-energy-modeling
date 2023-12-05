@@ -108,8 +108,12 @@ def simulate(
     """
     Run Simulation
     """
-    hourly_df, monthly_df = sb.simulate(idf, output_dir=output_dir)
-    monthly_df = sb.postprocess(monthly_df)
+    hourly_df, monthly_df = sb.simulate(idf)
+    errors, _ = sb.error_report(idf)
+    if len(errors) > 0:
+        monthly_df = errors
+    else:
+        monthly_df = sb.postprocess(monthly_df)
 
     shutil.rmtree(output_dir)
     return [sb_name, monthly_df]
@@ -182,24 +186,30 @@ def batch_sim(
             processors=parallel,
             # executor=ProcessPoolExecutor,
         )
-        for ix, (id, result) in p_results.items():
-            if len(results) == 0:
-                # set the result
-                row = features.loc[ix]
-                results = pd.DataFrame(result)
-                results = results.T
-                # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
-                index = (id, *(v for v in row.values))
-                results.index = pd.MultiIndex.from_tuples(
-                    [index],
-                    names=["id"] + row.index.values.tolist(),
-                )
-            else:
-                # make the multi-index of features
-                row = features.loc[ix]
-                index = (id, *(v for v in row.values))
-                # set the result
-                results.loc[index] = result
+        for ix, r in p_results.items():
+            try:
+                idx = r[0]
+                result = r[1]
+                if len(results) == 0:
+                    # set the result
+                    row = features.loc[ix]
+                    results = pd.DataFrame(result)
+                    results = results.T
+                    # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
+                    index = (idx, *(v for v in row.values))
+                    results.index = pd.MultiIndex.from_tuples(
+                        [index],
+                        names=["id"] + row.index.values.tolist(),
+                    )
+                else:
+                    # make the multi-index of features
+                    row = features.loc[ix]
+                    index = (idx, *(v for v in row.values))
+                    # set the result
+                    results.loc[index] = result
+            except:
+                logging.error(p_results)
+                results = pd.DataFrame(r)
         results = results.sort_index(level=psort)
 
     return results
