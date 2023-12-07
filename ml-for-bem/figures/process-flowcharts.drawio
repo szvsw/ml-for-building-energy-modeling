@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-12-06T17:03:51.854Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" etag="bv6LBkqq3crz1J5_uw5N" version="22.1.6" type="github" pages="13">
+<mxfile host="app.diagrams.net" modified="2023-12-07T17:38:35.221Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" etag="P631gpWxr-wAlqZOEDa7" version="22.1.6" type="github" pages="13">
   <diagram name="scratchpad" id="byVWfkzwb0T3H2y0rSpV">
     <mxGraphModel dx="1434" dy="828" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
       <root>
@@ -824,7 +824,7 @@
         <mxCell id="hrOl93r4M9CM_-W3TmWp-108" value="climate timeseries" style="rounded=1;whiteSpace=wrap;html=1;perimeterSpacing=48;" vertex="1" parent="1">
           <mxGeometry x="1410" y="370" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="hrOl93r4M9CM_-W3TmWp-109" value="depthwise&lt;br&gt;conv + skip" style="rounded=1;whiteSpace=wrap;html=1;perimeterSpacing=48;" vertex="1" parent="1">
+        <mxCell id="hrOl93r4M9CM_-W3TmWp-109" value="pointwise&lt;br&gt;conv + skip" style="rounded=1;whiteSpace=wrap;html=1;perimeterSpacing=48;" vertex="1" parent="1">
           <mxGeometry x="1420" y="380" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="hrOl93r4M9CM_-W3TmWp-116" value="cooling/heating&lt;br&gt;loads" style="rounded=1;whiteSpace=wrap;html=1;perimeterSpacing=12;" vertex="1" parent="1">
@@ -836,7 +836,7 @@
         <mxCell id="hrOl93r4M9CM_-W3TmWp-119" value="climate timeseries" style="rounded=1;whiteSpace=wrap;html=1;perimeterSpacing=48;" vertex="1" parent="1">
           <mxGeometry x="1650" y="350" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="hrOl93r4M9CM_-W3TmWp-120" value="depthwise&lt;br&gt;conv + skip" style="rounded=1;whiteSpace=wrap;html=1;perimeterSpacing=48;" vertex="1" parent="1">
+        <mxCell id="hrOl93r4M9CM_-W3TmWp-120" value="pointwise&lt;br&gt;conv + skip" style="rounded=1;whiteSpace=wrap;html=1;perimeterSpacing=48;" vertex="1" parent="1">
           <mxGeometry x="1660" y="360" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
