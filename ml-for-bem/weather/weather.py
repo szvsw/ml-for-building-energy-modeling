@@ -183,16 +183,36 @@ def extract(
         # roll the azimuths and elevations accoring to the utc offset
         azimuths = np.roll(azimuths, int(utc_offset_hours))
         elevations = np.roll(elevations, int(utc_offset_hours))
+        azimuths_cos = np.cos(np.radians(azimuths))
+        azimuths_sin = np.sin(np.radians(azimuths))
+        elevations_cos = np.cos(np.radians(elevations))
+        elevations_sin = np.sin(np.radians(elevations))
 
     for channel_name in timeseries_names:
         if channel_name == "solar_azimuth":
             channels.append(np.array(azimuths))
+        elif channel_name == "solar_azimuth_cos":
+            channels.append(azimuths_cos)
+        elif channel_name == "solar_azimuth_sin":
+            channels.append(azimuths_sin)
+        elif channel_name == "solar_elevation_cos":
+            channels.append(elevations_cos)
+        elif channel_name == "solar_elevation_sin":
+            channels.append(elevations_sin)
         elif channel_name == "solar_elevation":
             channels.append(np.array(elevations))
         elif channel_name == "latitude":
             channels.append(np.array([latitude] * 8760))
         elif channel_name == "longitude":
             channels.append(np.array([longitude] * 8760))
+        elif channel_name == "latitude_cos":
+            channels.append(np.cos(np.radians(np.array([latitude] * 8760))))
+        elif channel_name == "latitude_sin":
+            channels.append(np.sin(np.radians(np.array([latitude] * 8760))))
+        elif channel_name == "longitude_cos":
+            channels.append(np.cos(np.radians(np.array([longitude] * 8760))))
+        elif channel_name == "longitude_sin":
+            channels.append(np.sin(np.radians(np.array([longitude] * 8760))))
         else:
             channel = np.array(getattr(epw, channel_name).values)
             channels.append(channel)
@@ -225,7 +245,7 @@ if __name__ == "__main__":
     s3 = boto3.client("s3")
 
     bucket = "ml-for-bem"
-    experiment_name = "weather/v1"
+    experiment_name = "weather/v2"
     file_name = "global_climate_array"
     bucket_destination = f"{experiment_name}/{file_name}.npy"
 
@@ -242,6 +262,14 @@ if __name__ == "__main__":
         "diffuse_horizontal_radiation",
         "solar_azimuth",
         "solar_elevation",
+        "solar_azimuth_cos",
+        "solar_azimuth_sin",
+        "solar_elevation_cos",
+        "solar_elevation_sin",
+        "latitude_cos",
+        "latitude_sin",
+        "longitude_cos",
+        "longitude_sin",
         "latitude",
         "longitude",
     ]

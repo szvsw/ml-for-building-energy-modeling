@@ -32,6 +32,7 @@ def simulate(
     features: pd.Series,
     timeseries: np.ndarray,
     climate: Union[Path, str],
+    folder: str = None,
 ):
     parameter_dict = features.to_dict()
     hsp = parameter_dict["HeatingSetpoint"]
@@ -92,6 +93,8 @@ def simulate(
     """
     sb_name = str(uuid4())
     output_dir = data_root / "sim_results" / sb_name
+    if folder is not None:
+        output_dir = Path(folder) / output_dir
     os.makedirs(output_dir, exist_ok=True)
 
     sb = ShoeBox(
@@ -124,7 +127,8 @@ def batch_sim(
     timeseries: np.ndarray,
     climate: Union[Path, str],
     parallel: int = 0,
-    psort: str = None,
+    psort: str = "sim_idx",
+    folder: str = None,
 ):
     """
     Run a batch simulation which consumes the dataframe
@@ -133,6 +137,8 @@ def batch_sim(
         features (pd.DataFrame): dataframe of features which are tabular (e.g. geometry and hsp and csp)
         timeseries (np.ndarray): array of schedules data (e.g. people, lighting, equipment, etc.) for a single archetype (3,8760)
         climate (Union[Path, str]): path to epw file or string of climate zone name
+        parallel (int, optional): number of threads to use in parallel. Defaults to 0.
+        psort (str, optional): column name to sort the results by. Defaults to "sim_idx".
 
     Returns:
         results (pd.DataFrame): dataframe of results
@@ -143,11 +149,13 @@ def batch_sim(
 
     # iterate over the dataframe
     if parallel == 0:
+        i = 0
         for index, row in tqdm(features.iterrows()):
             id, monthly_results = simulate(
                 features=row,
                 timeseries=timeseries,
                 climate=climate,
+                folder=folder,
             )
 
             if len(results) == 0:
@@ -155,16 +163,17 @@ def batch_sim(
                 results = pd.DataFrame(monthly_results)
                 results = results.T
                 # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
-                index = (id, *(v for v in row.values))
+                index = (id, i, *(v for v in row.values))
                 results.index = pd.MultiIndex.from_tuples(
                     [index],
-                    names=["id"] + row.index.values.tolist(),
+                    names=["id", "sim_idx"] + row.index.values.tolist(),
                 )
             else:
                 # make the multi-index of features
-                index = (id, *(v for v in row.values))
+                index = (id, i, *(v for v in row.values))
                 # set the result
                 results.loc[index] = monthly_results
+            i = i + 1
     else:
         assert (
             parallel > 0 and parallel < 32
@@ -186,30 +195,25 @@ def batch_sim(
             processors=parallel,
             # executor=ProcessPoolExecutor,
         )
-        for ix, r in p_results.items():
-            try:
-                idx = r[0]
-                result = r[1]
-                if len(results) == 0:
-                    # set the result
-                    row = features.loc[ix]
-                    results = pd.DataFrame(result)
-                    results = results.T
-                    # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
-                    index = (idx, *(v for v in row.values))
-                    results.index = pd.MultiIndex.from_tuples(
-                        [index],
-                        names=["id"] + row.index.values.tolist(),
-                    )
-                else:
-                    # make the multi-index of features
-                    row = features.loc[ix]
-                    index = (idx, *(v for v in row.values))
-                    # set the result
-                    results.loc[index] = result
-            except:
-                logging.error(p_results)
-                results = pd.DataFrame(r)
+        for ix, (id, result) in p_results.items():
+            if len(results) == 0:
+                # set the result
+                row = features.loc[ix]
+                results = pd.DataFrame(result)
+                results = results.T
+                # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
+                index = (id, ix, *(v for v in row.values))
+                results.index = pd.MultiIndex.from_tuples(
+                    [index],
+                    names=["id", "sim_idx"] + row.index.values.tolist(),
+                )
+            else:
+                # make the multi-index of features
+                row = features.loc[ix]
+                index = (id, ix, *(v for v in row.values))
+                # set the result
+                results.loc[index] = result
+                
         results = results.sort_index(level=psort)
 
     return results

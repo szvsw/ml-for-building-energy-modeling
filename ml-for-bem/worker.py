@@ -214,7 +214,7 @@ def sample_and_simulate(
         space_config["schedules_seed"] = {
             "option_count": default_schedules.shape[0],
             "mode": "Onehot",
-            "name": "schedules_seed"
+            "name": "schedules_seed",
         }
 
     """
@@ -242,21 +242,8 @@ def sample_and_simulate(
     Run Simulation
     """
     hourly_df, monthly_df = sb.simulate(idf)
-    monthly_df: pd.DataFrame = monthly_df["System"]
-    monthly_df = monthly_df.rename(
-        columns={
-            "PERIMETER IDEAL LOADS AIR": "Perimeter",
-            "CORE IDEAL LOADS AIR": "Core",
-            "Zone Ideal Loads Supply Air Total Cooling Energy": "Cooling",
-            "Zone Ideal Loads Supply Air Total Heating Energy": "Heating",
-        },
-    )
-    monthly_df = monthly_df.unstack()
-    monthly_df = monthly_df * JOULES_TO_KWH
-    perimeter_area = shoebox_config.width * shoebox_config.perim_depth
-    core_area = shoebox_config.width * shoebox_config.core_depth
-    monthly_df["Perimeter"] = monthly_df.loc["Perimeter"] / perimeter_area
-    monthly_df["Core"] = monthly_df.loc["Core"] / core_area
+    hourly_df = sb.postprocess(hourly_df)
+    monthly_df = sb.postprocess(monthly_df)
 
     """
     Check For Errors
@@ -311,7 +298,7 @@ def sample_and_simulate(
     #         err = f.read()
 
     shutil.rmtree(output_dir)
-    return sb_name, simple_dict, monthly_df, err, space_config
+    return sb_name, simple_dict, monthly_df, hourly_df, err, space_config
 
 
 def batch_sim(
@@ -334,6 +321,7 @@ def batch_sim(
 
     Returns:
         results (pd.DataFrame): dataframe of results
+        results_hourly (pd.DataFrame): dataframe of results
         err_list (list): list of errors
         space_config (dict): dictionary of space config
 
@@ -341,6 +329,7 @@ def batch_sim(
 
     # make a dataframe to store results
     results = pd.DataFrame()
+    results_hourly = pd.DataFrame()
 
     # make a list to store errors
     err_list = []
@@ -360,7 +349,14 @@ def batch_sim(
 
         # run the sim
         try:
-            id, simple_dict, monthly_results, err, space_config = sample_and_simulate(
+            (
+                id,
+                simple_dict,
+                monthly_results,
+                hourly_results,
+                err,
+                space_config,
+            ) = sample_and_simulate(
                 train_or_test=train_or_test,
                 epw_idxs=epw_idxs,
                 schedules_mode=schedules_mode,
@@ -374,10 +370,16 @@ def batch_sim(
             if len(results) == 0:
                 # set the result
                 results = pd.DataFrame(monthly_results)
+                results_hourly = pd.DataFrame(hourly_results)
                 results = results.T
+                results_hourly = results_hourly.T
                 # set the index to be a multi index with column names from keys of simple_dict and values from values of simple_dict
                 index = (id, *(v for v in simple_dict.values()))
                 results.index = pd.MultiIndex.from_tuples(
+                    [index],
+                    names=["id"] + list(simple_dict.keys()),
+                )
+                results_hourly.index = pd.MultiIndex.from_tuples(
                     [index],
                     names=["id"] + list(simple_dict.keys()),
                 )
@@ -386,31 +388,49 @@ def batch_sim(
                 index = (id, *(v for v in simple_dict.values()))
                 # set the result
                 results.loc[index] = monthly_results
+                results_hourly.loc[index] = hourly_results
                 logger.info(f"Successfully Saved Results! {len(results)}\n\n")
             if err != None:
                 # cache any errors
                 err_list.append((id, err))
 
-    return results, err_list, space_config
+    return results, results_hourly, err_list, space_config
 
 
-def save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experiment_name):
+def save_and_upload_batch(
+    batch_dataframe: pd.DataFrame,
+    batch_dataframe_hourly: pd.DataFrame,
+    errs,
+    space_config,
+    bucket,
+    experiment_name,
+    save_hourly=False,
+):
     """
     Save the batch results to a file and upload to S3
 
     Args:
         batch_dataframe (pd.DataFrame): dataframe of batch results
+        batch_dataframe_hourly (pd.DataFrame): dataframe of batch results
         errs (list): list of errors
         bucket (str): S3 bucket name
         experiment_name (str): name of experiment
+        save_hourly (bool, optional): whether to save hourly results. Defaults to False.
     """
     # this fargate/batch task has its own id
     run_name = str(uuid4())
     output_folder = data_root / "batch_results"
+    output_folder_hourly = data_root / "batch_results_hourly"
     os.makedirs(output_folder, exist_ok=True)
+    os.makedirs(output_folder_hourly, exist_ok=True)
     output_path = output_folder / f"{run_name}.hdf"
+    output_path_hourly = output_folder_hourly / f"{run_name}.hdf"
 
+    batch_dataframe = batch_dataframe.astype(np.float32)
     batch_dataframe.to_hdf(output_path, key="batch_results")
+    if save_hourly:
+        batch_dataframe_hourly = batch_dataframe_hourly.astype(np.float32)
+        batch_dataframe_hourly.to_hdf(output_path_hourly, key="batch_results")
 
     logger.info("Connecting to bucket...")
     client = boto3.client("s3")
@@ -421,6 +441,12 @@ def save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experimen
         Bucket=bucket,
         Key=f"{experiment_name}/monthly/{run_name}.hdf",
     )
+    if save_hourly:
+        client.upload_file(
+            Filename=str(output_path_hourly),
+            Bucket=bucket,
+            Key=f"{experiment_name}/hourly/{run_name}.hdf",
+        )
     logger.info("Uploading Results Complete")
 
     if len(errs) > 0:
@@ -472,11 +498,26 @@ def save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experimen
     default="from_seed",
     help="If 'from_seed', then schedules are generated dyanmically.  Otherwise, schedules are sampled from a pre-generated list.",
 )
-def main(n, bucket, experiment_name, train_or_test, epw_idxs, schedules_mode):
-    batch_dataframe, errs, space_config = batch_sim(
+@click.option(
+    "--save_hourly",
+    default=False,
+    help="Whether to save hourly results",
+)
+def main(
+    n, bucket, experiment_name, train_or_test, epw_idxs, schedules_mode, save_hourly
+):
+    batch_dataframe, batch_dataframe_hourly, errs, space_config = batch_sim(
         n, train_or_test, epw_idxs, schedules_mode
     )
-    save_and_upload_batch(batch_dataframe, errs, space_config, bucket, experiment_name)
+    save_and_upload_batch(
+        batch_dataframe,
+        batch_dataframe_hourly,
+        errs,
+        space_config,
+        bucket,
+        experiment_name,
+        save_hourly,
+    )
 
 
 if __name__ == "__main__":
