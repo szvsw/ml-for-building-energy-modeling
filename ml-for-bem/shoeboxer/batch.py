@@ -32,6 +32,7 @@ def simulate(
     features: pd.Series,
     timeseries: np.ndarray,
     climate: Union[Path, str],
+    folder: str = None,
 ):
     parameter_dict = features.to_dict()
     hsp = parameter_dict["HeatingSetpoint"]
@@ -92,6 +93,8 @@ def simulate(
     """
     sb_name = str(uuid4())
     output_dir = data_root / "sim_results" / sb_name
+    if folder is not None:
+        output_dir = Path(folder) / output_dir
     os.makedirs(output_dir, exist_ok=True)
 
     sb = ShoeBox(
@@ -121,6 +124,7 @@ def batch_sim(
     climate: Union[Path, str],
     parallel: int = 0,
     psort: str = "sim_idx",
+    folder: str = None,
 ):
     """
     Run a batch simulation which consumes the dataframe
@@ -147,6 +151,7 @@ def batch_sim(
                 features=row,
                 timeseries=timeseries,
                 climate=climate,
+                folder=folder,
             )
 
             if len(results) == 0:
