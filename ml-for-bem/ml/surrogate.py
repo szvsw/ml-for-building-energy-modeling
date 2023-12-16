@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Union, Tuple
 
 import lightning.pytorch as pl
 import torch
@@ -9,7 +9,7 @@ import torch.optim as optim
 
 import wandb
 from ml.data import MinMaxTransform, StdNormalTransform, WeatherStdNormalTransform
-from ml.networks import Conv1DStageConfig, ConvNet, EnergyCNN2, ConvNet2
+from ml.networks import Conv1DStageConfig, ConvNet, EnergyCNN2, ConvNet2, Conv1DNextNet
 
 
 class MultiModalModel(nn.Module):
@@ -67,7 +67,12 @@ class SingleModalModel(nn.Module):
     A model that takes in building features, climate data, and schedules and predicts energy
     """
 
-    def __init__(self, timeseries_net: nn.Module, energy_net: nn.Module):
+    def __init__(
+        self,
+        timeseries_net: nn.Module,
+        energy_net: nn.Module,
+        include_days: bool = False,
+    ):
         """
         Args:
             timeseries_net: a network that takes in timeseries data (batch_size, n_channels, n_timesteps) and outputs a latent representation
@@ -78,6 +83,7 @@ class SingleModalModel(nn.Module):
         # store the nets
         self.timeseries_net = timeseries_net
         self.energy_net = energy_net
+        self.include_days = include_days
 
     def forward(
         self,
@@ -106,11 +112,67 @@ class SingleModalModel(nn.Module):
 
         # Concatenate the building features and latent representation along the channel axis
         latent = torch.cat([building_features, latent], dim=1)
-
+        if self.include_days:
+            days = (
+                torch.tensor(
+                    [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+                    device=latent.device,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+                .repeat(latent.shape[0], 1, 1)
+            )
+            days = (days - 28) / 3
+            latent = torch.cat([latent, days], dim=1)
 
         # Pass the concatenated input through the energy net to get energy predictions
         preds = self.energy_net(latent)
 
+        return preds
+
+
+# TODO: configurable activation
+class SingleNetModel(nn.Module):
+    def __init__(
+        self,
+        in_dim: int,
+        intermediate_activation: bool = False,
+        skip_normalization: bool = False,
+        norm_layer: Literal["batch", "layer"] = "batch",
+        flatten: bool = False,
+        final_shape: Tuple[int, int] = (4, 12),
+    ):
+        super().__init__()
+        self.net = Conv1DNextNet(
+            activation=nn.SELU,
+            in_dim=in_dim,
+            final_shape=final_shape,
+            skip_normalization=skip_normalization,
+            intermediate_activation=intermediate_activation,
+            flatten=flatten,
+            expansion_factor=1,
+            norm_layer=norm_layer,
+        )
+
+    def forward(
+        self,
+        building_features: torch.Tensor,
+        climates: torch.Tensor,
+        schedules: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Predict energy from building features, climate data, and schedules
+        Args:
+            building_features: (batch_size, n_features)
+            climates: (batch_size, n_climate_channels, n_timesteps)
+            schedules: (batch_size, n_schedule_channels, n_timesteps)
+        """
+        # TODO: this could happen in a dataloader
+        building_features_ts = building_features.unsqueeze(-1)
+        building_features_ts = building_features_ts.repeat(1, 1, climates.shape[-1])
+        # Combine the climate and schedules along the timeseries channel axis
+        timeseries = torch.cat([climates, building_features_ts, schedules], dim=1)
+        preds = self.net(timeseries)
         return preds
 
 
@@ -127,8 +189,10 @@ class Surrogate(pl.LightningModule):
         target_transform: Union[MinMaxTransform, StdNormalTransform],
         weather_transform: WeatherStdNormalTransform,
         space_config: dict,
-        net_config: Literal["Large", "Base", "Medium", "Small", "Mini", "MiniFunnel"] = "Small",
-        modality: Literal["Single", "Multi"] = "Multi",
+        net_config: Literal[
+            "Large", "Base", "Medium", "Meso", "Small", "Mini", "MiniOdd", "MiniFunnel"
+        ] = "Small",
+        modality: Literal["Single", "Multi", "SingleNet"] = "Multi",
         lr: float = 1e-3,
         lr_gamma: float = 0.5,
         latent_factor: int = 4,
@@ -139,6 +203,9 @@ class Surrogate(pl.LightningModule):
         static_features_per_input: int = 10,
         timeseries_channels_per_output: int = 4,
         timeseries_steps_per_output: int = 12,
+        custom_pooling: bool = False,
+        big_skip_enabled: bool = False,
+        include_days: bool = False,
     ):
         """
         Create the Lighting Module for managing the surrogate
@@ -148,6 +215,7 @@ class Surrogate(pl.LightningModule):
             weather_transform (nn.Module): a transform to apply to weather data.  Only used in predict step; Training DataLoaders handle weather transforms.
             space_config (dict): the configuration of the design space
             net_config (Literal["Base", "Small", "Mini", "MiniFunnel"], optional): the configuration of the timeseries net architecture.  Defaults to "Small".
+            modality (Literal["Single", "Multi", "SingleNet"], optional): the modality of the surrogate.  Defaults to "Multi".
             lr (float, optional): the learning rate.  Defaults to 1e-3.
             lr_gamma (float, optional): the learning rate decay.  Defaults to 0.5. Called after each epoch completes.
             latent_factor (int, optional): The timeseries net will output a latent representation with `latent_factor * static_features_per_input` channels.  Defaults to 4.
@@ -158,6 +226,8 @@ class Surrogate(pl.LightningModule):
             static_features_per_input (int, optional): The number of static features in the input.  Defaults to 10.
             timeseries_channels_per_output (int, optional): The number of timeseries channels in the output.  Defaults to 4.
             timeseries_steps_per_output (int, optional): The number of timesteps in the output.  Defaults to 12.
+            custom_pooling (bool, optional): Whether to use custom pooling in the timeseries net.  Defaults to False.
+            big_skip_enabled (bool, optional): Whether to use big skip connections in the timeseries net.  Defaults to False.
 
         Returns:
             Surrogate: the PyTorch Lightning Module which manages the surrogate model
@@ -173,65 +243,108 @@ class Surrogate(pl.LightningModule):
         self.space_config = space_config
         self.lr = lr
         self.lr_gamma = lr_gamma
-        self.net_config = net_config
         self.modality = modality
         self.static_features_per_input = static_features_per_input
         self.weather_and_schedules_channels_per_input = timeseries_channels_per_input
-        self.timeseries_channels_per_input = (
-            timeseries_channels_per_input
-            if modality == "Multi"
-            else timeseries_channels_per_input + static_features_per_input
-        )
-        self.latent_factor = latent_factor
-        self.latent_channels = self.static_features_per_input * self.latent_factor
-        self.energy_cnn_in_size = self.latent_channels + self.static_features_per_input #* (1 if self.modality ==  "Multi" else 0)
         self.timeseries_channels_per_output = timeseries_channels_per_output
         self.timeseries_steps_per_output = timeseries_steps_per_output
-        self.energy_cnn_feature_maps = energy_cnn_feature_maps
-        self.energy_cnn_n_blocks = energy_cnn_n_blocks
-        self.energy_cnn_n_layers = energy_cnn_n_layers
-
-        # Create the configuration for the timeseries net
-        conf = Conv1DStageConfig.Small(self.timeseries_channels_per_input)
-        if self.net_config == "Base":
-            conf = Conv1DStageConfig.Base(self.timeseries_channels_per_input)
-        elif self.net_config == "Mini":
-            conf = Conv1DStageConfig.Mini(self.timeseries_channels_per_input)
-        elif self.net_config == "MiniFunnel":
-            conf = Conv1DStageConfig.MiniFunnel(self.timeseries_channels_per_input)
-        elif self.net_config == "Large":
-            conf = Conv1DStageConfig.Large(self.timeseries_channels_per_input)
-        elif self.net_config == "Medium":
-            conf = Conv1DStageConfig.Medium(self.timeseries_channels_per_input)
-        elif self.net_config != "Small":
-            raise ValueError(f"Unsupported network config {net_config} provided.")
-        self.conf = conf
-
-        # Save hyperparameters
-        self.save_hyperparameters()
+        self.timeseries_channels_per_input = timeseries_channels_per_input
+        self.custom_pooling = custom_pooling
+        self.big_skip_enabled = big_skip_enabled
+        if self.modality in ["SingleNet", "Single"]:
+            self.timeseries_channels_per_input = (
+                self.timeseries_channels_per_input + self.static_features_per_input
+            )
+        elif self.modality == "Multi":
+            self.timeseries_channels_per_input = self.timeseries_channels_per_input
+        else:
+            raise ValueError(f"Unsupported modality '{modality}' provided.")
 
         # Create the timeseries net and energy net
-        net_class = ConvNet if self.modality == "Multi" else ConvNet2
-        timeseries_net = ConvNet(
-            stage_configs=conf,
-            latent_channels=self.latent_channels,
-            latent_length=self.timeseries_steps_per_output,
-        )
+        if self.modality == "SingleNet":
+            # Save hyperparameters
+            self.flatten = False
+            self.skip_normalization = True
+            self.intermediate_activation = False
+            self.norm_layer = "batch"
+            self.save_hyperparameters()
+            in_dim = self.timeseries_channels_per_input
+            final_shape = (
+                self.timeseries_channels_per_output,
+                self.timeseries_steps_per_output,
+            )
+            self.final_shape = final_shape
+            self.model = SingleNetModel(
+                in_dim=in_dim,
+                intermediate_activation=self.intermediate_activation,
+                skip_normalization=self.skip_normalization,
+                norm_layer=self.norm_layer,
+                flatten=self.flatten,
+                final_shape=self.final_shape,
+            )
+        else:
+            self.include_days = include_days
+            self.net_config = net_config
+            self.latent_factor = latent_factor
+            self.latent_channels = self.static_features_per_input * self.latent_factor
+            self.energy_cnn_in_size = (
+                self.latent_channels + self.static_features_per_input + 1
+                if include_days
+                else 0
+            )  # * (1 if self.modality ==  "Multi" else 0)
+            self.energy_cnn_feature_maps = energy_cnn_feature_maps
+            self.energy_cnn_n_blocks = energy_cnn_n_blocks
+            self.energy_cnn_n_layers = energy_cnn_n_layers
 
-        energy_net = EnergyCNN2(
-            in_channels=self.energy_cnn_in_size,
-            out_channels=self.timeseries_channels_per_output,
-            n_feature_maps=self.energy_cnn_feature_maps,
-            n_blocks=self.energy_cnn_n_blocks,
-            n_layers=self.energy_cnn_n_layers,
-        )
+            # Create the configuration for the timeseries net
+            conf = Conv1DStageConfig.Small(self.timeseries_channels_per_input)
+            if self.net_config == "Base":
+                conf = Conv1DStageConfig.Base(self.timeseries_channels_per_input)
+            elif self.net_config == "Mini":
+                conf = Conv1DStageConfig.Mini(self.timeseries_channels_per_input)
+            elif self.net_config == "MiniOdd":
+                conf = Conv1DStageConfig.MiniOdd(self.timeseries_channels_per_input)
+            elif self.net_config == "MiniFunnel":
+                conf = Conv1DStageConfig.MiniFunnel(self.timeseries_channels_per_input)
+            elif self.net_config == "Large":
+                conf = Conv1DStageConfig.Large(self.timeseries_channels_per_input)
+            elif self.net_config == "Medium":
+                conf = Conv1DStageConfig.Medium(self.timeseries_channels_per_input)
+            elif self.net_config == "Meso":
+                conf = Conv1DStageConfig.Meso(self.timeseries_channels_per_input)
+            elif self.net_config != "Small":
+                raise ValueError(f"Unsupported network config {net_config} provided.")
 
-        # Create and store the model
-        self.model = (
-            MultiModalModel(timeseries_net=timeseries_net, energy_net=energy_net)
-            if self.modality == "Multi"
-            else SingleModalModel(timeseries_net=timeseries_net, energy_net=energy_net)
-        )
+            self.conf = conf
+
+            self.save_hyperparameters()
+            net_class = ConvNet if self.modality == "Multi" else ConvNet2
+            timeseries_net = ConvNet(
+                stage_configs=conf,
+                latent_channels=self.latent_channels,
+                latent_length=self.timeseries_steps_per_output,
+                custom_pooling=self.custom_pooling,
+                big_skip_enabled=self.big_skip_enabled,
+            )
+
+            energy_net = EnergyCNN2(
+                in_channels=self.energy_cnn_in_size,
+                out_channels=self.timeseries_channels_per_output,
+                n_feature_maps=self.energy_cnn_feature_maps,
+                n_blocks=self.energy_cnn_n_blocks,
+                n_layers=self.energy_cnn_n_layers,
+            )
+
+            # Create and store the model
+            self.model = (
+                MultiModalModel(timeseries_net=timeseries_net, energy_net=energy_net)
+                if self.modality == "Multi"
+                else SingleModalModel(
+                    timeseries_net=timeseries_net,
+                    energy_net=energy_net,
+                    include_days=self.include_days,
+                )
+            )
 
         # Store the target transform module
         # TODO: ignore these as hyperparams
@@ -407,16 +520,18 @@ if __name__ == "__main__":
     in_lightning_studio = (
         True if os.environ.get("LIGHTNING_ORG", None) is not None else False
     )
+
     bucket = "ml-for-bem"
-    remote_experiment = "full_climate_zone/v7"
-    climate_experiment = "weather/v1"
+    version = "v8"
+    remote_experiment = f"full_climate_zone/{version}"
+    climate_experiment = "weather/v2"
 
     local_data_dir = (
         "/teamspace/s3_connections/ml-for-bem"
         if in_lightning_studio
         else "data/lightning"
     )
-    remote_data_dir = "full_climate_zone/v7/lightning"
+    remote_data_dir = f"full_climate_zone/{version}/lightning"
     remote_data_path = f"s3://{bucket}/{remote_data_dir}"
 
     dm = BuildingDataModule(
@@ -424,7 +539,10 @@ if __name__ == "__main__":
         remote_experiment=remote_experiment,
         data_dir=local_data_dir,
         climate_experiment=climate_experiment,
-        batch_size=128,
+        batch_size=512,
+        # batch_size=128,
+        # batch_size=64,
+        # batch_size=32,
         val_batch_mult=4,
     )
     # TODO: we should have a better workflow for first fitting the target transform
@@ -450,8 +568,11 @@ if __name__ == "__main__":
     """
     lr = 1e-2  # TODO: larger learning rate for larger batch size on multi-gpu?
     lr_gamma = 0.95
-    net_config = "Medium"
     modality = "Single"
+    net_config = "MiniOdd"
+    custom_pooling = False
+    big_skip_enabled = False
+    include_days = True
     latent_factor = 4
     energy_cnn_feature_maps = 512
     energy_cnn_n_layers = 3
@@ -473,6 +594,9 @@ if __name__ == "__main__":
         static_features_per_input=static_features_per_input,
         timeseries_channels_per_output=timeseries_channels_per_output,
         timeseries_steps_per_output=timeseries_steps_per_output,
+        custom_pooling=custom_pooling,
+        big_skip_enabled=big_skip_enabled,
+        include_days=include_days,
     )
     # surrogate = Surrogate.load_from_checkpoint("data/models/model.ckpt")
 
@@ -481,7 +605,7 @@ if __name__ == "__main__":
     """
     wandb_logger = WandbLogger(
         project="ml-for-bem",
-        name="Surrogate-With-Double-Modal-Architecture-And-Downscaling",
+        name="Surrogate-SingleModal-Mini-with-TrigAngularEncoding",
         save_dir="wandb",
         log_model="all",
         job_type="train",
@@ -499,8 +623,8 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="auto",
         devices="auto",
-        # strategy="auto",
-        strategy="ddp_find_unused_parameters_true",
+        strategy="auto",
+        # strategy="ddp_find_unused_parameters_true",
         logger=wandb_logger,
         default_root_dir=remote_data_path,
         enable_progress_bar=True,
@@ -509,9 +633,9 @@ if __name__ == "__main__":
         val_check_interval=0.25,
         # check_val_every_n_epoch=1,
         num_sanity_val_steps=3,
-        precision="bf16-mixed",
+        # precision="bf16-mixed",
         # gradient_clip_val=0.5,
-        sync_batchnorm=True,
+        # sync_batchnorm=True,
     )
 
     trainer.fit(
