@@ -112,7 +112,11 @@ def simulate(
     Run Simulation
     """
     hourly_df, monthly_df = sb.simulate(idf)
-    monthly_df = sb.postprocess(monthly_df)
+    errors, _ = sb.error_report(idf)
+    if len(errors) > 0:
+        monthly_df = errors
+    else:
+        monthly_df = sb.postprocess(monthly_df)
 
     shutil.rmtree(output_dir)
     return [sb_name, monthly_df]
@@ -209,6 +213,7 @@ def batch_sim(
                 index = (id, ix, *(v for v in row.values))
                 # set the result
                 results.loc[index] = result
+                
         results = results.sort_index(level=psort)
 
     return results

@@ -715,7 +715,11 @@ class ShoeBox:
 
     @classmethod
     def simulate(cls, idf):
-        idf.simulate(verbose=False, prep_outputs=False, readvars=False)
+        idf.simulate(
+            verbose=False,
+            prep_outputs=False,
+            readvars=False,
+        )
         sql = Sql(idf.sql_file)
         series_to_retrieve_hourly = []
         series_to_retrieve_monthly = []
