@@ -19,3 +19,18 @@ services:
       - "8501:8501"
     env_file:
       - .env
+  eplus-shoebox:
+    build:
+      context: .
+      dockerfile: api/lambda/eplus/shoeboxer/Dockerfile
+      platforms: 
+        - "linux/amd64"
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/ml-for-bem-eplus-shoebox-batch:${LAMBDA_TAG}
+    env_file: 
+      - .env
+    entrypoint: ["/aws-lambda/aws-lambda-rie", "/usr/local/bin/python", "-m", "awslambdaric"]
+    command: [ "api/lambda/eplus/shoeboxer/batch.handler" ]
+    ports:
+      - "5004:8080"
+    volumes:
+      - ${AWS_LAMBDA_RIE_PATH}:/aws-lambda
