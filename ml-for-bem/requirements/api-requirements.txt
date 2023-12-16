@@ -1,3 +1,5 @@
+botocore
+boto3
 python-multipart
 fastapi
 uvicorn[standard]
