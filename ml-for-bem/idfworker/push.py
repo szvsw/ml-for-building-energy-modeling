@@ -117,13 +117,13 @@ def push_files(
 ):
     sqs_client = boto3.client("sqs")
     s3_client = boto3.client("s3")
-    batch_id = str(uuid4()) if batch_id is None else batch_id
+    batch_id = str(uuid4()).split("-")[0] if batch_id is None else batch_id
     dlq_queue_url = create_sqs_queue_if_not_exists(sqs_client, queue + "-dlq")
     queue_url = create_sqs_queue_if_not_exists(sqs_client, queue, dlq=dlq_queue_url)
 
     for file_name in os.listdir(folder):
         if file_name.endswith(".idf") or file_name.endswith(".epjson"):
-            job_id = str(uuid4())
+            job_id = str(uuid4()).split("-")[0]
             idf_file_path = os.path.join(folder, file_name)
             idf_s3_key = upload_to_s3(
                 s3_client,

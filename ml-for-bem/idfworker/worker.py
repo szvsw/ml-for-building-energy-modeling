@@ -19,15 +19,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def construct_local_data_path(worker_id: UUID) -> Path:
-    data_path = Path("./") / "data" / "idfworker" / str(worker_id)
+def construct_local_data_path(worker_id: str) -> Path:
+    data_path = Path("./") / "data" / "worker" / worker_id
     os.makedirs(data_path, exist_ok=True)
     return data_path
 
 
 def download_s3_file(s3_client, bucket, key, local_path):
     if not os.path.exists(local_path):
-        local_path = Path(local_path)
         local_path.parent.mkdir(parents=True, exist_ok=True)
         logger.info(f"Downloading {key} from S3...")
         s3_client.download_file(bucket, key, local_path)
@@ -71,12 +70,6 @@ def handler(*, s3_client, worker_id: UUID, data_path: Path, message: dict):
         )
     )
     monthly_df = postprocess(monthly_df, local_idf_path, job_id)
-    # monthly_df.to_hdf(local_idf_path.with_suffix(".hdf"), key="monthly")
-    # s3_client.upload_file(
-    #     local_idf_path.with_suffix(".hdf"),
-    #     bucket,
-    #     str(Path(idf_key).parent / "monthly.hdf"),
-    # )
 
     return monthly_df
 
@@ -194,7 +187,7 @@ def run(
         worker_id (UUID, default=None): The worker ID.
     """
     s3_client = boto3.client("s3")
-    worker_id = uuid4() if worker_id is None else worker_id
+    worker_id = str(uuid4()).split("-")[0] if worker_id is None else worker_id
     data_path = construct_local_data_path(worker_id)
 
     msg_handler = partial(
