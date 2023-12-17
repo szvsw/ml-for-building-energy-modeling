@@ -1,22 +1,119 @@
-import logging
-import click
 import json
+import shutil
+import logging
+import os
+from functools import partial
+from pathlib import Path
+from uuid import UUID, uuid4
+
+import boto3
+import click
+import pandas as pd
+from archetypal.idfclass import IDF
+from archetypal.idfclass.sql import Sql
 
 from idfworker.pull import consume_messages
+from idfworker.push import construct_s3_key
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def handler(message):
+def construct_local_data_path(worker_id: UUID) -> Path:
+    data_path = Path("./") / "data" / "idfworker" / str(worker_id)
+    os.makedirs(data_path, exist_ok=True)
+    return data_path
+
+
+def download_s3_file(s3_client, bucket, key, local_path):
+    if not os.path.exists(local_path):
+        local_path = Path(local_path)
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Downloading {key} from S3...")
+        s3_client.download_file(bucket, key, local_path)
+        logger.info(f"Downloaded {key} from S3")
+    else:
+        logger.info(f"File {local_path} already exists, skipping download.")
+
+
+def handler(*, s3_client, worker_id: UUID, data_path: Path, message: dict):
     data = json.loads(message["Body"])
-    logger.info(f"Received message: {data}")
-    logger.info(f"Message ID: {message['MessageId']}")
-    logger.info(f"Receipt handle: {message['ReceiptHandle']}")
-    return 1
+    logger.info(f"Worker ID: {worker_id}")
+    logger.debug(f"Received message: {data}")
+    logger.debug(f"Message ID: {message['MessageId']}")
+    logger.debug(f"Receipt handle: {message['ReceiptHandle']}")
+    bucket = data["bucket"]
+    idf_key = data["idf"]
+    epw_key = data["epw"]
+    job_id = data["job_id"]
+    experiment = data["experiment"]
+    local_idf_path = data_path / idf_key
+    local_epw_path = data_path / epw_key  # only download if necessary
+    output_dir = local_idf_path.parent / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    download_s3_file(s3_client, bucket, idf_key, local_idf_path)
+    download_s3_file(s3_client, bucket, epw_key, local_epw_path)
+
+    idf = IDF(
+        idfname=local_idf_path,
+        epw=local_epw_path,
+        output_directory=output_dir,
+    )
+    idf.simulate()
+    sql = Sql(idf.sql_file)
+    monthly_df = pd.DataFrame(
+        sql.timeseries_by_name(
+            variable_or_meter=[
+                "Zone Ideal Loads Supply Air Total Heating Energy",
+                "Zone Ideal Loads Supply Air Total Cooling Energy",
+            ],
+            reporting_frequency="Monthly",
+        )
+    )
+    monthly_df = postprocess(monthly_df, local_idf_path, job_id)
+    # monthly_df.to_hdf(local_idf_path.with_suffix(".hdf"), key="monthly")
+    # s3_client.upload_file(
+    #     local_idf_path.with_suffix(".hdf"),
+    #     bucket,
+    #     str(Path(idf_key).parent / "monthly.hdf"),
+    # )
+
+    return monthly_df
+
+
+def postprocess(results_df: pd.DataFrame, local_idf_path, job_id):
+    df: pd.DataFrame = results_df["System"]
+
+    col_renamer = {
+        "Zone Ideal Loads Supply Air Total Cooling Energy": "Cooling",
+        "Zone Ideal Loads Supply Air Total Heating Energy": "Heating",
+    }
+    df = df.rename(
+        columns=col_renamer,
+    )
+    new_cols = []
+    for col in df.columns:
+        zone_name = col[0].split(" ")[0]
+        new_cols.append((zone_name, col[1]))
+    df.columns = pd.MultiIndex.from_tuples(new_cols)
+    df.index.name = "Month"
+    df = df.stack(level=0)
+    df = df.unstack(level=0)
+    df.index = pd.MultiIndex.from_tuples(
+        [(job_id, local_idf_path.name, zone) for zone in df.index.to_list()],
+        names=["job_id", "file_name", "Zone"],
+    )
+    df.columns.names = ["EndUse", "Month"]
+    return df
 
 
 @click.command()
+@click.option(
+    "--bucket",
+    prompt="Bucket name",
+    help="The name of the S3 bucket.",
+    default="ml-for-bem",
+)
 @click.option(
     "--queue",
     prompt="Queue name",
@@ -39,21 +136,25 @@ def handler(message):
     "--num_messages_to_process",
     prompt="Number of messages",
     help="Number of messages.",
+    type=int,
     default=10,
 )
 @click.option(
     "--visibility_timeout",
     default=120,
+    type=int,
     help="Visibility timeout in seconds.",
 )
 @click.option(
     "--wait_time",
-    default=1,
+    default=0,
+    type=int,
     help="Time in seconds to wait for messages to arrive.",
 )
 @click.option(
     "--num_msgs_per_request",
     default=10,
+    type=int,
     help="Number of messages to receive per queue request.",
 )
 @click.option(
@@ -61,7 +162,13 @@ def handler(message):
     default=False,
     help="Dry run.",
 )
+@click.option(
+    "--worker_id",
+    default=None,
+    help="The worker ID.",
+)
 def run(
+    bucket,
     queue,
     experiment,
     batch_id,
@@ -70,6 +177,7 @@ def run(
     wait_time,
     num_msgs_per_request,
     dry_run,
+    worker_id,
 ):
     """
     Run the worker.
@@ -80,12 +188,22 @@ def run(
         batch_id (str, default="test"): The Batch ID to filter messages.
         num_messages_to_process (int, default=10): The number of messages to process.
         visibility_timeout (int, default=120): The visibility timeout in seconds.
-        wait_time (int, default=1): The time in seconds to wait for messages to arrive.
+        wait_time (float, default=1): The time in seconds to wait for messages to arrive.
         num_msgs_per_request (int, default=10): The number of messages to receive per queue request.
         dry_run (bool, default=False): Dry run.
+        worker_id (UUID, default=None): The worker ID.
     """
-    msg_handler = handler if not dry_run else lambda msg: logger.info(msg["Body"])
-    consume_messages(
+    s3_client = boto3.client("s3")
+    worker_id = uuid4() if worker_id is None else worker_id
+    data_path = construct_local_data_path(worker_id)
+
+    msg_handler = partial(
+        handler, s3_client=s3_client, worker_id=worker_id, data_path=data_path
+    )
+
+    msg_handler = msg_handler if not dry_run else lambda msg: logger.info(msg["Body"])
+
+    results = consume_messages(
         queue=queue,
         experiment=experiment,
         batch_id=batch_id,
@@ -95,7 +213,45 @@ def run(
         wait_time=wait_time,
         handler=msg_handler,
     )
+    if dry_run:
+        return
+
+    results_to_concat = [
+        result for result in results if isinstance(result, pd.DataFrame)
+    ]
+    if len(results_to_concat) == 0:
+        logger.info("No results to concatenate.")
+        return
+
+    results = pd.concat(results_to_concat, axis=0)
+    results_local_path = data_path / f"{worker_id}.hdf"
+    logger.info("Saving results...")
+    results.to_hdf(results_local_path, key="monthly")
+    logger.info("Uploading results to S3...")
+    results_key = construct_s3_key(
+        experiment=experiment,
+        batch_id=batch_id,
+        file=results_local_path,
+        job_id="results",
+    )
+    s3_client.upload_file(
+        str(results_local_path),
+        bucket,
+        results_key,
+    )
+    shutil.rmtree(data_path)
+    logger.info("Uploaded results to S3.")
 
 
 if __name__ == "__main__":
+    from archetypal import settings
+
+    # Check if we are running on Windows or Linux using os
+    if os.name == "nt":
+        settings.ep_version == "22.2.0"
+        settings.energyplus_location = Path("C:/EnergyPlusV22-2-0")
+    else:
+        settings.ep_version == "22.2.0"
+        settings.energyplus_location = Path("/usr/local/EnergyPlus-22-2-0")
+
     run()
