@@ -30,7 +30,7 @@ def process_message(*, sqs_client, queue_url, message, handler=None):
                     ReceiptHandle=message["ReceiptHandle"],
                     VisibilityTimeout=0,
                 )
-                return 1
+                return "error"
         else:
             raise TypeError(f"handler must be callable, not {type(handler)}")
     else:
@@ -110,7 +110,7 @@ def consume_messages(
                     message=msg,
                     handler=handler,
                 )
-                if result is 1:
+                if result == "error" if isinstance(result, str) else False:
                     results.append(None)
                     logger.debug("Message processing failed, adding back into queue...")
                 else:
