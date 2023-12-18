@@ -1,77 +1,146 @@
-import boto3
-import click
 import logging
+
+import boto3
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def receive_messages(queue_url, num_msgs=1, wait_time=1, visibility_timeout=120):
+def process_message(*, sqs_client, queue_url, message, handler=None):
     """
-    Receive messages from SQS queue.
+    Process message.
 
     Args:
-        queue_url: The URL of the SQS queue.
-        num_msgs: The number of messages to receive (default: 10).
-        wait_time: The time in seconds to wait for messages (default: 20).
-        visibility_timeout: The time in seconds to make received messages
-            invisible to other consumers (default: 30).
+        sqs_client: The SQS client.
+        queue_url: The SQS queue URL.
+        message: The message to process.
+        handler (callable, default=None): The function to handle the message.  If none, just prints the message.
+
+    Returns:
+        The result of the handler (or None if not specified).
     """
-    sqs_client = boto3.client("sqs")
-    return sqs_client.receive_message(
-        QueueUrl=queue_url,
-        MaxNumberOfMessages=num_msgs,
-        WaitTimeSeconds=wait_time,
-        VisibilityTimeout=visibility_timeout,
-        MessageAttributeNames=["All"],
-    )
+    if handler:
+        if callable(handler):
+            try:
+                return handler(message=message)
+            except Exception as e:
+                logger.error(f"Error processing message: {message['Body']}", exc_info=e)
+                sqs_client.change_message_visibility(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=message["ReceiptHandle"],
+                    VisibilityTimeout=0,
+                )
+                return "error"
+        else:
+            raise TypeError(f"handler must be callable, not {type(handler)}")
+    else:
+        logger.warning(f"No handler specified for message:")
+        logger.warning(message["Body"])
+        return None
 
 
-def delete_message(queue_url, receipt_handle):
-    sqs_client = boto3.client("sqs")
-    sqs_client.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
+def consume_messages(
+    *,
+    queue,
+    experiment,
+    batch_id,
+    num_messages_to_process,
+    num_msgs_per_request,
+    visibility_timeout,
+    wait_time,
+    handler,
+):
+    """
+    Consume messages from SQS queue.
 
-
-def process_message(message):
-    # Placeholder for processing logic
-    print("Processing message:", message)
-
-
-@click.command()
-@click.option("--bucket", prompt="Bucket name", help="The name of the S3 bucket.")
-@click.option("--queue", prompt="Queue name", help="The name of the SQS queue.")
-@click.option(
-    "--experiment", prompt="Experiment name", help="The name of the experiment."
-)
-@click.option("--batch_id", prompt="Batch ID", help="The Batch ID to filter messages.")
-@click.option("--n_messages", prompt="Number of messages", help="Number of messages.")
-def consume_messages(bucket, queue, experiment, batch_id, n_messages):
+    Args:
+        queue: The name of the SQS queue.
+        experiment: The name of the experiment.
+        batch_id: The Batch ID to filter messages.
+        num_messages_to_process: The number of messages to process.
+        num_msgs_per_request: The number of messages to receive per queue request.
+        visibility_timeout: The visibility timeout in seconds.
+        wait_time: The time in seconds to wait for messages to arrive.
+        handler (callable): The function to handle the message.
+    """
     sqs_client = boto3.client("sqs")
     queue_url = sqs_client.get_queue_url(QueueName=queue)["QueueUrl"]
 
-    for i in range(int(n_messages)):
-        logger.info(f"{i:03d}: fetching messages from SQS")
-        response = receive_messages(queue_url)
+    processed_messages = 0
+    attempts_made = 0
+    results = []
+
+    while processed_messages < int(num_messages_to_process) and attempts_made < 3 * int(
+        num_messages_to_process
+    ):
+        logger.info("")
+        logger.info(f"--- Attempt {attempts_made:03d} ---")
+        response = sqs_client.receive_message(
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=num_msgs_per_request,
+            WaitTimeSeconds=wait_time,
+            VisibilityTimeout=visibility_timeout,
+            MessageAttributeNames=["All"],
+        )
+
         messages = response.get("Messages", [])
-        logger.info(f"Received {len(messages)} messages from SQS queue {queue_url}")
+        logger.debug(f"{len(messages)} messages fetched from SQS queue {queue_url}")
+        if len(messages) == 0:
+            logger.debug("No messages received, continuing...")
+            attempts_made += 1
+            continue
 
         for msg in messages:
             attrs = msg.get("MessageAttributes", {})
+            if processed_messages >= int(num_messages_to_process):
+                logger.info("Skipping message, already processed enough messages")
+                sqs_client.change_message_visibility(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=msg["ReceiptHandle"],
+                    VisibilityTimeout=0,
+                )
             if (
                 attrs.get("Experiment", {}).get("StringValue") == experiment
                 and attrs.get("BatchId", {}).get("StringValue") == batch_id
             ):
-                logger.info(f"Processing message: {msg['MessageId']}")
-                process_message(msg["Body"])
-                delete_message(queue_url, msg["ReceiptHandle"])
+                logger.debug(f"Processing message: {msg['MessageId']}")
+                result = process_message(
+                    sqs_client=sqs_client,
+                    queue_url=queue_url,
+                    message=msg,
+                    handler=handler,
+                )
+                if result == "error" if isinstance(result, str) else False:
+                    results.append(None)
+                    logger.debug("Message processing failed, adding back into queue...")
+                else:
+                    results.append(result)
+                    sqs_client.delete_message(
+                        QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"]
+                    )
+                    processed_messages += 1
+                    logger.debug(f"Processed {processed_messages} messages")
             else:
-                logger.warning(f"Skipping message: {msg['MessageId']}")
-                logger.warning(
+                logger.info(f"Skipping message: {msg['MessageId']}")
+                logger.debug(
                     f"Expected Experiment: {experiment}, but got {attrs.get('Experiment', {}).get('StringValue')}"
                 )
-                logger.warning(
+                logger.debug(
                     f"Expected BatchId: {batch_id}, but got {attrs.get('BatchId', {}).get('StringValue')}"
                 )
+
+                sqs_client.change_message_visibility(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=msg["ReceiptHandle"],
+                    VisibilityTimeout=0,
+                )
+            attempts_made += 1
+    logger.info("")
+    logger.info(
+        f"Finished processing messages, processed {processed_messages} messages\n"
+    )
+
+    return results
 
 
 if __name__ == "__main__":
