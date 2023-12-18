@@ -174,8 +174,8 @@ def postprocess(results_df: pd.DataFrame, local_idf_path, job_id):
     help="Time in seconds to wait for messages to arrive.",
 )
 @click.option(
-    "--num_msgs_per_request",
-    default=10,
+    "--num_messages_per_request",
+    default=1,
     type=int,
     help="Number of messages to receive per queue request.",
 )
@@ -197,7 +197,7 @@ def run(
     num_messages_to_process,
     visibility_timeout,
     wait_time,
-    num_msgs_per_request,
+    num_messages_per_request,
     dry_run,
     worker_id,
 ):
@@ -211,7 +211,7 @@ def run(
         num_messages_to_process (int, default=10): The number of messages to process.
         visibility_timeout (int, default=120): The visibility timeout in seconds.
         wait_time (float, default=1): The time in seconds to wait for messages to arrive.
-        num_msgs_per_request (int, default=10): The number of messages to receive per queue request.
+        num_messages_per_request (int, default=1): The number of messages to receive per queue request.
         dry_run (bool, default=False): Dry run.
         worker_id (UUID, default=None): The worker ID.
     """
@@ -230,7 +230,7 @@ def run(
         experiment=experiment,
         batch_id=batch_id,
         num_messages_to_process=num_messages_to_process,
-        num_msgs_per_request=num_msgs_per_request,
+        num_msgs_per_request=num_messages_per_request,
         visibility_timeout=visibility_timeout,
         wait_time=wait_time,
         handler=msg_handler,
