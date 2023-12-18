@@ -60,7 +60,7 @@ def handler(*, s3_client, worker_id: UUID, data_path: Path, message: dict):
     )
     idf.simulate()
     sql = Sql(idf.sql_file)
-    monthly_df = pd.DataFrame(
+    zone_monthly_df = pd.DataFrame(
         sql.timeseries_by_name(
             variable_or_meter=[
                 "Zone Ideal Loads Supply Air Total Heating Energy",
@@ -69,9 +69,38 @@ def handler(*, s3_client, worker_id: UUID, data_path: Path, message: dict):
             reporting_frequency="Monthly",
         )
     )
-    monthly_df = postprocess(monthly_df, local_idf_path, job_id)
+    zone_monthly_df = postprocess(zone_monthly_df, local_idf_path, job_id)
 
-    return monthly_df
+    remote_results_key = Path(idf_key).with_suffix(".hdf")
+    local_results_key = local_idf_path.with_suffix(".hdf")
+    zone_monthly_df.to_hdf(local_results_key, key="Zones")
+
+    building_monthly_df = pd.DataFrame(
+        sql.timeseries_by_name(
+            variable_or_meter=[
+                "Heating:DistrictHeating",
+                "Cooling:DistrictCooling",
+                "Electricity:Facility",
+            ],
+            reporting_frequency="Monthly",
+        )
+    )
+    # drop the first two levels of the columns
+    building_monthly_df.columns = building_monthly_df.columns.droplevel(level=[0, 1])
+    building_monthly_df = building_monthly_df.unstack()
+    building_monthly_df.to_hdf(local_results_key, key="Building", mode="a")
+
+    s3_client.upload_file(
+        str(local_results_key),
+        bucket,
+        str(remote_results_key),
+    )
+
+    return (
+        zone_monthly_df,
+        building_monthly_df,
+        (job_id, local_idf_path.name, local_epw_path.name),
+    )
 
 
 def postprocess(results_df: pd.DataFrame, local_idf_path, job_id):
@@ -209,17 +238,35 @@ def run(
     if dry_run:
         return
 
-    results_to_concat = [
-        result for result in results if isinstance(result, pd.DataFrame)
+    zone_results_to_concat = [
+        result[0] for result in results if isinstance(result, tuple)
     ]
-    if len(results_to_concat) == 0:
+    building_results_to_concat = [
+        result[1] for result in results if isinstance(result, tuple)
+    ]
+    building_idxs = [result[2] for result in results if isinstance(result, tuple)]
+
+    if len(zone_results_to_concat) == 0:
         logger.info("No results to concatenate.")
         return
 
-    results = pd.concat(results_to_concat, axis=0)
+    zone_results = pd.concat(zone_results_to_concat, axis=0)
+
+    buildings_df = pd.DataFrame()
+    for idx, building_df in zip(building_idxs, building_results_to_concat):
+        if len(buildings_df) == 0:
+            buildings_df = pd.DataFrame(building_df)
+            buildings_df = buildings_df.T
+            buildings_df.index = pd.MultiIndex.from_tuples(
+                [idx], names=["job_id", "file_name", "epw_name"]
+            )
+        else:
+            buildings_df.loc[idx] = building_df
+
     results_local_path = data_path / f"{worker_id}.hdf"
     logger.info("Saving results...")
-    results.to_hdf(results_local_path, key="monthly")
+    zone_results.to_hdf(results_local_path, key="Zones")
+    buildings_df.to_hdf(results_local_path, key="Buildings", mode="a")
     logger.info("Uploading results to S3...")
     results_key = construct_s3_key(
         experiment=experiment,
