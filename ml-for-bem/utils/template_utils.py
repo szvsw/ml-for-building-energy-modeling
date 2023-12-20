@@ -10,6 +10,7 @@ from random import randint
 
 # Import window schema
 from utils.nrel_uitls import WINDTYPES
+from utils.nrel_uitls import RESTYPES
 
 import warnings
 
@@ -53,13 +54,10 @@ with warnings.catch_warnings():
     from archetypal.template.zonedefinition import ZoneDefinition
     from archetypal.template.constructions.internal_mass import InternalMass
     from archetypal.utils import reduce
-    from pyumi.shoeboxer.shoebox import ShoeBox
 
-from utils.nrel_uitls import RESTYPES
-
-
-PEOPLE_DENSITY = 0.2  # pp/m2
-DHW_USE_PP = 0.05125  # m3/day
+PEOPLE_DENSITY = 0.028  # pp/m2
+DHW_PER_M2 = "0.00003770781"  # m3/h/m2
+# DHW_USE_PP = 0.05125  # m3/day
 
 
 class minimumTemplate(UmiTemplateLibrary):
@@ -77,9 +75,7 @@ class minimumTemplate(UmiTemplateLibrary):
     # ):
     #     self.seed_template = UmiTemplateLibrary.open(template_path)
 
-    def initialize(self, name):  # csv_path, name
-        self.Name = name
-
+    def initialize(self):  # csv_path, name
         # unchanging objects
         self.WindowConstructions = self.make_window_constructions()
         print(self.WindowConstructions)
@@ -104,20 +100,26 @@ class minimumTemplate(UmiTemplateLibrary):
         dhw_setting = DomesticHotWaterSetting(
             Name="dwh_setting",
             IsOn=True,
-            WaterSchedule=self.YearSchedules[0],  # self.always_on
-            FlowRatePerFloorArea=DHW_USE_PP
-            * PEOPLE_DENSITY
-            * 0.5  # assume less people than people density
-            / 24,  # [m3/hr-m2] 0.05 m3/day/pp * pp/m2 * 1 day/24h - ASHRAE
-            WaterSupplyTemperature=50,  # 65
+            WaterSchedule=self.always_on,  # self.always_on
+            FlowRatePerFloorArea=DHW_PER_M2,
+            WaterSupplyTemperature=50,  # 43.3 in reference buildings
             WaterTemperatureInlet=10,
         )
+        # FlowRatePerFloorArea=DHW_USE_PP
+        #     * PEOPLE_DENSITY
+        #     * 0.5  # assume less people than people density
+        #     / 24,  # [m3/hr-m2] 0.05 m3/day/pp * pp/m2 * 1 day/24h - ASHRAE
         # List of DomesticHotWaterSetting objects (needed for Umi template creation)
-        self.DomesticHotWaterSettings = [dhw_setting]
+        self.DomesticHotWaterSettings = [
+            dhw_setting
+        ]  # TODO make sure not in scientific notation
 
     def setup_default_scheds(self):
         self.always_off = self.YearSchedules[3]
         self.always_on = self.YearSchedules[4]
+        self.occupancy_sched = self.YearSchedules[0]
+        self.lights_sched = self.YearSchedules[1]
+        self.equip_sched = self.YearSchedules[2]
         # # Always on
         # sch_d_on = DaySchedule.from_values(
         #     Name="d_AlwaysOn", Values=[1] * 24, Type="Fraction", Category="Day"
@@ -225,32 +227,14 @@ class minimumTemplate(UmiTemplateLibrary):
         return [singleClear, dblClear, dblLowE, tripleClear, tripleLowE]
 
     def make_opaque_constructions(self):
-        self.concrete_facade = self.OpaqueMaterials[3].duplicate()  # Concrete dense
-        self.concrete_facade.Name = self.concrete_facade.Name + "_facade"
-        self.concrete_roof = self.OpaqueMaterials[3].duplicate()  # Concrete dense
-        self.concrete_roof.Name = self.concrete_roof.Name + "_roof"
-        self.concrete_ground = self.OpaqueMaterials[3].duplicate()  # Concrete dense
-        self.concrete_ground.Name = self.concrete_ground.Name + "_ground"
-        self.insulation = self.OpaqueMaterials[11]  # Fiberglass batt
-        self.insulation_facade = self.OpaqueMaterials[11].duplicate()  # Fiberglass batt
-        self.insulation_facade.Name = self.insulation_facade.Name + "_facade"
-        self.insulation_roof = self.OpaqueMaterials[11].duplicate()  # insulation dense
-        self.insulation_roof.Name = self.insulation_roof.Name + "_roof"
-        self.insulation_ground = self.OpaqueMaterials[
-            11
-        ].duplicate()  # insulation dense
-        self.insulation_ground.Name = self.insulation_ground.Name + "_ground"
+        # TODO add
+        # "DesignStrength": null,
+        # "ModulusOfElasticity": null,
+        # DOUBLE CONCRETE MATERIAL
 
-        self.OpaqueMaterials.extend(
-            [
-                self.concrete_facade,
-                self.concrete_roof,
-                self.concrete_ground,
-                self.insulation_facade,
-                self.insulation_roof,
-                self.insulation_ground,
-            ]
-        )
+        self.concrete = self.OpaqueMaterials[3]  # Concrete dense
+        self.insulation_fiberglass = self.OpaqueMaterials[11]  # Fiberglass batt
+        self.insulation_xps = self.OpaqueMaterials[9]  # XPS
 
         plywood = self.OpaqueMaterials[10]  # Fiberglass batt
         gypsum = self.OpaqueMaterials[5]  # 14:Gypsum_Board
@@ -282,8 +266,8 @@ class minimumTemplate(UmiTemplateLibrary):
         self.default_floor = OpaqueConstruction(
             Name="floor",
             Layers=[
-                MaterialLayer(self.insulation_ground, Thickness=0.2),
-                MaterialLayer(self.concrete_ground, Thickness=0.2),
+                MaterialLayer(self.insulation_xps, Thickness=0.2),
+                MaterialLayer(self.concrete, Thickness=0.2),
                 MaterialLayer(ceramicTile, Thickness=0.02),
             ],
             Surface_Type="Ground",
@@ -294,7 +278,7 @@ class minimumTemplate(UmiTemplateLibrary):
             Name="partition",
             Layers=[
                 self.gypsumLayer,
-                MaterialLayer(self.insulation, Thickness=0.02),
+                MaterialLayer(self.insulation_fiberglass, Thickness=0.02),
                 self.gypsumLayer,
             ],
             Surface_Type="Partition",
@@ -305,30 +289,30 @@ class minimumTemplate(UmiTemplateLibrary):
             self.default_partition,
         ]
 
-    def loMass_facade(self, r_val):
-        t = self.insulation_facade.Conductivity * r_val
-        loMass_facade = OpaqueConstruction(
-            Name="loMass_facade",
-            Layers=[
-                self.claddingLayer,
-                self.plywoodLayer,
-                MaterialLayer(self.insulation_facade, Thickness=t),
-                self.gypsumLayer,
-            ],
-            Surface_Type="Facade",
-            Outside_Boundary_Condition="Outdoors",
-        )
-        self.OpaqueConstructions.append(loMass_facade)
-        return loMass_facade
+    # def loMass_facade(self, r_val):
+    #     t = self.insulation_fiberglass.Conductivity * r_val
+    #     loMass_facade = OpaqueConstruction(
+    #         Name="loMass_facade",
+    #         Layers=[
+    #             self.claddingLayer,
+    #             self.plywoodLayer,
+    #             MaterialLayer(self.insulation_fiberglass, Thickness=t),
+    #             self.gypsumLayer,
+    #         ],
+    #         Surface_Type="Facade",
+    #         Outside_Boundary_Condition="Outdoors",
+    #     )
+    #     self.OpaqueConstructions.append(loMass_facade)
+    #     return loMass_facade
 
     def hiMass_facade(self, r_val):
-        t = self.insulation_facade.Conductivity * r_val
+        t = self.insulation_fiberglass.Conductivity * r_val
         hiMass_facade = OpaqueConstruction(
             Name="hiMass_facade",
             Layers=[
-                MaterialLayer(self.concrete_facade, Thickness=0.1),
+                MaterialLayer(self.concrete, Thickness=0.1),
                 self.plywoodLayer,
-                MaterialLayer(self.insulation_facade, Thickness=t),
+                MaterialLayer(self.insulation_fiberglass, Thickness=t),
                 self.gypsumLayer,
             ],
             Surface_Type="Facade",
@@ -355,15 +339,15 @@ class minimumTemplate(UmiTemplateLibrary):
     #     return loMass_roof
 
     def hiMass_roof(self, r_val):
-        t = self.insulation_roof.Conductivity * r_val
+        t = self.insulation_xps.Conductivity * r_val
         # slateTile = self.OpaqueMaterials[14]  # 23:Slate_Tile
         hiMass_roof = OpaqueConstruction(
             Name="hiMass_roof",
             Layers=[
                 # MaterialLayer(slateTile, Thickness=0.02),
-                MaterialLayer(self.concrete_roof, Thickness=0.1),
+                MaterialLayer(self.concrete, Thickness=0.1),
                 self.plywoodLayer,
-                MaterialLayer(self.insulation_roof, Thickness=t),
+                MaterialLayer(self.insulation_xps, Thickness=t),
                 self.gypsumLayer,
             ],
             Surface_Type="Roof",
@@ -410,7 +394,7 @@ class minimumTemplate(UmiTemplateLibrary):
                 HeatingSchedule=self.always_on,
                 IsCoolingOn=True,
                 CoolingSchedule=self.always_on,
-                IsMechVentOn=True,
+                IsMechVentOn=True,  # TODO: this should be off for single family? Return to this
                 MechVentSchedule=self.always_on,
             )
             self.ZoneConditionings.append(zone_conditioning)
@@ -431,9 +415,9 @@ class minimumTemplate(UmiTemplateLibrary):
                 IsPeopleOn=True,
                 EquipmentPowerDensity=epd,
                 LightingPowerDensity=lpd,
-                EquipmentAvailabilitySchedule=self.YearSchedules[2],
-                LightsAvailabilitySchedule=self.YearSchedules[1],
-                OccupancySchedule=self.YearSchedules[0],
+                EquipmentAvailabilitySchedule=self.equip_sched,
+                LightsAvailabilitySchedule=self.lights_sched,
+                OccupancySchedule=self.occupancy_sched,
                 PeopleDensity=PEOPLE_DENSITY,
             )
             # List of ZoneLoad objects (needed for Umi template creation)
@@ -499,36 +483,36 @@ class minimumTemplate(UmiTemplateLibrary):
         perimHi_cons, coreHi_cons = self.define_zone_constructions(
             idx, self.hiMass_facade(r_wall), self.hiMass_roof(r_roof)
         )
-        perimLo_cons, coreLo_cons = self.define_zone_constructions(
-            idx, self.loMass_facade(r_wall), self.hiMass_roof(r_roof)
-        )
+        # perimLo_cons, coreLo_cons = self.define_zone_constructions(
+        #     idx, self.loMass_facade(r_wall), self.hiMass_roof(r_roof)
+        # )
 
-        print("RVALUE FACADE", perimLo_cons.Facade.r_value)
-        print("HEAT CAP FACADE", perimLo_cons.Facade.heat_capacity_per_unit_wall_area)
+        print("RVALUE FACADE", perimHi_cons.Facade.r_value)
+        print("HEAT CAP FACADE", perimHi_cons.Facade.heat_capacity_per_unit_wall_area)
         print("THICKNESS FACADE LAYERS")
-        for layer in perimLo_cons.Facade.Layers:
+        for layer in perimHi_cons.Facade.Layers:
             print(layer)
 
-        print("RVALUE ROOF", perimLo_cons.Roof.r_value)
-        print("HEAT CAP ROOF", perimLo_cons.Roof.heat_capacity_per_unit_wall_area)
+        print("RVALUE ROOF", perimHi_cons.Roof.r_value)
+        print("HEAT CAP ROOF", perimHi_cons.Roof.heat_capacity_per_unit_wall_area)
 
         # Perimeter zone
-        perimLo = ZoneDefinition(
-            Name=f"Perim_zone_LoMass_{idx}",
-            Constructions=perimLo_cons,  #
-            Loads=ZoneLoads,
-            Conditioning=ZoneConditioning,
-            Ventilation=ZoneVentilation,
-            DomesticHotWater=self.DomesticHotWaterSettings[0],
-            DaylightMeshResolution=1,
-            DaylightWorkplaneHeight=0.8,
-            InternalMassConstruction=self.default_partition,
-            InternalMassExposedPerFloorArea=1.05,
-            WindowConstruction=self.WindowConstructions[wind_idx],
-            Windows=self.WindowSettings[wind_idx],
-        )
+        # perimLo = ZoneDefinition(
+        #     Name=f"Perim_zone_LoMass_{idx}",
+        #     Constructions=perimLo_cons,  #
+        #     Loads=ZoneLoads,
+        #     Conditioning=ZoneConditioning,
+        #     Ventilation=ZoneVentilation,
+        #     DomesticHotWater=self.DomesticHotWaterSettings[0],
+        #     DaylightMeshResolution=1,
+        #     DaylightWorkplaneHeight=0.8,
+        #     InternalMassConstruction=self.default_partition,
+        #     InternalMassExposedPerFloorArea=1.05,
+        #     WindowConstruction=self.WindowConstructions[wind_idx],
+        #     Windows=self.WindowSettings[wind_idx],
+        # )
         perimHi = ZoneDefinition(
-            Name=f"Perim_zone_HiMass_{idx}",
+            Name=f"Perim_zone_{idx}",
             Constructions=perimHi_cons,  #
             Loads=ZoneLoads,
             Conditioning=ZoneConditioning,
@@ -541,22 +525,22 @@ class minimumTemplate(UmiTemplateLibrary):
             WindowConstruction=self.WindowConstructions[wind_idx],
             Windows=self.WindowSettings[wind_idx],
         )
-        coreLo = ZoneDefinition(
-            Name=f"Core_zone_LoMass_{idx}",
-            Constructions=coreLo_cons,  #
-            Loads=ZoneLoads,
-            Conditioning=ZoneConditioning,
-            Ventilation=ZoneVentilation,
-            DomesticHotWater=self.DomesticHotWaterSettings[0],
-            DaylightMeshResolution=1,
-            DaylightWorkplaneHeight=0.8,
-            InternalMassConstruction=self.default_partition,
-            InternalMassExposedPerFloorArea=1.05,
-            WindowConstruction=self.WindowConstructions[wind_idx],
-            Windows=self.WindowSettings[wind_idx],
-        )
+        # coreLo = ZoneDefinition(
+        #     Name=f"Core_zone_LoMass_{idx}",
+        #     Constructions=coreLo_cons,  #
+        #     Loads=ZoneLoads,
+        #     Conditioning=ZoneConditioning,
+        #     Ventilation=ZoneVentilation,
+        #     DomesticHotWater=self.DomesticHotWaterSettings[0],
+        #     DaylightMeshResolution=1,
+        #     DaylightWorkplaneHeight=0.8,
+        #     InternalMassConstruction=self.default_partition,
+        #     InternalMassExposedPerFloorArea=1.05,
+        #     WindowConstruction=self.WindowConstructions[wind_idx],
+        #     Windows=self.WindowSettings[wind_idx],
+        # )
         coreHi = ZoneDefinition(
-            Name=f"Core_zone_HiMass_{idx}",
+            Name=f"Core_zone_{idx}",
             Constructions=coreHi_cons,  #
             Loads=ZoneLoads,
             Conditioning=ZoneConditioning,
@@ -570,20 +554,20 @@ class minimumTemplate(UmiTemplateLibrary):
             Windows=self.WindowSettings[wind_idx],
         )
         # add to List of Zone objects (needed for Umi template creation)
-        self.ZoneDefinitions.extend([perimLo, coreLo, perimHi, coreHi])
+        self.ZoneDefinitions.extend([perimHi, coreHi])
 
         # BuildingTemplate using Zone, StructureInformation and WindowSetting objects
-        building_template_loMass = BuildingTemplate(
-            Name=f"{bld_template_name}_MASS_0",
-            Core=coreLo,
-            Perimeter=perimLo,
-            Structure=self.StructureDefinitions[0],
-            Windows=self.WindowSettings[wind_idx],
-            DefaultWindowToWallRatio=wwr,
-        )
+        # building_template_loMass = BuildingTemplate(
+        #     Name=f"{bld_template_name}_MASS_0",
+        #     Core=coreLo,
+        #     Perimeter=perimLo,
+        #     Structure=self.StructureDefinitions[0],
+        #     Windows=self.WindowSettings[wind_idx],
+        #     DefaultWindowToWallRatio=wwr,
+        # )
 
         building_template_hiMass = BuildingTemplate(
-            Name=f"{bld_template_name}_MASS_1",
+            Name=bld_template_name,
             Core=coreHi,
             Perimeter=perimHi,
             Structure=self.StructureDefinitions[0],
@@ -591,12 +575,10 @@ class minimumTemplate(UmiTemplateLibrary):
             DefaultWindowToWallRatio=wwr,
         )
 
-        self.BuildingTemplates.extend(
-            [building_template_loMass, building_template_hiMass]
-        )
+        self.BuildingTemplates.extend([building_template_hiMass])
 
-    def construct_cz_templates(self, templates_df, name):
-        self.initialize(name)
+    def construct_cz_templates(self, templates_df, name, cz):
+        # self.initialize()
 
         for idx, row in templates_df.iterrows():
             # template_name = self.clean_name(
@@ -605,15 +587,15 @@ class minimumTemplate(UmiTemplateLibrary):
             # )
             print("\n", "*" * 50, f"\n{idx} out of {templates_df.shape[0]}")
             print(row["Dependency=Vintage UBEM"])
-            v_idx = 0
+            v_idx = "pre1940"
             if row["Dependency=Vintage UBEM"] == "1946-1980":
-                v_idx = 1
+                v_idx = "Pre1980"
             elif row["Dependency=Vintage UBEM"] == "1981-2003":
-                v_idx = 2
+                v_idx = "Post1980"
             elif row["Dependency=Vintage UBEM"] == "2004+":
-                v_idx = 3
+                v_idx = "Post2004"
 
-            template_name = f"PROG_{RESTYPES[row['Dependency=Geometry Building Type RECS']]:02d}_VINTAGE_{v_idx:02d}"
+            template_name = f"{RESTYPES[row['Dependency=Geometry Building Type RECS']]}{v_idx}_ResStock_{cz}"
             print("Building building template for ", template_name)
 
             self.construct_building_template(
@@ -635,17 +617,17 @@ class minimumTemplate(UmiTemplateLibrary):
         self.unique_components(keep_orphaned=True)
         self.check_key_duplicates()
 
-        self.save(
-            path_or_buf=os.path.join(
-                os.getcwd(),
-                "ml-for-bem",
-                "data",
-                "template_libs",
-                "cz_libs",
-                "residential",
-                name + ".json",
-            )
-        )
+        # self.save(
+        #     path_or_buf=os.path.join(
+        #         os.getcwd(),
+        #         "ml-for-bem",
+        #         "data",
+        #         "template_libs",
+        #         "cz_libs",
+        #         "residential",
+        #         name + ".json",
+        #     )
+        # )
 
         return self
 
@@ -771,7 +753,6 @@ def test_template(lib, epw_path, outdir, energy_df, csv_name):
             dhw = dhw.sum()
             print("DHW EUI: ", dhw / (width * depth))
             print("*" * 50)
-            # x()
 
         except Exception as e:
             print(e)
@@ -781,12 +762,14 @@ def test_template(lib, epw_path, outdir, energy_df, csv_name):
 
 if __name__ == "__main__":
     overwrite = True
-    sim = False
+    # sim = False
 
     template_path = os.path.join(
         os.getcwd(), "ml-for-bem", "data", "template_libs", "ConstructionsLibrary.json"
     )
-    buildings_df_path = "D:/Users/zoelh/Dropbox (MIT)/Downgrades/UBEM_res_templates"
+    buildings_df_path = (
+        "D:/Users/zoelh/Dropbox (MIT)/Thesis Work/Jan 24 Workshop/UBEM_res_templates"
+    )
     # buildings_df_path = "C:/Users/zoele/Dropbox (MIT)/Downgrades/UBEM_res_templates"
     cz_templatelist = os.listdir(buildings_df_path)
     cz_templatelist = [x for x in cz_templatelist if "residentialtemplates" in x]
@@ -794,6 +777,20 @@ if __name__ == "__main__":
     energy_df = pd.DataFrame(columns=["cz", "archetype", "heating", "cooling"])
     print(cz_templatelist)
 
+    seed_template = UmiTemplateLibrary.open(template_path)
+    template = minimumTemplate(
+        OpaqueMaterials=seed_template.OpaqueMaterials,
+        GasMaterials=seed_template.GasMaterials,
+        GlazingMaterials=seed_template.GlazingMaterials,
+        DaySchedules=seed_template.DaySchedules,
+        WeekSchedules=seed_template.WeekSchedules,
+        YearSchedules=seed_template.YearSchedules,
+    )
+    template.initialize()
+
+    # for i, csv_name in enumerate(
+    #     ["residentialtemplates_CZ1A.csv", "residentialtemplates_CZ2A.csv"]
+    # ):
     for i, csv_name in enumerate(cz_templatelist):
         tpath = os.path.join(
             os.getcwd(),
@@ -828,22 +825,34 @@ if __name__ == "__main__":
             cz_df = pd.read_csv(os.path.join(buildings_df_path, csv_name), index_col=0)
             print("\n", "*" * 50, "\nTEMPLATES FOR CZ ", csv_name)
 
-            seed_template = UmiTemplateLibrary.open(template_path)
+            # seed_template = UmiTemplateLibrary.open(template_path)
 
-            template = minimumTemplate(
-                OpaqueMaterials=seed_template.OpaqueMaterials,
-                GasMaterials=seed_template.GasMaterials,
-                GlazingMaterials=seed_template.GlazingMaterials,
-                DaySchedules=seed_template.DaySchedules,
-                WeekSchedules=seed_template.WeekSchedules,
-                YearSchedules=seed_template.YearSchedules,
+            # template = minimumTemplate(
+            #     OpaqueMaterials=seed_template.OpaqueMaterials,
+            #     GasMaterials=seed_template.GasMaterials,
+            #     GlazingMaterials=seed_template.GlazingMaterials,
+            #     DaySchedules=seed_template.DaySchedules,
+            #     WeekSchedules=seed_template.WeekSchedules,
+            #     YearSchedules=seed_template.YearSchedules,
+            # )
+            cz = csv_name.split(".csv")[0].split("_")[-1].split("Z")[-1]
+            template.construct_cz_templates(cz_df, name, cz)
+            template.save(
+                path_or_buf=os.path.join(
+                    os.getcwd(),
+                    "ml-for-bem",
+                    "data",
+                    "template_libs",
+                    "cz_libs",
+                    "residential",
+                    "ResstockRefBuildings.json",
+                )
             )
-            template.construct_cz_templates(cz_df, name)
 
         elif name + ".json" in existing:
             p = os.path.join(tpath, name + ".json")
             template = UmiTemplateLibrary.open(p)
-        if sim:
-            energy_df = test_template(template, epw_path, outdir, energy_df, name)
-    if sim:
-        energy_df.to_csv(os.path.join(outdir, "shoebox_test.csv"), index=False)
+    #     if sim:
+    #         energy_df = test_template(template, epw_path, outdir, energy_df, name)
+    # if sim:
+    #     energy_df.to_csv(os.path.join(outdir, "shoebox_test.csv"), index=False)
