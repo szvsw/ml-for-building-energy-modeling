@@ -154,3 +154,15 @@ TIMESERIES_OUTPUTS = [
         store_output=False,
     ),
 ]
+
+
+def get_tmass_idx(val):
+    if val >= ThermalMassCapacities.Concrete:
+        hot_bin = ThermalMassConstructions.Concrete.value
+    elif val < ThermalMassCapacities.Concrete and val >= ThermalMassCapacities.Brick:
+        hot_bin = ThermalMassConstructions.Brick.value
+    elif val < ThermalMassCapacities.Brick and val >= ThermalMassCapacities.WoodFrame:
+        hot_bin = ThermalMassConstructions.WoodFrame.value
+    elif val < ThermalMassCapacities.WoodFrame:
+        hot_bin = ThermalMassConstructions.SteelFrame.value
+    return hot_bin
