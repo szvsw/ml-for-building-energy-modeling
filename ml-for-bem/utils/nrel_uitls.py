@@ -110,11 +110,18 @@ CLIMATEZONES = {
 CLIMATEZONES_LIST = list(CLIMATEZONES.keys())
 
 
+# RESTYPES = {
+#     "Single-Family Detached": 0,
+#     "Single-Family Attached": 1,
+#     "Multi-Family with 2 - 4 Units": 2,
+#     "Multi-Family with 5+ Units": 3,
+# }
+
 RESTYPES = {
-    "Single-Family Detached": 0,
-    "Single-Family Attached": 1,
-    "Multi-Family with 2 - 4 Units": 2,
-    "Multi-Family with 5+ Units": 3,
+    "Single-Family Detached": "RefBldgSingleFamilyResidential",
+    "Single-Family Attached": "RefBldgTownhome",
+    "Multi-Family with 2 - 4 Units": "RefBldgCondominium",
+    "Multi-Family with 5+ Units": "RefBldgApartment",
 }
 
 WINDTYPES = {
