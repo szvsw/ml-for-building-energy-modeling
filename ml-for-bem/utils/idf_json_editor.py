@@ -7,6 +7,8 @@ import os
 import subprocess
 from pathlib import Path
 import click
+from concurrent.futures import ThreadPoolExecutor
+from tqdm import tqdm
 
 from utils.constants import *
 from utils.schedules import mutate_timeseries
@@ -182,6 +184,16 @@ def validation_ventilation(epjson, mech_vent_sched_mode, new_filename):
     # epjson.save_idf(suffix="_new") # original_name_new.idf instead of override
 
 
+def process_idfs(dat):
+    idf_path = dat[0]
+    mech_vent_sched_mode = dat[1]
+    fname = dat[2]
+    epjson = EpJsonIDF(idf_path)
+    validation_ventilation(epjson, mech_vent_sched_mode, fname)
+    os.remove(epjson.epjson_path)
+    return idf_path
+
+
 # make a click function which accepts a number of simulations to run, a bucket name, and an experiment name
 @click.command()
 @click.option("--hdf", default=None, help=".hdf features path")
@@ -193,15 +205,26 @@ def validation_ventilation(epjson, mech_vent_sched_mode, new_filename):
 def main(hdf, fname):
     local_dir = Path(hdf).parent
     features = pd.read_hdf(hdf, key="buildings")
-    for name, row in features.iterrows():
-        idf_name = "%09d" % (int(name),) + ".idf"
-        idf_path = local_dir / "idf" / idf_name
-        print(idf_path)
-        mech_vent_sched_mode = row["VentilationMode"]
-        epjson = EpJsonIDF(idf_path)
-        validation_ventilation(epjson, mech_vent_sched_mode, fname)
-        # delete epjsons
-        os.remove(epjson.epjson_path)
+    names = features.index.to_list()
+    vent_modes = features["VentilationMode"].to_list()
+    idf_name = lambda x: "%09d" % (int(x),) + ".idf"
+    idf_paths = [local_dir / "idf" / idf_name(x) for x in names]
+    run_dict = [[x, y, fname] for x, y in zip(idf_paths, vent_modes)]
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        dfs = list(tqdm(executor.map(process_idfs, run_dict), total=len(run_dict)))
+    logger.info("Downloading and opening files complete.")
+    print(dfs)
+
+    # for name, row in features.iterrows():
+    #     idf_name = "%09d" % (int(name),) + ".idf"
+    #     idf_path = local_dir / "idf" / idf_name
+    #     print(idf_path)
+    #     mech_vent_sched_mode = row["VentilationMode"]
+    #     epjson = EpJsonIDF(idf_path)
+    #     validation_ventilation(epjson, mech_vent_sched_mode, fname)
+    #     # delete epjsons
+    #     os.remove(epjson.epjson_path)
     # delete extra files
     os.remove(local_dir / "idf" / "eplusout.end")
     os.remove(local_dir / "idf" / "eplusout.err")
