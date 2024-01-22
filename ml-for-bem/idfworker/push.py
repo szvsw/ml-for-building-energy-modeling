@@ -1,7 +1,7 @@
 import json
-from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from uuid import uuid4
 
@@ -117,6 +117,14 @@ def send_to_sqs(sqs_client, queue_url, s3_path, batch_id, experiment):
     "--batch_id",
     default=None,
     help="The Batch ID to filter messages.",
+    prompt="Batch ID (optional)",
+    required=False,
+)
+@click.option(
+    "--log_level",
+    default="WARNING",
+    help="The log level.",
+    prompt="Log level",
     required=False,
 )
 def push_files(
@@ -126,7 +134,9 @@ def push_files(
     folder,
     epw,
     batch_id,
+    log_level,
 ):
+    logger.setLevel(log_level)
     sqs_client = boto3.client("sqs")
     s3_client = boto3.client("s3")
     batch_id = str(uuid4()).split("-")[0] if batch_id is None else batch_id
@@ -167,7 +177,7 @@ def push_files(
         send_to_sqs(sqs_client, queue_url, data, batch_id, experiment)
 
     with ThreadPoolExecutor(max_workers=8) as executor:
-        tqdm(executor.map(handle, energy_files), total=len(energy_files))
+        list(tqdm(executor.map(handle, energy_files), total=len(energy_files)))
 
     logger.info(f"Batch ID: {batch_id}")
 
