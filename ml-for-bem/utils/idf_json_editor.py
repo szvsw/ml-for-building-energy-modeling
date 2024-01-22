@@ -5,11 +5,11 @@ import logging
 import math
 import os
 import subprocess
-from pathlib import Path
-import click
 from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm
+from pathlib import Path
 
+import click
+from tqdm import tqdm
 from utils.constants import *
 from utils.schedules import mutate_timeseries
 
@@ -206,7 +206,6 @@ def set_validation_ventilation_schedules(hdf, fname):
     with ThreadPoolExecutor(max_workers=8) as executor:
         dfs = list(tqdm(executor.map(process_idfs, run_dict), total=len(run_dict)))
     logger.info("Downloading and opening files complete.")
-    print(dfs)
 
     # delete extra files
     os.remove(local_dir / "idf" / "eplusout.end")
@@ -217,13 +216,23 @@ def set_validation_ventilation_schedules(hdf, fname):
 
 # make a click function which accepts a number of simulations to run, a bucket name, and an experiment name
 @click.command()
-@click.option("--hdf", default=None, help=".hdf features path")
+@click.option(
+    "--hdf", default=None, help=".hdf features path", prompt="Path to hdf file"
+)
 @click.option(
     "--fname",
     default="idf_new",
     help="Name for file to store altered IDFs. If not set will override.",
+    prompt="Name for file to store altered IDFs. If not set will override.",
 )
-def main(hdf, fname):
+@click.option(
+    "--log_level",
+    default="ERROR",
+    help="Logging level",
+    prompt="Logging level",
+)
+def main(hdf, fname, log_level):
+    logger.setLevel(log_level)
     set_validation_ventilation_schedules(hdf, fname)
 
 
