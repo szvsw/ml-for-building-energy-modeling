@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 from pathlib import Path
@@ -6,6 +7,7 @@ from uuid import uuid4
 
 import boto3
 import click
+from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -92,11 +94,21 @@ def send_to_sqs(sqs_client, queue_url, s3_path, batch_id, experiment):
 
 
 @click.command()
-@click.option("--bucket", prompt="Bucket name", help="The name of the S3 bucket.")
+@click.option(
+    "--bucket",
+    prompt="Bucket name",
+    help="The name of the S3 bucket.",
+    default="ml-for-bem",
+)
 @click.option(
     "--experiment", prompt="Experiment name", help="The name of the experiment."
 )
-@click.option("--queue", prompt="Queue name", help="The name of the SQS queue.")
+@click.option(
+    "--queue",
+    prompt="Queue name",
+    help="The name of the SQS queue.",
+    default="ml-for-bem-idfworker",
+)
 @click.option(
     "--folder", prompt="Folder path", help="The path to the folder with .idf files."
 )
@@ -121,33 +133,41 @@ def push_files(
     dlq_queue_url = create_sqs_queue_if_not_exists(sqs_client, queue + "-dlq")
     queue_url = create_sqs_queue_if_not_exists(sqs_client, queue, dlq=dlq_queue_url)
 
-    for file_name in os.listdir(folder):
-        if file_name.endswith(".idf") or file_name.endswith(".epjson"):
-            job_id = str(uuid4()).split("-")[0]
-            idf_file_path = os.path.join(folder, file_name)
-            idf_s3_key = upload_to_s3(
-                s3_client,
-                bucket,
-                experiment=experiment,
-                batch_id=batch_id + f"/idfs/{job_id}",
-                file_path=idf_file_path,
+    energy_files = [
+        file
+        for file in os.listdir(folder)
+        if file.endswith(".idf") or file.endswith(".epjson")
+    ]
+
+    def handle(file_name):
+        job_id = str(uuid4()).split("-")[0]
+        idf_file_path = os.path.join(folder, file_name)
+        idf_s3_key = upload_to_s3(
+            s3_client,
+            bucket,
+            experiment=experiment,
+            batch_id=batch_id + f"/idfs/{job_id}",
+            file_path=idf_file_path,
+        )
+        epw_s3_key = construct_s3_key(experiment, "epw", epw)
+        if not check_if_s3_file_exists(s3_client, bucket, epw_s3_key):
+            upload_to_s3(s3_client, bucket, key=epw_s3_key, file_path=epw)
+        else:
+            logger.info(
+                f"Skipping EPW because {epw_s3_key} already exists in bucket {bucket}"
             )
-            epw_s3_key = construct_s3_key(experiment, "epw", epw)
-            if not check_if_s3_file_exists(s3_client, bucket, epw_s3_key):
-                upload_to_s3(s3_client, bucket, key=epw_s3_key, file_path=epw)
-            else:
-                logger.info(
-                    f"Skipping EPW because {epw_s3_key} already exists in bucket {bucket}"
-                )
-            data = {
-                "idf": idf_s3_key,
-                "epw": epw_s3_key,
-                "bucket": bucket,
-                "experiment": experiment,
-                "job_id": job_id,
-            }
-            data = json.dumps(data)
-            send_to_sqs(sqs_client, queue_url, data, batch_id, experiment)
+        data = {
+            "idf": idf_s3_key,
+            "epw": epw_s3_key,
+            "bucket": bucket,
+            "experiment": experiment,
+            "job_id": job_id,
+        }
+        data = json.dumps(data)
+        send_to_sqs(sqs_client, queue_url, data, batch_id, experiment)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        tqdm(executor.map(handle, energy_files), total=len(energy_files))
 
     logger.info(f"Batch ID: {batch_id}")
 
