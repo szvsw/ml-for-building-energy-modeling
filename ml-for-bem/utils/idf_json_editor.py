@@ -194,15 +194,7 @@ def process_idfs(dat):
     return idf_path
 
 
-# make a click function which accepts a number of simulations to run, a bucket name, and an experiment name
-@click.command()
-@click.option("--hdf", default=None, help=".hdf features path")
-@click.option(
-    "--fname",
-    default="idf_new",
-    help="Name for file to store altered IDFs. If not set will override.",
-)
-def main(hdf, fname):
+def set_validation_ventilation_schedules(hdf, fname):
     local_dir = Path(hdf).parent
     features = pd.read_hdf(hdf, key="buildings")
     names = features.index.to_list()
@@ -216,20 +208,23 @@ def main(hdf, fname):
     logger.info("Downloading and opening files complete.")
     print(dfs)
 
-    # for name, row in features.iterrows():
-    #     idf_name = "%09d" % (int(name),) + ".idf"
-    #     idf_path = local_dir / "idf" / idf_name
-    #     print(idf_path)
-    #     mech_vent_sched_mode = row["VentilationMode"]
-    #     epjson = EpJsonIDF(idf_path)
-    #     validation_ventilation(epjson, mech_vent_sched_mode, fname)
-    #     # delete epjsons
-    #     os.remove(epjson.epjson_path)
     # delete extra files
     os.remove(local_dir / "idf" / "eplusout.end")
     os.remove(local_dir / "idf" / "eplusout.err")
     os.remove(local_dir / fname / "eplusout.end")
     os.remove(local_dir / fname / "eplusout.err")
+
+
+# make a click function which accepts a number of simulations to run, a bucket name, and an experiment name
+@click.command()
+@click.option("--hdf", default=None, help=".hdf features path")
+@click.option(
+    "--fname",
+    default="idf_new",
+    help="Name for file to store altered IDFs. If not set will override.",
+)
+def main(hdf, fname):
+    set_validation_ventilation_schedules(hdf, fname)
 
 
 if __name__ == "__main__":
