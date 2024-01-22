@@ -159,7 +159,7 @@ class EpJsonIDF:
         return year_bunch, week_bunches, day_bunches
 
 
-def validation_ventilation(epjson, mech_vent_sched_mode):
+def validation_ventilation(epjson, mech_vent_sched_mode, new_filename):
     if mech_vent_sched_mode == MechVentMode.OccupancySchedule.value:
         pass
     elif mech_vent_sched_mode == MechVentMode.AllOn.value:
@@ -178,14 +178,19 @@ def validation_ventilation(epjson, mech_vent_sched_mode):
             "ZoneHVAC:IdealLoadsAirSystem",
             {"demand_controlled_ventilation_type": "None"},
         )
-    epjson.save_idf(output_path=epjson.output_directory.parent / "idf_new")
+    epjson.save_idf(output_path=epjson.output_directory.parent / new_filename)
     # epjson.save_idf(suffix="_new") # original_name_new.idf instead of override
 
 
 # make a click function which accepts a number of simulations to run, a bucket name, and an experiment name
 @click.command()
 @click.option("--hdf", default=None, help=".hdf features path")
-def main(hdf):
+@click.option(
+    "--fname",
+    default="idf_new",
+    help="Name for file to store altered IDFs. If not set will override.",
+)
+def main(hdf, fname):
     local_dir = Path(hdf).parent
     features = pd.read_hdf(hdf, key="buildings")
     for name, row in features.iterrows():
@@ -194,7 +199,14 @@ def main(hdf):
         print(idf_path)
         mech_vent_sched_mode = row["VentilationMode"]
         epjson = EpJsonIDF(idf_path)
-        validation_ventilation(epjson, mech_vent_sched_mode)
+        validation_ventilation(epjson, mech_vent_sched_mode, fname)
+        # delete epjsons
+        os.remove(epjson.epjson_path)
+    # delete extra files
+    os.remove(local_dir / "idf" / "eplusout.end")
+    os.remove(local_dir / "idf" / "eplusout.err")
+    os.remove(local_dir / fname / "eplusout.end")
+    os.remove(local_dir / fname / "eplusout.err")
 
 
 if __name__ == "__main__":
