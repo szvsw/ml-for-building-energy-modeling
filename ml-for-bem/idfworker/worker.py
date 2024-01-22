@@ -1,7 +1,7 @@
 import json
-import shutil
 import logging
 import os
+import shutil
 from functools import partial
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -11,7 +11,6 @@ import click
 import pandas as pd
 from archetypal.idfclass import IDF
 from archetypal.idfclass.sql import Sql
-
 from idfworker.pull import consume_messages
 from idfworker.push import construct_s3_key
 
