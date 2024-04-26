@@ -10,9 +10,8 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset, random_split
-
 from shoeboxer.schedules import schedules_from_seed
+from torch.utils.data import DataLoader, Dataset, random_split
 from utils.nrel_uitls import CLIMATEZONES, CLIMATEZONES_LIST
 
 logger = logging.getLogger(__name__)
@@ -466,7 +465,6 @@ class BuildingDataset(Dataset):
         # Store the epw indices
         self.epw_ixs = features["base_epw"].astype(int)
 
-
         # Drop unnecessary columns, leaving only features
         features = features.drop("id", axis=1)
         features = features.drop("error", axis=1)
@@ -575,7 +573,7 @@ class BuildingDataset(Dataset):
             schedules = schedules_from_seed(schedule_seed).astype(np.float32)
         else:
             schedules = None
-        
+
         if self.climate_array is not None:
             # get the epw index and load the climate data
             epw_ix = self.epw_ixs.iloc[index]
@@ -646,13 +644,21 @@ class BuildingDataModule(pl.LightningDataModule):
         self.space_config_path = (
             Path(self.experiment_root) / "train" / "space_definition.json"
         )
-        self.climate_experiment_root = (Path(data_dir) / climate_experiment) if self.climate_experiment is not None else None
+        self.climate_experiment_root = (
+            (Path(data_dir) / climate_experiment)
+            if self.climate_experiment is not None
+            else None
+        )
         self.climate_array_path = (
-            self.climate_experiment_root / "global_climate_array.npy"
-        ) if self.climate_experiment is not None else None
+            (self.climate_experiment_root / "global_climate_array.npy")
+            if self.climate_experiment is not None
+            else None
+        )
         self.climate_timeseries_names_path = (
-            self.climate_experiment_root / "timeseries.json"
-        ) if self.climate_experiment is not None else None
+            (self.climate_experiment_root / "timeseries.json")
+            if self.climate_experiment is not None
+            else None
+        )
 
     def prepare_data(self):
         # Download the data from s3 if it doesn't exist locally
@@ -710,7 +716,9 @@ class BuildingDataModule(pl.LightningDataModule):
 
             # Load the climate array and apply weather transform
             climate_array = np.load(self.climate_array_path)
-            weather_transform = WeatherStdNormalTransform(climate_array, channel_names=self.climate_timeseries_names)
+            weather_transform = WeatherStdNormalTransform(
+                climate_array, channel_names=self.climate_timeseries_names
+            )
             self.climate_array = (
                 weather_transform(
                     torch.tensor(
@@ -782,38 +790,52 @@ class BuildingDataModule(pl.LightningDataModule):
                 generator=torch.Generator().manual_seed(42),
             )
 
-
     def train_dataloader(self):
         return DataLoader(
-            self.seen_epw_training_set if self.climate_experiment is not None else self.train_dataset, batch_size=self.batch_size, shuffle=True
+            self.seen_epw_training_set
+            if self.climate_experiment is not None
+            else self.train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
         )
 
     def val_dataloader(self):
-        return [
-            DataLoader(
-                self.seen_epw_validation_set,
+        return (
+            [
+                DataLoader(
+                    self.seen_epw_validation_set,
+                    batch_size=self.batch_size * self.val_batch_mult,
+                ),
+                DataLoader(
+                    self.unseen_epw_validation_set,
+                    batch_size=self.batch_size * self.val_batch_mult,
+                ),
+            ]
+            if self.climate_experiment is not None
+            else DataLoader(
+                self.val_dataset,
                 batch_size=self.batch_size * self.val_batch_mult,
-            ),
-            DataLoader(
-                self.unseen_epw_validation_set,
-                batch_size=self.batch_size * self.val_batch_mult,
-            ),
-        ] if self.climate_experiment is not None else DataLoader(self.val_dataset, batch_size=self.batch_size * self.val_batch_mult,
+            )
         )
 
     def test_dataloader(self):
-        return [
-            DataLoader(
-                self.seen_epw_testing_set,
+        return (
+            [
+                DataLoader(
+                    self.seen_epw_testing_set,
+                    batch_size=self.batch_size * self.val_batch_mult,
+                ),
+                DataLoader(
+                    self.unseen_epw_testing_set,
+                    batch_size=self.batch_size * self.val_batch_mult,
+                ),
+            ]
+            if self.climate_experiment is not None
+            else DataLoader(
+                self.test_dataset,
                 batch_size=self.batch_size * self.val_batch_mult,
-            ),
-            DataLoader(
-                self.unseen_epw_testing_set,
-                batch_size=self.batch_size * self.val_batch_mult,
-            ),
-        ] if self.climate_experiment is not None else DataLoader(self.test_dataset, batch_size=self.batch_size * self.val_batch_mult,
+            )
         )
-
 
 
 if __name__ == "__main__":
