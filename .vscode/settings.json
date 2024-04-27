@@ -1,7 +1,10 @@
 {
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
     },
     "terminal.integrated.env.windows": {
         "PYTHONPATH": "${workspaceFolder}/ml-for-bem"
@@ -11,4 +14,12 @@
     },
     "terminal.integrated.cwd": "${workspaceFolder}/ml-for-bem",
     "jupyter.notebookFileRoot": "${workspaceFolder}/ml-for-bem",
+    "notebook.formatOnSave.enabled": true,
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "notebook.codeActionsOnSave": {
+        "source.organizeImports": true,
+    }
 }
